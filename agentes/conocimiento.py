@@ -90,6 +90,9 @@ EPSILON_MINIMO = 0.02
 EPSILON_DECAIMIENTO = 0.995                # por cada decisión
 PENALIZACION_CAMBIO = 0.5                  # cambiar de modo a cada rato también cuesta
 BONO_PLAN = 1.5                            # preferencia por el modo que sugiere el plan del Coordinador
+MARGEN_CAMBIO = 0.3                        # solo cambia de modo si la mejor opción supera a la actual por este margen
+                                           # (evita que el semáforo "parpadee" por diferencias que son ruido)
+# Con el cruce vacío (estado a0-b0) no hay a quién dar prioridad: queda en "normal" (o en el modo del plan) y no explora
 # Regla experta (conocimiento inicial de la tabla Q): por cada cubeta de diferencia entre accesos,
 # la prioridad hacia el acceso más cargado vale PESO_DESBALANCE más que el ciclo normal.
 PESO_DESBALANCE = 1.0

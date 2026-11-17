@@ -226,6 +226,9 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
   v < 2 m/s a menos de 100 m de la línea de pare) por WebSocket y el servidor las publica en `sma/sensores/<cruce>`
   (si la pestaña 3D está oculta Chrome pausa la simulación y no hay sensores). Página `/agentes` = `panel/agentes.html`.
   Entre modos cíclicos el simulador y el ESP32 conservan la fase (solo cambian los tiempos).
+  Semafórico (17-nov): histéresis `MARGEN_CAMBIO`=0.3 (solo cambia si la mejor opción supera a la actual por ese
+  margen); con el cruce vacío (a0-b0) queda en `normal` o en el modo del plan y no explora; la bitácora muestra la
+  cola con un decimal.
 - Terminar contingencia: botón "Terminar" del aviso → `POST /api/terminar` → `sma/eventos/<cruce>`
   `{"tipo":"fin_contingencia","alerta"}` → Vigilancia → Coordinador (`TerminarAlerta`). Si el SMA no avisa el cierre
   20 s después de la hora, el panel retira el plan de la vista por su cuenta.

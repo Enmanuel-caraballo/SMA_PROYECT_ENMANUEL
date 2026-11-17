@@ -75,17 +75,30 @@ class QSemaforo:
             fila.setdefault(a, round(self.valor_experto(estado, a), 3))
         return fila
 
-    def elegir(self, cruce, estado, sugerido=None):
-        """Devuelve (acción, motivo, puntajes). sugerido = modo que pide el plan del Coordinador."""
+    def elegir(self, cruce, estado, sugerido=None, actual="normal"):
+        """Devuelve (acción, motivo, puntajes).
+        sugerido = modo que pide el plan del Coordinador; actual = modo que tiene hoy el semáforo."""
         fila = self.valores(cruce, estado)
         puntajes = {a: v + (K.BONO_PLAN if a == sugerido else 0.0) for a, v in fila.items()}
+        # 1) cruce vacío: no hay cola a la que dar prioridad -> normal (o lo que pida el plan), sin explorar
+        if estado == "a0-b0":
+            if sugerido:
+                return sugerido, "cruce vacío: se deja el modo que pide el plan", puntajes
+            return "normal", "cruce vacío: sin cola no hay a quién dar prioridad", puntajes
+        # 2) exploración: a veces prueba otro modo para seguir aprendiendo
         if random.random() < self.epsilon:
             accion = random.choice(K.MODOS_ADAPTATIVOS)
             return accion, f"explora (epsilon={self.epsilon:.3f})", puntajes
+        # 3) la mejor opción según la tabla Q (+ bono del plan)
         accion = max(puntajes, key=puntajes.get)
         motivo = "mejor valor Q" + (" + bono del plan" if sugerido and accion == sugerido else "")
         if sugerido and accion != sugerido:
             motivo = f"las colas pesan más que el plan (sugería {sugerido})"
+        # 4) histéresis: cambiar de modo solo si la mejora supera el margen
+        if actual in puntajes and accion != actual:
+            mejora = puntajes[accion] - puntajes[actual]
+            if mejora < K.MARGEN_CAMBIO:
+                return actual, f"se mantiene {actual}: {accion} solo mejora {mejora:.2f} (< margen {K.MARGEN_CAMBIO})", puntajes
         return accion, motivo, puntajes
 
     def aprender(self, cruce, estado, accion, recompensa, estado_sig):

@@ -610,10 +610,13 @@ class AgenteSemaforico(Agent):
                        f"Q ← Q + {K.Q_ALFA} × (recompensa + {K.Q_GAMMA} × max Q(siguiente) − Q)",
                        "Conocimiento inicial: Q(prioridad hacia el acceso más cargado) = diferencia de cubetas − "
                        f"{K.COSTO_PRIORIDAD_SIN_COLA}; Q(normal) = 0",
+                       f"Solo cambia de modo si la mejor opción supera a la actual por más de {K.MARGEN_CAMBIO} (histéresis)",
+                       "Con el cruce vacío (a0-b0) queda en normal (o en el modo del plan) y no explora",
                        f"Modos {K.MODOS_BLOQUEADOS} que ordena el Coordinador no se cambian por cuenta propia"],
             "parametros": {"intervalo_s": K.INTERVALO_CONTROL, "cubetas": K.CUBETAS_COLA, "alfa": K.Q_ALFA,
                            "gamma": K.Q_GAMMA, "epsilon": round(self.q.epsilon, 4), "epsilon_min": K.EPSILON_MINIMO,
-                           "penalizacion_cambio": K.PENALIZACION_CAMBIO, "bono_plan": K.BONO_PLAN},
+                           "penalizacion_cambio": K.PENALIZACION_CAMBIO, "bono_plan": K.BONO_PLAN,
+                           "margen_cambio": K.MARGEN_CAMBIO},
             "estado": {"decisiones_aprendidas": self.q.pasos,
                        "recompensa_media_50": round(sum(recientes) / len(recientes), 2) if recientes else None,
                        "recompensas": recientes, "cruces": self.decision, "q": self.q.q, "visitas": self.q.visitas},
@@ -644,12 +647,12 @@ class AgenteSemaforico(Agent):
                     info["motivo"] = f"modo {ag.bloqueado[cruce]} fijado por el plan del Coordinador"
                     ag.decision[cruce] = info
                     continue
-                accion, motivo, puntajes = ag.q.elegir(cruce, estado, ag.sugerido.get(cruce))
                 anterior = ag.modo.get(cruce, "normal")
+                accion, motivo, puntajes = ag.q.elegir(cruce, estado, ag.sugerido.get(cruce), anterior)
                 cambio = accion != anterior
                 if cambio:
                     ag.ordenar(cruce, accion)
-                    log("Semaforico", f"{cruce}: cola A={a:.0f} B={b:.0f} ({estado}) -> {accion} [{motivo}; "
+                    log("Semaforico", f"{cruce}: cola A={a:.1f} B={b:.1f} ({estado}) -> {accion} [{motivo}; "
                                       + ", ".join(f"{k}={v:.2f}" for k, v in puntajes.items()) + "]")
                 ag.previo[cruce] = (estado, accion, total, cambio)
                 ag.decision[cruce] = {**info, "modo": accion, "motivo": motivo, "cambio": cambio,
