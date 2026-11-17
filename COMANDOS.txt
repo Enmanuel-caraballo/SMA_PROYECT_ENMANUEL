@@ -122,34 +122,39 @@ cd "C:\Program Files\mosquitto"
 
 
 ----------------------------------------------------------------------
- 7. MAQUETA VIRTUAL (mapa de Cartagena con 8 cruces)
+ 7. GEMELO DIGITAL 3D DE BOCAGRANDE (maqueta virtual)
 ----------------------------------------------------------------------
 # TERMINAL 1: Mosquitto (paso 3)
-# TERMINAL 2: simulador de cruces
-#   - SIN ESP32: simula los 8 cruces
+# TERMINAL 2: simulador de los 5 cruces semaforizados de Bocagrande
+#   - SIN ESP32: simula los 5 cruces
 python maqueta_virtual\simulador_ciudad.py --incluir-cruce1
-#   - CON ESP32 conectado: simula cruce2..cruce8 (cruce1 lo maneja el ESP32)
+#   - CON ESP32 conectado: simula cruce2..cruce5 (cruce1 = San Martín x Calle 6 lo maneja el ESP32)
 python maqueta_virtual\simulador_ciudad.py
 # TERMINAL 3: agentes (esperar "Los 7 agentes del SMA están activos", ~15 s)
 python agentes\sma_agentes.py
 # TERMINAL 4: panel web
 python maqueta_virtual\panel\servidor_panel.py
-# Abrir en el navegador:  http://localhost:8000
+# Abrir en el navegador:  http://localhost:8000        (vista 3D)
+#                         http://localhost:8000/mapa2d (mapa 2D con los mismos cruces)
+# La primera vez necesita internet (Three.js, fuentes y teselas del mapa 2D).
 
-# Probar el Caso 1 en la maqueta virtual:
-#   - En el panel: elegir el cruce y pulsar "Simular accidente"
-#     (o clic sobre un cruce del mapa -> "Simular accidente aquí")
-#   - O desde la carpeta de Mosquitto:
+# Controles de la vista 3D: arrastrar = girar, rueda = zoom, clic derecho = desplazar.
+# Seleccionar un cruce: en la lista de la izquierda o clic en su anillo/etiqueta.
+# Botones: ACCIDENTE, CONGESTIÓN, AGLOMERACIÓN (publican en sma/eventos/<cruce>).
+#   Accidente   -> carros chocados (naranja), cola, curiosos (amarillo), corredor (anillo verde)
+#                  y una ambulancia (blanca con baliza) entra por la ruta más corta.
+#   Congestión  -> el tráfico se duplica 45 s.
+#   Aglomeración-> 60 peatones extra alrededor del cruce durante 40 s.
+
+# También desde la carpeta de Mosquitto:
 .\mosquitto_pub -h localhost -t sma/eventos/cruce3 -m accidente
-# Resultado: el cruce pasa a CORREDOR (borde verde, A verde y B rojo), aparece la
-# alerta AL-000x en "Alertas", la bitácora muestra toda la cadena de agentes y
-# a los 10 s el cruce vuelve a NORMAL y la alerta queda "cerrada".
-
-# En el mapa: con poco zoom cada cruce es un círculo (mitad izquierda = A,
-# mitad derecha = B); al acercarse (zoom 15+) se ven los dos semáforos completos.
+.\mosquitto_pub -h localhost -t sma/eventos/cruce1 -m "{\"tipo\":\"congestion\"}"
 
 # Ver la bitácora de los agentes por MQTT (sin el panel):
 .\mosquitto_sub -h localhost -t sma/panel/log -v
+
+# Refrescar los datos de OpenStreetMap (solo si cambian vías o semáforos en OSM):
+python maqueta_virtual\preparar_bocagrande.py
 
 # Opciones útiles:
 #   simulador_ciudad.py --broker 192.168.1.7
@@ -244,3 +249,8 @@ pip install greenlet          # o el nombre que diga el error
 #      antes de que los agentes terminen de arrancar se pierden.
 # Panel: un cruce aparece "sin señal"
 #   -> no está corriendo el simulador (o el ESP32 para cruce1)
+# Vista 3D lenta
+#   -> cerrar otras pestañas; si baja de ~24 FPS el brillo neón se apaga solo.
+# Al cerrar los agentes quedan procesos de Python sueltos (servidor XMPP de SPADE)
+#   y la próxima vez no arrancan: cerrar todo lo del proyecto con
+Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Where-Object { $_.CommandLine -match 'sma_agentes|simulador_ciudad|servidor_panel|multiprocessing' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }

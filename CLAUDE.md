@@ -113,9 +113,11 @@ SMA_IA/
 │   ├── esp32_mqtt_prueba/esp32_mqtt_prueba.ino   (prueba del LED azul)
 │   └── esp32_cruce/esp32_cruce.ino               (cruce con 2 semáforos + botón en GPIO4)
 ├── maqueta_virtual/
-│   ├── cruces.json            (8 cruces reales, coordenadas OSM)
+│   ├── cruces.json            (5 cruces semaforizados de Bocagrande, generado desde OSM)
+│   ├── bocagrande/bocagrande.json (red vial, edificios, semáforos en metros; generado)
+│   ├── preparar_bocagrande.py (descarga OSM/Overpass y genera los dos JSON)
 │   ├── simulador_ciudad.py
-│   └── panel/                 (servidor_panel.py + index.html)
+│   └── panel/                 (servidor_panel.py, index.html = vista 3D, static/bocagrande3d.js, mapa2d.html)
 └── docs/                      (diagramas .drawio/.pdf, documento Word, checklist, informe)
 ```
 
@@ -126,8 +128,10 @@ LED azul GPIO2 = conectado a MQTT.
 
 Hecho: diseño (diagrama de clases v4, diagramas de secuencia de los 2 casos, catálogo de mensajes), documento v3
 corregido, Mosquitto + ESP32 conectados, 7 agentes SPADE funcionando con el Caso 1, código del cruce físico
-(sin LEDs todavía: solo hay ESP32, faltan componentes). **Maqueta virtual terminada y probada (16-nov-2026)**:
-8 cruces, simulador, panel web con mapa y bitácora; `log()` publica en `sma/panel/log`.
+(sin LEDs todavía: solo hay ESP32, faltan componentes). **Maqueta virtual terminada y probada (16-nov-2026)**.
+**Decisión 16-nov-2026: todo el proyecto se concentra en BOCAGRANDE.** La maqueta virtual es un gemelo digital 3D
+(Three.js) con datos reales de OSM: 5 cruces semaforizados, carros y peatones simulados en el navegador que obedecen
+los semáforos y reaccionan a eventos (accidente, congestión, aglomeración, cerco). Ver sección 9.
 
 Pendiente (en orden): **Caso 2** (reconocimiento facial con DeepFace o face_recognition +
 cerco) → bot de Telegram para el Comunicador (+ LLM local con Ollama o Gemini gratis) → mediciones y resultados → informe.
@@ -136,7 +140,7 @@ Ojo para el Caso 2: hoy `AgenteCoordinador.ResponderAccidente` abre **siempre** 
 sin importar el tipo de alerta. Una alerta `persona_solicitada` debe ir por otro plan (Predictor → `activarCerco` en
 la ruta → aviso solo a la Policía). En el panel el botón "Simular persona solicitada" está deshabilitado hasta entonces.
 
-## 8. Maqueta virtual (HECHA — especificación original, se mantiene como referencia)
+## 8. Maqueta virtual v1 (HECHA — especificación original de 8 cruces de la ciudad; reemplazada por la sección 9)
 
 ### Objetivo
 Mostrar en el navegador un **mapa de Cartagena** con **6–8 cruces** cuyos semáforos cambian de color en vivo,
@@ -181,3 +185,21 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
 - Commits en español y sin línea `Co-Authored-By`.
 - Sin fotos de personas reales en el repo (los rostros de prueba van en una carpeta ignorada por Git).
 - Probar cada cambio corriéndolo antes de darlo por terminado.
+
+## 9. Gemelo digital 3D de Bocagrande (versión actual)
+
+- **Sector único: Bocagrande.** Todo lo nuevo (Caso 2, mediciones, informe) debe ubicarse en este sector.
+- Cruces (de `highway=traffic_signals` en OSM, 7 semáforos → 5 intersecciones). `cruce1` = Av. San Martín (en OSM
+  "Carrera 2") × Calle 6 = cruce físico ESP32 (punto crítico citado por la DATT). cruce2 = Cra. 3 × Calle 6,
+  cruce3 = San Martín × Calle 10, cruce4 = Cra. 3 × Calle 10, cruce5 = San Martín × Calle 15 (Base Naval).
+- Grupo **A** de un acceso = tramos cuyo nombre es `via_principal` del cruce; el resto es **B**.
+- `preparar_bocagrande.py` regenera `cruces.json` y `bocagrande/bocagrande.json` (coordenadas en metros,
+  origen 10.4035, -75.5550; el norte es -z en Three.js). Si Overpass da 502/504, reintentar más tarde.
+- Vista 3D: `panel/index.html` (interfaz) + `panel/static/bocagrande3d.js` (escena y simulación). Three.js 0.160.0
+  por importmap desde unpkg. La simulación de tráfico corre en el navegador; las luces vienen de `sma/estado/<cruce>`.
+- El servidor reenvía la historia al conectar con `"historial": true`; la vista 3D no dispara efectos con eso.
+- Efectos: `sma/eventos` accidente → `eventoAccidente`; congestion → `congestion`; aglomeracion → `aglomerar`;
+  `sma/semaforo` corredor → ambulancia; cerco → 2 patrullas; normal → retira el accidente a los 8 s.
+- Vehículos ×1.5 y peatones ×2 de escala real a propósito (si no, no se ven junto a las torres).
+- Depuración desde la consola: `window.__bocagrande` (cámara, controles, escena) e `import('/static/bocagrande3d.js')`
+  para leer `estado` (carros, peatones, métricas, fps, ms).

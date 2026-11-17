@@ -22,10 +22,12 @@ import paho.mqtt.client as mqtt
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 CARPETA = Path(__file__).resolve().parent
 RUTA_CRUCES = CARPETA.parent / "cruces.json"
+RUTA_MAPA_3D = CARPETA.parent / "bocagrande" / "bocagrande.json"
 TIPOS_EVENTO = {"accidente", "congestion", "aglomeracion", "placa_reportada", "persona_solicitada"}
 
 args = None
@@ -93,9 +95,24 @@ async def ciclo_de_vida(app):
 app = FastAPI(title="Maqueta virtual SMA CTG", lifespan=ciclo_de_vida)
 
 
+app.mount("/static", StaticFiles(directory=CARPETA / "static"), name="static")
+
+
 @app.get("/")
 def pagina():
+    """Gemelo digital 3D de Bocagrande."""
     return FileResponse(CARPETA / "index.html")
+
+
+@app.get("/mapa2d")
+def pagina_2d():
+    """Mapa 2D (Leaflet) con los mismos cruces."""
+    return FileResponse(CARPETA / "mapa2d.html")
+
+
+@app.get("/datos/bocagrande.json")
+def datos_bocagrande():
+    return FileResponse(RUTA_MAPA_3D, media_type="application/json")
 
 
 @app.get("/api/cruces")
@@ -127,9 +144,10 @@ def api_evento(evento: Evento):
 async def ws(websocket: WebSocket):
     await websocket.accept()
     clientes_ws.add(websocket)
-    # lo que ya pasó: estados actuales + bitácora reciente
+    # lo que ya pasó: estados actuales + bitácora reciente (marcado como historial
+    # para que la vista 3D no vuelva a disparar accidentes viejos)
     for paquete in list(estados.values()) + list(bitacora):
-        await websocket.send_text(json.dumps(paquete, ensure_ascii=False))
+        await websocket.send_text(json.dumps({**paquete, "historial": True}, ensure_ascii=False))
     try:
         while True:
             await websocket.receive_text()   # el navegador no envía nada; solo mantiene viva la conexión

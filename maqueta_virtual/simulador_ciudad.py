@@ -1,7 +1,7 @@
 """
-SMA Movilidad y Seguridad CTG - Simulador de los cruces virtuales
-=================================================================
-Simula los semáforos de los cruces de cruces.json con EL MISMO contrato MQTT
+SMA Movilidad y Seguridad CTG - Simulador de los cruces virtuales de Bocagrande
+==============================================================================
+Simula los semáforos de los cruces de cruces.json (los 5 cruces semaforizados de Bocagrande en OSM) con EL MISMO contrato MQTT
 que el ESP32 (esp32/esp32_cruce/esp32_cruce.ino), así los agentes no distinguen
 un cruce real de uno virtual:
 
@@ -9,7 +9,7 @@ un cruce real de uno virtual:
   publica   sma/estado/<cruce>     JSON retenido {"modo":"normal","A":"verde","B":"rojo"}
 
 Uso:
-  python maqueta_virtual/simulador_ciudad.py                    (cruce2..cruce8; cruce1 lo maneja el ESP32)
+  python maqueta_virtual/simulador_ciudad.py                    (cruce2..cruce5; cruce1 lo maneja el ESP32)
   python maqueta_virtual/simulador_ciudad.py --incluir-cruce1   (también simula el cruce físico)
   python maqueta_virtual/simulador_ciudad.py --broker 192.168.1.7
 """
@@ -84,7 +84,7 @@ class Cruce:
 
 
 def main():
-    p = argparse.ArgumentParser(description="Simulador de cruces virtuales de Cartagena")
+    p = argparse.ArgumentParser(description="Simulador de cruces virtuales de Bocagrande")
     p.add_argument("--incluir-cruce1", action="store_true",
                    help="simula también cruce1 (el cruce físico) cuando el ESP32 no está conectado")
     p.add_argument("--broker", default="localhost", help="IP del broker Mosquitto (por defecto localhost)")
