@@ -5,7 +5,8 @@ Simula los semáforos de los cruces de cruces.json (los 5 cruces semaforizados d
 que el ESP32 (esp32/esp32_cruce/esp32_cruce.ino), así los agentes no distinguen
 un cruce real de uno virtual:
 
-  escucha   sma/semaforo/<cruce>   normal | corredor | cerco  (compat.: verde=corredor, rojo=normal)
+  escucha   sma/semaforo/<cruce>   normal | prioridad_a | prioridad_b | peatonal | corredor | cerco
+                                   (compat.: verde=corredor, rojo=normal)
   publica   sma/estado/<cruce>     JSON retenido {"modo":"normal","A":"verde","B":"rojo"}
 
 Uso:
@@ -35,9 +36,16 @@ CICLO = [
     ("rojo", "amarillo", 2.0),
     ("rojo", "rojo", 1.0),
 ]
+# Planes de desvío: mismas fases, otros tiempos (igual que el ESP32)
+TIEMPOS_MODO = {
+    "prioridad_a": [20.0, 2.0, 1.0, 5.0, 2.0, 1.0],    # verde largo para la vía A
+    "prioridad_b": [5.0, 2.0, 1.0, 20.0, 2.0, 1.0],    # verde largo para la vía B
+    "peatonal":    [8.0, 2.0, 8.0, 6.0, 2.0, 8.0],     # todo rojo largo: cruzan los peatones
+}
 ORDENES = {"normal": "normal", "rojo": "normal",
            "corredor": "corredor", "verde": "corredor",
-           "cerco": "cerco"}
+           "cerco": "cerco", "prioridad_a": "prioridad_a",
+           "prioridad_b": "prioridad_b", "peatonal": "peatonal"}
 
 
 def log(texto):
@@ -72,7 +80,8 @@ class Cruce:
         elif self.modo == "cerco":
             luces = ("rojo", "rojo")
         else:
-            if time.monotonic() - self.inicio_fase >= CICLO[self.fase][2]:
+            duracion = TIEMPOS_MODO.get(self.modo, [f[2] for f in CICLO])[self.fase]
+            if time.monotonic() - self.inicio_fase >= duracion:
                 self.fase = (self.fase + 1) % len(CICLO)
                 self.inicio_fase = time.monotonic()
             luces = CICLO[self.fase][:2]

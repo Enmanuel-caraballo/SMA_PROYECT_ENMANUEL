@@ -7,6 +7,8 @@
 //   "normal"   -> ciclo automático A/B
 //   "corredor" -> corredor de emergencia: A en verde fijo, B en rojo
 //   "cerco"    -> cerco de persecución: ambos en rojo
+//   "prioridad_a" / "prioridad_b" -> desvío: verde largo (20 s) para A o para B
+//   "peatonal" -> aglomeración: todo rojo de 8 s en cada cambio para que crucen los peatones
 //   (por compatibilidad: "verde" = corredor, "rojo" = normal)
 // Botón: publica "accidente" en sma/eventos/cruce1
 // Estado: publica JSON en sma/estado/cruce1 cada vez que cambia una luz
@@ -38,7 +40,7 @@ const unsigned long T_VERDE_A = 8000, T_VERDE_B = 6000;
 const unsigned long T_AMARILLO = 2000, T_TODO_ROJO = 1000;
 
 enum Luz { ROJO, AMARILLO, VERDE };
-enum Modo { NORMAL, CORREDOR, CERCO };
+enum Modo { NORMAL, CORREDOR, CERCO, PRIORIDAD_A, PRIORIDAD_B, PEATONAL };
 
 // Fases del ciclo normal: {luz A, luz B, duración}
 struct Fase { Luz a; Luz b; unsigned long ms; };
@@ -51,6 +53,12 @@ const Fase CICLO[] = {
   {ROJO,     ROJO,     T_TODO_ROJO},
 };
 const int N_FASES = sizeof(CICLO) / sizeof(CICLO[0]);
+// Planes de desvío (mismas 6 fases, otros tiempos)
+const unsigned long MS_PRIORIDAD_A[] = {20000, 2000, 1000, 5000, 2000, 1000};
+const unsigned long MS_PRIORIDAD_B[] = {5000, 2000, 1000, 20000, 2000, 1000};
+const unsigned long MS_PEATONAL[]    = {8000, 2000, 8000, 6000, 2000, 8000};
+
+unsigned long duracionFase(int f);
 
 WiFiClient wifi;
 PubSubClient mqtt(wifi);
@@ -67,7 +75,23 @@ unsigned long ultimoCambioBoton = 0;
 unsigned long ultimoAccidente = 0;
 
 const char* nombreLuz(Luz l)  { return l == VERDE ? "verde" : (l == AMARILLO ? "amarillo" : "rojo"); }
-const char* nombreModo(Modo m){ return m == CORREDOR ? "corredor" : (m == CERCO ? "cerco" : "normal"); }
+const char* nombreModo(Modo m) {
+  switch (m) {
+    case CORREDOR: return "corredor";
+    case CERCO: return "cerco";
+    case PRIORIDAD_A: return "prioridad_a";
+    case PRIORIDAD_B: return "prioridad_b";
+    case PEATONAL: return "peatonal";
+    default: return "normal";
+  }
+}
+
+unsigned long duracionFase(int f) {
+  if (modo == PRIORIDAD_A) return MS_PRIORIDAD_A[f];
+  if (modo == PRIORIDAD_B) return MS_PRIORIDAD_B[f];
+  if (modo == PEATONAL)    return MS_PEATONAL[f];
+  return CICLO[f].ms;
+}
 
 void encender(int r, int a, int v, Luz l) {
   digitalWrite(r, l == ROJO);
@@ -103,8 +127,8 @@ void cambiarModo(Modo nuevo) {
 void actualizarSemaforos() {
   if (modo == CORREDOR) { ponerLuces(VERDE, ROJO); return; }
   if (modo == CERCO)    { ponerLuces(ROJO, ROJO);  return; }
-  // Modo normal: avanza el ciclo sin usar delay()
-  if (millis() - inicioFase >= CICLO[fase].ms) {
+  // Modo normal o de desvío: avanza el ciclo sin usar delay()
+  if (millis() - inicioFase >= duracionFase(fase)) {
     fase = (fase + 1) % N_FASES;
     inicioFase = millis();
   }
@@ -134,6 +158,9 @@ void alRecibirMensaje(char* tema, byte* datos, unsigned int largo) {
   if (m == "corredor" || m == "verde")      cambiarModo(CORREDOR);
   else if (m == "cerco")                    cambiarModo(CERCO);
   else if (m == "normal" || m == "rojo")    cambiarModo(NORMAL);
+  else if (m == "prioridad_a")              cambiarModo(PRIORIDAD_A);
+  else if (m == "prioridad_b")              cambiarModo(PRIORIDAD_B);
+  else if (m == "peatonal")                 cambiarModo(PEATONAL);
   else Serial.println("Orden desconocida");
 }
 

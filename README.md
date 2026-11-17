@@ -30,7 +30,8 @@ Sobre esa red circulan carros y peatones simulados que **obedecen los semáforos
 | Tema MQTT | Contenido |
 |---|---|
 | `sma/eventos/<cruce>` | `accidente` o JSON `{"tipo": ...}` (botón del ESP32, panel o `mosquitto_pub`) |
-| `sma/semaforo/<cruce>` | `normal` \| `corredor` \| `cerco` (órdenes del Agente Semafórico) |
+| `sma/semaforo/<cruce>` | `normal` \| `prioridad_a` \| `prioridad_b` \| `peatonal` \| `cerco` \| `corredor` (órdenes del Agente Semafórico) |
+| `sma/plan/<cruce>` | JSON del plan activo `{"plan","nombre","semaforos","alerta","cruce","sentido","duracion","activo"}` (lo dibuja el gemelo 3D) |
 | `sma/estado/<cruce>` | JSON retenido `{"modo":"normal","A":"verde","B":"rojo"}` |
 | `sma/panel/log` | JSON `{"ts","agente","texto"}`: bitácora de los agentes para el panel |
 
@@ -64,16 +65,37 @@ la Calle 6 con San Martín y la Calle 15 frente a la Base Naval ([El Universal, 
 En OSM el tramo sur de la Av. San Martín figura como "Carrera 2". Si en campo hay más semáforos que no están
 en OSM, se pueden agregar en OpenStreetMap y volver a correr `preparar_bocagrande.py`.
 
+## Planes que decide el SMA (Caso 1)
+
+En Cartagena no existen corredores de emergencia, así que ante un evento el **Coordinador** genera planes de
+**desvío** y elige el de mayor utilidad (`impacto × nivel de tráfico − 0,5 × costo`). Cada plan dura **5 min**
+(`--duracion N` para cambiarlo) y luego se restaura el plan normal.
+
+| Evento | Plan elegido | Semáforos |
+|---|---|---|
+| Accidente en **cruce5**, sentido **salida** (Av. San Martín ~100 m antes de la Calle 15, hacia el Centro) | **Contraflujo Carrera 1 (salida)**: desde el cruce4 todo lo que sale toma la Calle 10 hacia la Carrera 1, que queda **solo de salida** (ambos carriles); el ingreso es **solo por la Av. San Martín**. Los que ya estaban detrás del accidente pasan despacio por el carril libre. | cruce4 `prioridad_a`, cruce3 `prioridad_b`, cruce5 `prioridad_b` |
+| Accidente en **cruce5**, sentido **entrada** (después de la Calle 15, hacia Bocagrande) | **Contraflujo Carrera 1 (entrada)**: el ingreso es **solo por la Carrera 1**; la Av. San Martín queda para salir. | cruce5 `prioridad_a`, cruce3 `prioridad_b` |
+| Accidente en otro cruce | Desvío local: más verde para la vía libre | `prioridad_a` en ese cruce |
+| Congestión | Verde largo para la vía principal | `prioridad_a` |
+| Aglomeración | Fase peatonal extendida (todo rojo de 8 s en cada cambio) | `peatonal` |
+| Persona solicitada / placa (Caso 2) | Cerco semafórico; aviso **solo a la Policía** ("posible coincidencia") | `cerco` |
+
+Modos de semáforo (ESP32 y simulador): `normal` (A 8 s / B 6 s), `prioridad_a` (A 20 s / B 5 s),
+`prioridad_b` (A 5 s / B 20 s), `peatonal`, `cerco` (todo rojo) y `corredor` (se conserva por compatibilidad).
+
 ## Gemelo digital 3D
 
 - **Vehículos**: siguen la red real (sentidos únicos incluidos), mantienen distancia y frenan en la línea de pare
   según la luz de su acceso (A o B). Luces de freno al detenerse.
 - **Peatones**: caminan por los andenes y cruzan cuando la vía que atraviesan está en rojo.
 - **Eventos** (botones del panel o `sma/eventos/<cruce>`):
-  - *Accidente*: dos carros chocados bloquean un carril, se forma cola, se acercan curiosos y, cuando el SMA abre el
-    corredor, entra una **ambulancia** por la ruta más corta.
-  - *Congestión*: se duplica el tráfico durante 90 s.
-  - *Aglomeración*: 60 peatones extra alrededor del cruce durante 75 s.
+  - *Accidente*: dos carros chocados bloquean un carril, se forma cola, se acercan curiosos y entra una
+    **ambulancia**. En el cruce5 se elige el sentido (salida/entrada) y el plan de contraflujo se ve en el mapa:
+    ruta de desvío en **verde** con flechas animadas, ruta alterna en **azul**, **barreras rojas** en los tramos
+    cerrados, la Carrera 1 usando sus dos carriles en un solo sentido y una cuenta regresiva del plan arriba.
+  - *Congestión*: se duplica el tráfico mientras dure el plan (5 min).
+  - *Aglomeración*: 60 peatones extra alrededor del cruce mientras dure el plan (5 min).
+  - 20 % de los carros nuevos quieren **salir de Bocagrande** y buscan la ruta más corta a la salida vigente.
   - *Cerco* (Caso 2): todos los accesos en rojo y llegan **patrullas**.
 - **Métricas en vivo**: vehículos, velocidad promedio (con gráfica), detenidos, peatones esperando y cola por cruce.
 - Si el equipo no llega a ~24 FPS se apaga solo el efecto de brillo (bloom).
@@ -94,15 +116,16 @@ python maqueta_virtual\panel\servidor_panel.py
 ```
 
 Abrir **http://localhost:8000** (requiere internet la primera vez para cargar Three.js y las fuentes).
-Elegir un cruce (lista de la izquierda o clic en su anillo) y pulsar **Accidente**: el cruce pasa a *corredor*
-(anillo verde), aparecen los carros chocados y la cola, entra la ambulancia, la bitácora muestra la cadena
-Vigilancia → Clasificador → Coordinador → Consultor → Semafórico → Comunicador el corredor se mantiene 30 s (`--duracion N` para cambiarlo) y vuelve a *normal*;
-los carros chocados se retiran 15 s después.
+Elegir el **cruce5**, el sentido **salida** y pulsar **Accidente**: los agentes deciden en menos de 1 s
+(Vigilancia → Clasificador → Coordinador → Consultor → Semafórico → Comunicador), se activa el
+**contraflujo de la Carrera 1**, la cámara muestra el desvío y el plan dura 5 min; luego todo vuelve a *normal*
+y los carros chocados se retiran 15 s después. Clic en el aviso del plan (arriba) para volver a la vista del desvío.
 Controles: arrastrar = girar, rueda = zoom, clic derecho = desplazar.
 
 Más detalles (instalación, ESP32, Git, problemas comunes) en [`COMANDOS.txt`](COMANDOS.txt).
 
 ## Casos de demostración
 
-1. **Accidente → corredor de emergencia**: funcionando (ESP32 y maqueta virtual).
+1. **Accidente → plan de desvío por utilidad** (contraflujo de la Carrera 1 en la salida/entrada de Bocagrande):
+   funcionando (ESP32 y maqueta virtual).
 2. **Persona solicitada → cerco semafórico**: pendiente.

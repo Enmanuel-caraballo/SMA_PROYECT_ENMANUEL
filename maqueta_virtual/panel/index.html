@@ -60,6 +60,18 @@
   .cruce .det { grid-column: 2; font-size: 12px; color: var(--tenue); }
   .modo { font-family: "Orbitron"; font-size: 9px; letter-spacing: .1em; padding: 1px 6px; border-radius: 4px; border: 1px solid currentColor; text-transform: uppercase; }
   .modo.normal { color: var(--cian); } .modo.corredor { color: var(--verde); } .modo.cerco { color: var(--rojo); }
+  .modo.prioridad_a, .modo.prioridad_b { color: #ffb300; } .modo.peatonal { color: #b04dff; }
+  /* Planes activos (arriba al centro) */
+  .planes { position: fixed; top: 74px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; flex-direction: column; gap: 6px; }
+  .plan { padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(255,179,0,.55); box-shadow: 0 0 18px rgba(255,179,0,.25);
+    display: flex; gap: 14px; align-items: center; font-size: 14px; cursor: pointer; }
+  .plan b { font-family: "Orbitron"; font-size: 12px; color: #ffb300; letter-spacing: .08em; }
+  .plan .t { font-family: "Orbitron"; font-size: 16px; color: var(--texto); min-width: 52px; text-align: right; }
+  .plan .det { color: var(--tenue); font-size: 12px; }
+  .etq-plan { font-family: "Orbitron"; font-size: 11px; letter-spacing: .1em; color: var(--c); padding: 3px 8px; border-radius: 5px;
+    border: 1px solid var(--c); background: rgba(3,8,16,.85); box-shadow: 0 0 12px var(--c); white-space: nowrap; pointer-events: none; }
+  #sentido { padding: 8px 8px; }
+  #sentido option { background: #071019; }
   .esp { font-family: "Orbitron"; font-size: 9px; color: #fff; background: #2962ff; padding: 0 4px; border-radius: 3px; margin-left: 4px; }
   .alertas { max-height: 30%; overflow-y: auto; }
   .alerta { padding: 7px 9px; margin-bottom: 6px; border-radius: 8px; border-left: 3px solid var(--amarillo); background: rgba(255,255,255,.03); font-size: 13px; }
@@ -96,6 +108,8 @@
   .etq-cruce em { display: block; color: var(--tenue); font-style: normal; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
   .etq-cruce[data-modo="corredor"] { border-color: var(--verde); box-shadow: 0 0 14px rgba(0,255,122,.5); }
   .etq-cruce[data-modo="cerco"] { border-color: var(--rojo); box-shadow: 0 0 14px rgba(255,23,68,.6); }
+  .etq-cruce[data-modo^="prioridad"] { border-color: #ffb300; box-shadow: 0 0 14px rgba(255,179,0,.5); }
+  .etq-cruce[data-modo="peatonal"] { border-color: #b04dff; box-shadow: 0 0 14px rgba(176,77,255,.5); }
   .etq-cruce.sel { outline: 1px solid var(--cian); }
   .cargando { position: fixed; inset: 0; display: grid; place-items: center; z-index: 10; background: var(--fondo);
     font-family: "Orbitron"; letter-spacing: .3em; color: var(--cian); }
@@ -137,7 +151,8 @@
     <div id="listaCruces"></div>
   </section>
   <section class="caja vidrio leyenda">
-    <i style="background:#00e5ff"></i>Normal · <i style="background:#00ff7a"></i>Corredor · <i style="background:#ff1744"></i>Cerco<br>
+    <i style="background:#00e5ff"></i>Normal · <i style="background:#ffb300"></i>Desvío (verde largo) · <i style="background:#b04dff"></i>Peatonal · <i style="background:#ff1744"></i>Cerco<br>
+    <i style="background:#00ff7a"></i>Ruta de desvío · <i style="background:#2979ff"></i>Ruta alterna · <i style="background:#ff1744"></i>Vía cerrada<br>
     <i style="background:#ff6d00"></i>Accidente · <i style="background:#ffd000"></i>Aglomeración · <i style="background:#fff"></i>Ambulancia/Policía
   </section>
 </div>
@@ -153,8 +168,14 @@
   </section>
 </div>
 
+<div class="planes" id="planes"></div>
+
 <div class="dock vidrio">
   <div class="selec">Cruce seleccionado<b id="selNombre">—</b></div>
+  <select class="btn" id="sentido" title="Sentido del accidente en la Av. San Martín (solo cruce5)" hidden>
+    <option value="salida">↗ Sentido salida (hacia el Centro)</option>
+    <option value="entrada">↙ Sentido entrada (hacia Bocagrande)</option>
+  </select>
   <button class="btn rojo" data-evento="accidente">Accidente</button>
   <button class="btn amarillo" data-evento="congestion">Congestión</button>
   <button class="btn magenta" data-evento="aglomeracion">Aglomeración</button>
@@ -168,6 +189,7 @@ import * as sim from "/static/bocagrande3d.js";
 const COLORES = { Vigilancia: "#38bdf8", Clasificador: "#facc15", Coordinador: "#f472b6", Consultor: "#a78bfa",
   Predictor: "#fb923c", Semaforico: "#4ade80", Comunicador: "#2dd4bf", "Simulación": "#94a3b8", MQTT: "#6f8ba3", Panel: "#00e5ff" };
 const alertas = [], pendientes = [];
+const planes = new Map();     // alerta -> plan activo con su hora de fin
 let seleccionado = null;
 const historialVel = [];
 const $ = id => document.getElementById(id);
@@ -193,6 +215,7 @@ sim.estado.alSeleccionar = id => {
   seleccionado = id;
   const c = sim.estado.cruces.find(x => x.id === id);
   $("selNombre").textContent = c ? `${c.id} · ${c.nombre}` : "—";
+  $("sentido").hidden = id !== "cruce5";     // cruce5 = salida/entrada de Bocagrande: importa el sentido
   pintarCruces();
 };
 sim.seleccionar(sim.estado.cruces[0].id, false);
@@ -203,8 +226,10 @@ for (const b of document.querySelectorAll("[data-evento]")) {
   b.onclick = async () => {
     if (!seleccionado) return;
     try {
+      const cuerpo = { cruce: seleccionado, tipo: b.dataset.evento };
+      if (seleccionado === "cruce5" && b.dataset.evento === "accidente") cuerpo.sentido = $("sentido").value;
       const r = await fetch("/api/evento", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cruce: seleccionado, tipo: b.dataset.evento }) });
+        body: JSON.stringify(cuerpo) });
       if (!r.ok) linea({ hora: hora(), agente: "Panel", texto: "error: " + (await r.json()).detail });
     } catch { linea({ hora: hora(), agente: "Panel", texto: "error de red" }); }
   };
@@ -219,8 +244,22 @@ setInterval(() => {
   $("cajaDet").classList.toggle("alerta", m.detenidos > m.carros * 0.4);
   $("reloj").textContent = hora();
   historialVel.push(m.vel); if (historialVel.length > 120) historialVel.shift();
-  grafica(); pintarCruces();
+  grafica(); pintarCruces(); pintarPlanes();
 }, 1000);
+
+function pintarPlanes() {
+  const ahora = Date.now();
+  $("planes").innerHTML = [...planes.values()].map(p => {
+    const r = Math.max(0, Math.round((p.finMs - ahora) / 1000));
+    return `<div class="plan vidrio" data-cruce="${esc(p.cruce)}"><b>${esc(p.alerta)} · PLAN ACTIVO</b>
+      <span>${esc(p.nombre)}<div class="det">${esc(p.evento || "")} en ${esc(p.cruce)}${p.sentido ? " · sentido " + esc(p.sentido) : ""}</div></span>
+      <span class="t">${Math.floor(r / 60)}:${String(r % 60).padStart(2, "0")}</span></div>`;
+  }).join("");
+}
+$("planes").addEventListener("click", ev => {
+  const d = ev.target.closest(".plan"); if (!d) return;
+  if (sim.estado.centroPlan && sim.estado.contraflujo) sim.vistaPlan(); else sim.seleccionar(d.dataset.cruce);
+});
 
 function grafica() {
   const cv = $("grafica"), g = cv.getContext("2d");
@@ -284,7 +323,7 @@ function recibir(p) {
     pendientes.push(id);
     linea({ hora: p.hora, agente: "MQTT", texto: `evento ${ev} en ${id}`, mqtt: true });
     if (vivo) {
-      if (ev === "accidente") sim.eventoAccidente(id);
+      if (ev === "accidente") sim.eventoAccidente(id, typeof p.datos === "object" ? p.datos.sentido : null);
       else if (ev === "congestion") sim.congestion();
       else if (ev === "aglomeracion") sim.aglomerar(id);
     }
@@ -293,8 +332,31 @@ function recibir(p) {
     if (vivo) {
       if (p.datos === "corredor") sim.enviarEmergencia(id, "ambulancia");
       else if (p.datos === "cerco") sim.enviarEmergencia(id, "policia");
-      else if (p.datos === "normal") setTimeout(() => sim.terminarAccidente(id), 15000);
     }
+  } else if (tipo === "plan" && typeof p.datos === "object") {
+    const d = p.datos;
+    if (d.activo) {
+      // si la página se abrió con el plan en curso, solo queda el tiempo restante
+      let dur = d.duracion || 300;
+      if (p.historial) {
+        dur -= Date.now() / 1000 - (p.recibido || Date.now() / 1000);
+        if (dur < 3) return;
+        if (d.evento === "accidente") sim.eventoAccidente(d.cruce, d.sentido);
+      }
+      sim.activarPlan({ ...d, duracion: dur });
+      planes.set(d.alerta, { ...d, finMs: Date.now() + dur * 1000 });
+      linea({ hora: p.hora, agente: "MQTT", texto: `plan activo en ${id}: ${d.nombre}`, mqtt: true });
+      if (vivo && d.evento === "accidente") sim.enviarEmergencia(d.cruce, "ambulancia");
+      if (vivo && sim.estado.contraflujo && d.plan === sim.estado.contraflujo) sim.vistaPlan();
+    } else {
+      sim.desactivarPlan(d);
+      planes.delete(d.alerta);
+      linea({ hora: p.hora, agente: "MQTT", texto: `plan terminado en ${id}: ${d.nombre}`, mqtt: true });
+      if (d.evento === "accidente") { const t0 = sim.tiempoSimulado(); setTimeout(() => sim.terminarAccidente(d.cruce, t0), 15000); }
+      else if (d.evento === "congestion") sim.congestion(0);
+      else if (d.evento === "aglomeracion") sim.terminarAglomeracion(d.cruce);
+    }
+    pintarPlanes();
   }
 }
 
@@ -302,6 +364,8 @@ function conectar() {
   const ws = new WebSocket(`ws://${location.host}/ws`);
   ws.onopen = () => {
     $("bitacora").innerHTML = ""; alertas.length = 0; pendientes.length = 0;
+    for (const d of planes.values()) sim.desactivarPlan(d);
+    planes.clear();
     $("alertas").innerHTML = '<div class="vacio">Sin alertas.</div>';
     $("punto").classList.add("ok"); $("conexion").textContent = "en vivo";
   };

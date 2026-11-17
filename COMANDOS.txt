@@ -112,13 +112,15 @@ cd "C:\Program Files\mosquitto"
 
 # Resultado esperado:
 #  - En la terminal de agentes: Vigilancia -> Clasificador -> Coordinador ->
-#    Consultor -> Semaforico -> Comunicador, y a los 30 s "plan normal"
-#    (python agentes\sma_agentes.py --duracion 60  para que dure más).
-#  - En el ESP32: el cruce pasa a corredor (A verde, B rojo) y luego vuelve al ciclo.
+#    Consultor -> Semaforico -> Comunicador, y a los 5 min "plan normal"
+#    (python agentes\sma_agentes.py --duracion 60  para que dure 1 min).
+#  - En el ESP32: el cruce pasa a prioridad_a (desvío local: A verde 20 s, B 5 s) y luego vuelve al ciclo.
 
 # Órdenes manuales al cruce (para probar el ESP32 sin agentes):
 .\mosquitto_pub -h localhost -t sma/semaforo/cruce1 -m corredor
 .\mosquitto_pub -h localhost -t sma/semaforo/cruce1 -m cerco
+.\mosquitto_pub -h localhost -t sma/semaforo/cruce1 -m prioridad_a
+.\mosquitto_pub -h localhost -t sma/semaforo/cruce1 -m peatonal
 .\mosquitto_pub -h localhost -t sma/semaforo/cruce1 -m normal
 
 
@@ -142,10 +144,15 @@ python maqueta_virtual\panel\servidor_panel.py
 # Controles de la vista 3D: arrastrar = girar, rueda = zoom, clic derecho = desplazar.
 # Seleccionar un cruce: en la lista de la izquierda o clic en su anillo/etiqueta.
 # Botones: ACCIDENTE, CONGESTIÓN, AGLOMERACIÓN (publican en sma/eventos/<cruce>).
-#   Accidente   -> carros chocados (naranja), cola, curiosos (amarillo), corredor (anillo verde)
-#                  y una ambulancia (blanca con baliza) entra por la ruta más corta.
-#   Congestión  -> el tráfico se duplica 90 s.
-#   Aglomeración-> 60 peatones extra alrededor del cruce durante 75 s.
+#   Accidente   -> carros chocados (naranja), cola, curiosos (amarillo) y una ambulancia.
+#                  En el cruce5 se elige el SENTIDO (salida = hacia el Centro, entrada = hacia Bocagrande):
+#                  el SMA activa el contraflujo de la Carrera 1 (ruta verde con flechas, ruta alterna azul,
+#                  barreras rojas en las vías cerradas) y arriba aparece el plan con su cuenta regresiva.
+#   Congestión  -> el tráfico se duplica y el cruce pasa a prioridad_a (verde largo).
+#   Aglomeración-> 60 peatones extra y el cruce pasa a fase peatonal.
+#   Cada plan dura 5 minutos (agentes con --duracion N para cambiarlo).
+# Accidente en el cruce5 desde Mosquitto (sentido salida):
+#   .\mosquitto_pub -h localhost -t sma/eventos/cruce5 -m "{\"tipo\":\"accidente\",\"sentido\":\"salida\"}"
 
 # También desde la carpeta de Mosquitto:
 .\mosquitto_pub -h localhost -t sma/eventos/cruce3 -m accidente

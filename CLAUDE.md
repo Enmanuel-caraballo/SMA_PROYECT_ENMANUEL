@@ -39,10 +39,10 @@ la tarea actual (ver sección 8).
 |---|---|---|
 | AgenteVigilancia | reactivo simple | Escucha `sma/eventos/#` por MQTT y envía `AlertaNovedad` al Clasificador |
 | AgenteClasificadorAlertas | basado en objetivos | Tabla `REGLAS`: tipo de evento → (TipoAlerta, NivelPrioridad). Envía `Alerta` al Coordinador |
-| AgenteCoordinador | basado en utilidad | Consulta al Consultor, genera planes, elige el de mayor utilidad, ordena al Semafórico y al Comunicador, mantiene el plan `SEGUNDOS_CORREDOR`=30 s (`--duracion N`) y restaura el normal |
+| AgenteCoordinador | basado en utilidad | Consulta al Consultor, genera planes de desvío (`generar_planes`), elige el de mayor utilidad, ordena al Semafórico (`activarPlan`) y al Comunicador, mantiene el plan `SEGUNDOS_PLAN`=300 s (`--duracion N`) y restaura el normal |
 | AgenteConsultor | reactivo basado en modelos | Responde `query-ref` (estado vial) con caché |
 | AgentePredictor | híbrido: basado en modelos + utilidad | Responde `predecirRutaHuida` (por ahora reglas simples) |
-| AgenteSemaforico | basado en objetivos | Traduce órdenes a MQTT: `abrirCorredorEmergencia`→`corredor`, `restaurarPlanNormal`→`normal`, `activarCerco`→`cerco` |
+| AgenteSemaforico | basado en objetivos | `activarPlan` trae un modo por cruce y lo publica en `sma/semaforo/<cruce>`, además publica el plan en `sma/plan/<cruce>`; `restaurarPlanNormal`→`normal` (se conservan `abrirCorredorEmergencia`→`corredor` y `activarCerco`→`cerco`) |
 | AgenteComunicador | basado en objetivos | Redacta el aviso (por ahora lo imprime; luego Telegram + LLM) |
 
 Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
@@ -64,13 +64,17 @@ Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
 | Tema | Quién publica | Quién escucha | Contenido |
 |---|---|---|---|
 | `sma/eventos/<cruce>` | ESP32 (botón), simulador, panel | AgenteVigilancia | texto (`accidente`) o JSON `{"tipo": "...", ...}` |
-| `sma/semaforo/<cruce>` | AgenteSemaforico | ESP32 / simulador | `normal` \| `corredor` \| `cerco` (compat.: `verde`=corredor, `rojo`=normal) |
+| `sma/semaforo/<cruce>` | AgenteSemaforico | ESP32 / simulador | `normal` \| `prioridad_a` \| `prioridad_b` \| `peatonal` \| `cerco` \| `corredor` (compat.: `verde`=corredor, `rojo`=normal) |
+| `sma/plan/<cruce>` | AgenteSemaforico | Panel (gemelo 3D) | JSON `{"plan","nombre","semaforos","alerta","cruce","evento","sentido","duracion","activo"}` |
 | `sma/estado/<cruce>` | ESP32 / simulador | Panel | JSON **retenido** `{"modo":"normal","A":"verde","B":"rojo"}` |
 
 - `<cruce>` = `cruce1`, `cruce2`, … `cruce1` es el **cruce físico** del ESP32.
 - Semáforo **A** = vía principal, **B** = vía secundaria.
 - Ciclo normal: A verde 8 s → A amarillo 2 s → todo rojo 1 s → B verde 6 s → B amarillo 2 s → todo rojo 1 s.
 - `corredor`: A verde fijo, B rojo. `cerco`: A y B en rojo.
+- Planes de desvío (mismas 6 fases, otros tiempos): `prioridad_a` A 20 s / B 5 s; `prioridad_b` A 5 s / B 20 s;
+  `peatonal` todo rojo de 8 s en cada cambio.
+- Eventos: `accidente` en el cruce5 puede traer `{"tipo":"accidente","sentido":"salida"|"entrada"}`.
 
 ## 4. Catálogo de mensajes entre agentes (resumen)
 
@@ -88,9 +92,13 @@ Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
 
 ## 5. Casos de demostración
 
-- **Caso 1 – Accidente → corredor de emergencia** (YA FUNCIONA de punta a punta con el ESP32):
+- **Caso 1 – Accidente → plan de desvío** (YA FUNCIONA de punta a punta con el ESP32 y el gemelo 3D):
   evento → Vigilancia → Clasificador (Movilidad, Alta) → Coordinador consulta estado vial y elige plan por
-  utilidad → Semafórico pone `corredor` → Comunicador avisa a la ciudadanía → a los 30 s `normal`.
+  utilidad → Semafórico aplica los modos y publica el plan → Comunicador avisa a la ciudadanía → a los 5 min `normal`.
+  **En Cartagena no hay corredores de emergencia** (decisión del 16-nov): el plan fuerte es el **contraflujo de la
+  Carrera 1** cuando el accidente bloquea la única salida/entrada de Bocagrande (cruce5, Av. San Martín × Calle 15):
+  sentido salida → desde el cruce4 todo sale por Calle 10 → Carrera 1 (solo salida, 2 carriles) y el ingreso solo por la
+  Av. San Martín; sentido entrada → ingreso solo por la Carrera 1 y la Av. San Martín para salir.
 - **Caso 2 – Persona solicitada → cerco semafórico** (PENDIENTE):
   cámara detecta rostro → Consultor confirma coincidencia → alerta Crítica → Predictor da ruta de huida →
   Semafórico pone `cerco` en **todos los cruces de la ruta** → Comunicador avisa **solo a la Policía**.
@@ -136,9 +144,9 @@ los semáforos y reaccionan a eventos (accidente, congestión, aglomeración, ce
 Pendiente (en orden): **Caso 2** (reconocimiento facial con DeepFace o face_recognition +
 cerco) → bot de Telegram para el Comunicador (+ LLM local con Ollama o Gemini gratis) → mediciones y resultados → informe.
 
-Ojo para el Caso 2: hoy `AgenteCoordinador.ResponderAccidente` abre **siempre** corredor y avisa a la Ciudadanía,
-sin importar el tipo de alerta. Una alerta `persona_solicitada` debe ir por otro plan (Predictor → `activarCerco` en
-la ruta → aviso solo a la Policía). En el panel el botón "Simular persona solicitada" está deshabilitado hasta entonces.
+Para el Caso 2: `generar_planes` ya manda las alertas de tipo Seguridad a un plan `cerco` en el cruce del evento con
+aviso **solo a la Policía** ("posible coincidencia"); falta el reconocimiento facial y usar el Predictor para poner el
+cerco en todos los cruces de la ruta de huida. En el panel el botón "Persona solicitada" sigue deshabilitado.
 
 ## 8. Maqueta virtual v1 (HECHA — especificación original de 8 cruces de la ciudad; reemplazada por la sección 9)
 
@@ -198,10 +206,17 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
 - Vista 3D: `panel/index.html` (interfaz) + `panel/static/bocagrande3d.js` (escena y simulación). Three.js 0.160.0
   por importmap desde unpkg. La simulación de tráfico corre en el navegador; las luces vienen de `sma/estado/<cruce>`.
 - El servidor reenvía la historia al conectar con `"historial": true`; la vista 3D no dispara efectos con eso.
-- Efectos: `sma/eventos` accidente → `eventoAccidente`; congestion → `congestion`; aglomeracion → `aglomerar`;
-  `sma/semaforo` corredor → ambulancia; cerco → 2 patrullas; normal → retira el accidente a los 15 s.
-- Duraciones (alargadas 16-nov para apreciar el efecto; las decisiones siguen siendo inmediatas): corredor 30 s,
-  congestión 90 s, aglomeración 75 s, curiosos del accidente 60 s.
+- Efectos: `sma/eventos` accidente → `eventoAccidente(cruce, sentido)` (en el cruce5 a ~100 m del cruce sobre la
+  Av. San Martín); congestion → `congestion`; aglomeracion → `aglomerar`; `sma/semaforo` cerco → 2 patrullas;
+  `sma/plan` activo → `activarPlan` (+ ambulancia si es accidente); inactivo → `desactivarPlan`, retira el accidente a los
+  15 s y termina congestión/aglomeración.
+- Contraflujo: `construirGrafo` crea tramos de **reserva** (sentido contrario, deshabilitados) para la Carrera 1 norte y la
+  Calle 10 cruce3–Carrera 1; `prepararGeografia` busca los tramos por nombre/posición (no por índice). `aplicarContraflujo`
+  cierra/abre tramos, presta el carril contrario en vías de doble sentido (cuando ese sentido se vacía) y `reencaminar`
+  recalcula rutas (Dijkstra respeta cierres, sin vueltas en U). 20 % de los carros nuevos van a la salida vigente.
+- Duración de cada evento/plan: **5 min** (decisión 16-nov; las decisiones de los agentes siguen siendo inmediatas).
 - Vehículos ×1.5 y peatones ×2 de escala real a propósito (si no, no se ven junto a las torres).
-- Depuración desde la consola: `window.__bocagrande` (cámara, controles, escena) e `import('/static/bocagrande3d.js')`
-  para leer `estado` (carros, peatones, métricas, fps, ms).
+- Depuración desde la consola: `window.__bocagrande` (cámara, controles, escena, geo, aristasDir, `avanzar(s)`) e
+  `import('/static/bocagrande3d.js')` para leer `estado` (carros, peatones, métricas, planes, fps, ms).
+  Ojo: `avanzar(s)` es síncrono y los semáforos no cambian mientras corre; para medir colas usar pasos cortos
+  (p. ej. `avanzar(0.8)` + esperar 1 s) para que lleguen los cambios de luz por MQTT.

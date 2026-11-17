@@ -1,7 +1,7 @@
 """
 SMA Movilidad y Seguridad CTG - Esqueleto de los 7 agentes (tareas 2.5 y 2.6)
 ==============================================================================
-Recorre el Caso 1 (accidente -> corredor de emergencia) de punta a punta:
+Recorre el Caso 1 (accidente -> plan de desvío elegido por utilidad) de punta a punta:
 
   ESP32 / mosquitto_pub --MQTT--> AgenteVigilancia --inform--> AgenteClasificadorAlertas
   --inform--> AgenteCoordinador --query-ref--> AgenteConsultor
@@ -12,15 +12,18 @@ Recorre el Caso 1 (accidente -> corredor de emergencia) de punta a punta:
 Requisitos:   pip install spade paho-mqtt
 Uso:          python sma_agentes.py               (espera eventos por MQTT)
               python sma_agentes.py --simular     (dispara un accidente de prueba solo)
+              python sma_agentes.py --duracion 120 (segundos que dura cada plan; por defecto 300)
 
 Disparar un accidente desde otra terminal (carpeta de Mosquitto):
               mosquitto_pub -h localhost -t sma/eventos/cruce1 -m accidente
+              mosquitto_pub -h localhost -t sma/eventos/cruce5 -m "{\"tipo\":\"accidente\",\"sentido\":\"salida\"}"
 """
 
 import asyncio
 import json
 import sys
 from datetime import datetime
+from pathlib import Path
 
 import paho.mqtt.client as mqtt
 import spade
@@ -36,9 +39,75 @@ BROKER_MQTT = "localhost"      # PC donde corre Mosquitto
 PUERTO_MQTT = 1883
 TEMA_EVENTOS = "sma/eventos/#"          # lo que publica el ESP32 (o mosquitto_pub)
 TEMA_SEMAFORO = "sma/semaforo/{cruce}"  # lo que escucha el ESP32
-SEGUNDOS_CORREDOR = 30                  # cuánto se mantiene el plan (corredor) antes de restaurar
+TEMA_PLAN = "sma/plan/{cruce}"          # plan activo (lo dibuja el gemelo digital 3D)
+SEGUNDOS_PLAN = 300                     # cuánto dura cada plan (5 min) antes de restaurar
 if "--duracion" in sys.argv:             # p. ej. --duracion 60 (las decisiones siguen siendo inmediatas)
-    SEGUNDOS_CORREDOR = float(sys.argv[sys.argv.index("--duracion") + 1])
+    SEGUNDOS_PLAN = float(sys.argv[sys.argv.index("--duracion") + 1])
+
+# ---------------- Conocimiento vial de Bocagrande ----------------
+# La única salida/entrada de Bocagrande hacia el Centro es la Av. San Martín por el cruce5
+# (Calle 15, frente a la Base Naval); la Carrera 1 (vía de la playa) sirve de alterna en contraflujo.
+SALIDA_BOCAGRANDE = "cruce5"
+try:
+    _ruta = Path(__file__).resolve().parent.parent / "maqueta_virtual" / "cruces.json"
+    NOMBRE_CRUCE = {c["id"]: c["nombre"] for c in json.loads(_ruta.read_text(encoding="utf-8"))["cruces"]}
+except (OSError, ValueError, KeyError):
+    NOMBRE_CRUCE = {}
+
+PLANES_CONTRAFLUJO = {
+    "salida": {
+        "clave": "contraflujo_salida", "nombre": "Contraflujo Carrera 1 (salida)",
+        "semaforos": {"cruce4": "prioridad_a", "cruce3": "prioridad_b", "cruce5": "prioridad_b"},
+        "aviso": ("accidente en la Av. San Martín antes de la Calle 15, sentido salida. Para salir de Bocagrande "
+                  "tome la Calle 10 desde la Carrera 3 hacia la Carrera 1: la Carrera 1 queda SOLO de salida. "
+                  "El ingreso a Bocagrande es únicamente por la Av. San Martín."),
+    },
+    "entrada": {
+        "clave": "contraflujo_entrada", "nombre": "Contraflujo Carrera 1 (entrada)",
+        "semaforos": {"cruce5": "prioridad_a", "cruce3": "prioridad_b"},
+        "aviso": ("accidente en la Av. San Martín después de la Calle 15, sentido entrada. El ingreso a "
+                  "Bocagrande es SOLO por la Carrera 1; la Av. San Martín queda para salir."),
+    },
+}
+FACTOR_TRAFICO = {"alto": 1.0, "medio": 0.85, "bajo": 0.7}
+
+
+def nombre_cruce(cruce):
+    return f"{cruce} ({NOMBRE_CRUCE[cruce]})" if cruce in NOMBRE_CRUCE else cruce
+
+
+def generar_planes(alerta, cruce):
+    """Planes candidatos para una alerta (clave, nombre, impacto, costo, semáforos, receptor, aviso)."""
+    evento = alerta.get("tipo_evento")
+    lugar = nombre_cruce(cruce)
+    avisar = {"clave": "solo_avisar", "nombre": "Solo avisar", "impacto": 0.3, "costo": 0.0, "semaforos": {},
+              "receptor": "Ciudadania", "aviso": f"{evento} en {lugar}; transite con precaución."}
+    if alerta.get("tipo") == "Seguridad":
+        return [
+            {"clave": "cerco", "nombre": "Cerco semafórico", "impacto": 0.9, "costo": 0.5,
+             "semaforos": {cruce: "cerco"}, "receptor": "Policia",
+             "aviso": f"posible coincidencia ({evento}) en {lugar}; cerco semafórico activo."},
+            {**avisar, "receptor": "Policia", "aviso": f"posible coincidencia ({evento}) en {lugar}."},
+        ]
+    if evento == "accidente":
+        planes = [avisar,
+                  {"clave": "desvio_local", "nombre": f"Desvío local en {cruce}", "impacto": 0.55, "costo": 0.15,
+                   "semaforos": {cruce: "prioridad_a"}, "receptor": "Ciudadania",
+                   "aviso": f"accidente en {lugar}; más tiempo de verde para la vía libre, use vías alternas."}]
+        if cruce == SALIDA_BOCAGRANDE:
+            # el accidente bloquea la única salida (o entrada): el contraflujo por la Carrera 1 rinde mucho más
+            sentido = alerta.get("sentido") or "salida"
+            planes.append({**PLANES_CONTRAFLUJO[sentido], "impacto": 0.95, "costo": 0.35, "receptor": "Ciudadania"})
+        return planes
+    if evento == "congestion":
+        return [avisar, {"clave": "priorizar_principal", "nombre": f"Verde largo para la vía principal en {cruce}",
+                         "impacto": 0.7, "costo": 0.2, "semaforos": {cruce: "prioridad_a"}, "receptor": "Ciudadania",
+                         "aviso": f"congestión en {lugar}; se amplió el verde de la vía principal."}]
+    if evento == "aglomeracion":
+        return [avisar, {"clave": "fase_peatonal", "nombre": f"Fase peatonal extendida en {cruce}",
+                         "impacto": 0.7, "costo": 0.25, "semaforos": {cruce: "peatonal"}, "receptor": "Ciudadania",
+                         "aviso": f"aglomeración de personas en {lugar}; fase peatonal extendida, conduzca despacio."}]
+    return [avisar]
 
 JID = {n: f"{n}@{DOMINIO}" for n in
        ["vigilancia", "clasificador", "coordinador", "consultor",
@@ -69,9 +138,12 @@ def log(agente, texto):
         _mqtt_log.publish(TEMA_PANEL_LOG, json.dumps(linea, ensure_ascii=False))
 
 
-def mensaje(para, performativa, accion, contenido):
-    """Crea un mensaje FIPA-ACL con el contenido en JSON (ver pestaña 'Mensajes')."""
+def mensaje(para, performativa, accion, contenido, hilo=None):
+    """Crea un mensaje FIPA-ACL con el contenido en JSON (ver pestaña 'Mensajes').
+    hilo = conversación (id de la alerta): cada incidente recibe solo sus propias respuestas."""
     m = Message(to=JID[para])
+    if hilo:
+        m.thread = hilo
     m.set_metadata("performative", performativa)
     m.set_metadata("ontology", "sma-ctg")
     m.set_metadata("action", accion)
@@ -168,11 +240,12 @@ class AgenteCoordinador(Agent):
                 return
             alerta = json.loads(msg.body)
             log("Coordinador", f"recibí {alerta['id']} ({alerta['tipo']}, {alerta['prioridad']})")
-            # Lanza un comportamiento por incidente para poder esperar respuestas
-            self.agent.add_behaviour(AgenteCoordinador.ResponderAccidente(alerta),
-                                     plantilla("inform"))
+            # Lanza un comportamiento por incidente; solo recibe las respuestas de su conversación
+            t = plantilla("inform")
+            t.thread = alerta["id"]
+            self.agent.add_behaviour(AgenteCoordinador.ResponderAlerta(alerta), t)
 
-    class ResponderAccidente(OneShotBehaviour):
+    class ResponderAlerta(OneShotBehaviour):
         def __init__(self, alerta):
             super().__init__()
             self.alerta = alerta
@@ -184,39 +257,43 @@ class AgenteCoordinador(Agent):
             return None
 
         async def run(self):
-            cruce = self.alerta.get("ubicacion", "cruce1")
+            a = self.alerta
+            cruce, hilo = a.get("ubicacion", "cruce1"), a["id"]
             # 1) Consultar estado vial
-            await self.send(mensaje("consultor", "query-ref", "consultarEstadoVial", {"sector": cruce}))
+            await self.send(mensaje("consultor", "query-ref", "consultarEstadoVial", {"sector": cruce}, hilo))
             estado = await self.esperar("EstadoTrafico") or {"nivel": "desconocido"}
             log("Coordinador", f"estado vial en {cruce}: {estado['nivel']}")
 
-            # 2) Generar planes y elegir el de mayor utilidad
-            planes = [
-                {"nombre": "Corredor de emergencia", "impacto": 0.9, "costo_movilidad": 0.3},
-                {"nombre": "Solo avisar a la ciudadanía", "impacto": 0.4, "costo_movilidad": 0.0},
-            ]
+            # 2) Generar planes y elegir el de mayor utilidad: impacto x tráfico - 0.5 x costo de movilidad
+            factor = FACTOR_TRAFICO.get(estado["nivel"], 0.85)
+            planes = generar_planes(a, cruce)
             for p in planes:
-                p["utilidad"] = round(p["impacto"] - 0.5 * p["costo_movilidad"], 2)
+                p["utilidad"] = round(p["impacto"] * factor - 0.5 * p["costo"], 2)
             mejor = max(planes, key=lambda p: p["utilidad"])
             log("Coordinador", "utilidades: " + ", ".join(f"{p['nombre']}={p['utilidad']}" for p in planes))
             log("Coordinador", f"plan elegido: {mejor['nombre']}")
 
             # 3) Ordenar al Semafórico y esperar resultado
-            await self.send(mensaje("semaforico", "request", "abrirCorredorEmergencia",
-                                    {"ruta": [cruce], "alerta": self.alerta["id"]}))
+            sentido = {"contraflujo_salida": "salida", "contraflujo_entrada": "entrada"}.get(mejor["clave"])
+            plan = {"plan": mejor["clave"], "nombre": mejor["nombre"], "semaforos": mejor["semaforos"],
+                    "alerta": hilo, "cruce": cruce, "evento": a.get("tipo_evento"),
+                    "sentido": a.get("sentido") or sentido, "duracion": SEGUNDOS_PLAN}
+            await self.send(mensaje("semaforico", "request", "activarPlan", plan, hilo))
             resultado = await self.esperar("ResultadoAccion") or {"estado": "sin respuesta"}
             log("Coordinador", f"resultado del Semafórico: {resultado}")
 
-            # 4) Pedir al Comunicador que avise
+            # 4) Pedir al Comunicador que avise (Seguridad: solo a la Policía)
             await self.send(mensaje("comunicador", "request", "comunicar",
-                                    {"receptor": "Ciudadania", "alerta": self.alerta, "resultado": resultado}))
+                                    {"receptor": mejor["receptor"], "alerta": a, "aviso": mejor["aviso"],
+                                     "plan": mejor["nombre"], "duracion": SEGUNDOS_PLAN}, hilo))
 
-            # 5) Mantener el plan SEGUNDOS_CORREDOR para que se vea su efecto y restaurar
-            log("Coordinador", f"{self.alerta['id']}: plan activo {SEGUNDOS_CORREDOR:g} s en {cruce}")
-            await asyncio.sleep(SEGUNDOS_CORREDOR)
-            await self.send(mensaje("semaforico", "request", "restaurarPlanNormal", {"cruces": [cruce]}))
+            # 5) Mantener el plan SEGUNDOS_PLAN para que se vea su efecto y restaurar
+            log("Coordinador", f"{hilo}: plan activo {SEGUNDOS_PLAN:g} s ({mejor['nombre']})")
+            await asyncio.sleep(SEGUNDOS_PLAN)
+            await self.send(mensaje("semaforico", "request", "restaurarPlanNormal",
+                                    {**plan, "cruces": sorted(set(mejor["semaforos"]) | {cruce})}, hilo))
             await self.esperar("ResultadoAccion")
-            log("Coordinador", f"{self.alerta['id']} cerrado: semáforos vuelven a plan normal")
+            log("Coordinador", f"{hilo} cerrado: semáforos vuelven a plan normal")
 
 
 # =====================================================================
@@ -299,18 +376,28 @@ class AgenteSemaforico(Agent):
                 return
             accion = msg.get_metadata("action")
             datos = json.loads(msg.body)
-            cruces = datos.get("ruta") or datos.get("cruces") or ["cruce1"]
-            orden = ORDEN_ESP32.get(accion)
-            self.agent.objetivo = {"abrirCorredorEmergencia": "CorredorEmergencia",
-                                   "activarCerco": "CercoPersecucion"}.get(accion, "Fluidez")
-            for c in cruces:
+            if accion == "activarPlan":          # el plan trae un modo por cruce
+                ordenes = datos.get("semaforos", {})
+            else:
+                cruces = datos.get("ruta") or datos.get("cruces") or ["cruce1"]
+                ordenes = {c: ORDEN_ESP32.get(accion) for c in cruces}
+            modos = set(ordenes.values())
+            self.agent.objetivo = ("CercoPersecucion" if "cerco" in modos else
+                                   "CorredorEmergencia" if "corredor" in modos else "Fluidez")
+            for c, orden in ordenes.items():
                 if orden and self.agent.conectado:
                     self.agent.mqtt.publish(TEMA_SEMAFORO.format(cruce=c), orden)
-                log("Semaforico", f"{accion} en {c} -> ESP32 '{orden}' (objetivo: {self.agent.objetivo})")
+                log("Semaforico", f"{accion} en {c} -> '{orden}' (objetivo: {self.agent.objetivo})")
+            if not ordenes:
+                log("Semaforico", f"{accion}: sin cambios de semáforos")
+            # el plan (desvíos, contraflujo) también se publica para el gemelo digital
+            if accion in ("activarPlan", "restaurarPlanNormal") and "plan" in datos and self.agent.conectado:
+                aviso = {**datos, "activo": accion == "activarPlan"}
+                self.agent.mqtt.publish(TEMA_PLAN.format(cruce=datos["cruce"]), json.dumps(aviso, ensure_ascii=False))
             r = msg.make_reply()
             r.set_metadata("performative", "inform")
             r.set_metadata("action", "ResultadoAccion")
-            r.body = json.dumps({"accion": accion, "estado": "ok", "cruces": cruces})
+            r.body = json.dumps({"accion": accion, "estado": "ok", "cruces": list(ordenes)})
             await self.send(r)
 
 
@@ -328,9 +415,9 @@ class AgenteComunicador(Agent):
                 return
             datos = json.loads(msg.body)
             a = datos["alerta"]
-            evento = str(a.get("tipo_evento") or a.get("tipo", "evento")).replace("_", " ")
-            texto = (f"Alerta de {a.get('tipo', '').lower()}: se reporta {evento} en {a.get('ubicacion')}. "
-                     f"Se abrió un corredor de emergencia; por favor tome una vía alterna.")
+            minutos = round(datos.get("duracion", SEGUNDOS_PLAN) / 60, 1)
+            texto = (f"Alerta de {a.get('tipo', '').lower()}: {datos.get('aviso', '')} "
+                     f"Plan: {datos.get('plan', '-')} (~{minutos:g} min).")
             log("Comunicador", f"[para {datos['receptor']}] {texto}   (luego: Telegram + LLM)")
 
 

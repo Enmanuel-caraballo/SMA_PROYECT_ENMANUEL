@@ -2,8 +2,8 @@
 SMA Movilidad y Seguridad CTG - Servidor del panel web (maqueta virtual)
 ========================================================================
 Se suscribe a sma/# en Mosquitto y reenvía cada mensaje al navegador por WebSocket.
-El navegador muestra el mapa de Cartagena (Leaflet + OpenStreetMap), los semáforos,
-la bitácora de agentes y las alertas.
+El navegador muestra el gemelo digital 3D de Bocagrande (o el mapa 2D), los semáforos,
+los planes de desvío activos, la bitácora de agentes y las alertas.
 
 Uso:   python maqueta_virtual/panel/servidor_panel.py
        abrir http://localhost:8000
@@ -13,6 +13,7 @@ Opciones: --broker 192.168.1.7   --puerto-web 8000   --host 0.0.0.0 (para verlo 
 import argparse
 import asyncio
 import json
+import time
 from collections import deque
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -33,6 +34,7 @@ TIPOS_EVENTO = {"accidente", "congestion", "aglomeracion", "placa_reportada", "p
 args = None
 clientes_ws: set[WebSocket] = set()
 estados = {}                    # último sma/estado/<cruce>
+planes = {}                     # planes activos (sma/plan/<cruce>) por id de alerta
 bitacora = deque(maxlen=300)    # últimos mensajes para quien abra la página tarde
 cliente_mqtt = None
 
@@ -62,10 +64,15 @@ def al_mensaje_mqtt(loop):
             datos = json.loads(cuerpo)
         except ValueError:
             datos = cuerpo
-        paquete = {"tema": msg.topic, "datos": datos, "hora": f"{datetime.now():%H:%M:%S}"}
+        paquete = {"tema": msg.topic, "datos": datos, "hora": f"{datetime.now():%H:%M:%S}", "recibido": time.time()}
         partes = msg.topic.split("/")
         if len(partes) == 3 and partes[1] == "estado":
             estados[partes[2]] = paquete
+        elif len(partes) == 3 and partes[1] == "plan" and isinstance(datos, dict):
+            if datos.get("activo"):
+                planes[datos.get("alerta")] = paquete
+            else:
+                planes.pop(datos.get("alerta"), None)
         else:
             bitacora.append(paquete)
         # los callbacks de paho corren en otro hilo -> pasar al bucle de asyncio
@@ -123,6 +130,7 @@ def api_cruces():
 class Evento(BaseModel):
     cruce: str
     tipo: str = "accidente"
+    sentido: str | None = None      # solo cruce5: "salida" (hacia el Centro) o "entrada" (hacia Bocagrande)
 
 
 @app.post("/api/evento")
@@ -134,9 +142,14 @@ def api_evento(evento: Evento):
         raise HTTPException(400, "tipo de evento desconocido")
     if cliente_mqtt is None or not cliente_mqtt.is_connected():
         raise HTTPException(503, "sin conexión a Mosquitto")
-    cuerpo = "accidente" if evento.tipo == "accidente" else json.dumps({"tipo": evento.tipo})
+    if evento.sentido not in (None, "salida", "entrada"):
+        raise HTTPException(400, "sentido debe ser 'salida' o 'entrada'")
+    if evento.tipo == "accidente" and not evento.sentido:
+        cuerpo = "accidente"
+    else:
+        cuerpo = json.dumps({"tipo": evento.tipo, **({"sentido": evento.sentido} if evento.sentido else {})})
     cliente_mqtt.publish(f"sma/eventos/{evento.cruce}", cuerpo)
-    log(f"evento simulado desde el panel: {evento.tipo} en {evento.cruce}")
+    log(f"evento simulado desde el panel: {evento.tipo} en {evento.cruce}" + (f" ({evento.sentido})" if evento.sentido else ""))
     return {"ok": True}
 
 
@@ -144,9 +157,9 @@ def api_evento(evento: Evento):
 async def ws(websocket: WebSocket):
     await websocket.accept()
     clientes_ws.add(websocket)
-    # lo que ya pasó: estados actuales + bitácora reciente (marcado como historial
-    # para que la vista 3D no vuelva a disparar accidentes viejos)
-    for paquete in list(estados.values()) + list(bitacora):
+    # lo que ya pasó: estados actuales + bitácora reciente + planes en curso (marcado como historial
+    # para que la vista 3D no vuelva a disparar accidentes viejos; los planes sí se redibujan)
+    for paquete in list(estados.values()) + list(bitacora) + list(planes.values()):
         await websocket.send_text(json.dumps({**paquete, "historial": True}, ensure_ascii=False))
     try:
         while True:
