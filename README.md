@@ -104,6 +104,7 @@ sus parámetros, la decisión que tomó y por qué, y lo que lleva aprendido.
   penalización por cambiar de modo. Empieza con la regla experta ("dar prioridad al acceso más cargado") y la corrige
   con la experiencia. Los modos de un plan del Coordinador son **sugerencias**: si las colas dicen otra cosa, el
   Semafórico prioriza el acceso cargado ("las colas pesan más que el plan"). No toca `cerco` ni `peatonal`.
+  Para no "parpadear" solo cambia de modo si la mejora supera un margen (0,3) y con el cruce vacío queda en `normal`.
 - **Agente Coordinador: decide por utilidad y aprende el impacto real de cada plan.** Cada plan tiene un impacto
   esperado y un costo; utilidad = impacto × factor de tráfico − 0,5 × costo. Al cerrar un plan mide las colas de todo
   el sector antes y durante el plan y corrige el impacto (sube si Bocagrande fluyó mejor, baja si fluyó peor).
