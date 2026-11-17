@@ -1,0 +1,85 @@
+{
+  "_fuente": "Coordenadas = nodo compartido por ambas vías en OpenStreetMap (Overpass, nov-2026); barrio verificado con Nominatim.",
+  "cruces": [
+    {
+      "id": "cruce1",
+      "nombre": "India Catalina",
+      "barrio": "Chambacú",
+      "lat": 10.426682,
+      "lon": -75.544429,
+      "via_principal": "Avenida Pedro de Heredia",
+      "via_secundaria": "Avenida Rafael Núñez",
+      "fisico": true
+    },
+    {
+      "id": "cruce2",
+      "nombre": "Rotonda de Chambacú",
+      "barrio": "El Espinal",
+      "lat": 10.424554,
+      "lon": -75.538888,
+      "via_principal": "Avenida Pedro de Heredia",
+      "via_secundaria": "Rotonda de Chambacú",
+      "fisico": false
+    },
+    {
+      "id": "cruce3",
+      "nombre": "Pie de la Popa",
+      "barrio": "Pie de la Popa",
+      "lat": 10.417780,
+      "lon": -75.529066,
+      "via_principal": "Avenida Pedro de Heredia",
+      "via_secundaria": "Carrera 22",
+      "fisico": false
+    },
+    {
+      "id": "cruce4",
+      "nombre": "Rotonda El Prado",
+      "barrio": "Martínez Martelo",
+      "lat": 10.412112,
+      "lon": -75.521306,
+      "via_principal": "Avenida Pedro de Heredia",
+      "via_secundaria": "Rotonda El Prado",
+      "fisico": false
+    },
+    {
+      "id": "cruce5",
+      "nombre": "Santander con Blas de Lezo",
+      "barrio": "Centro",
+      "lat": 10.419286,
+      "lon": -75.552677,
+      "via_principal": "Avenida Santander",
+      "via_secundaria": "Avenida Blas de Lezo",
+      "fisico": false
+    },
+    {
+      "id": "cruce6",
+      "nombre": "San Martín con Calle 10",
+      "barrio": "Bocagrande",
+      "lat": 10.406817,
+      "lon": -75.552114,
+      "via_principal": "Avenida San Martín",
+      "via_secundaria": "Calle 10",
+      "fisico": false
+    },
+    {
+      "id": "cruce7",
+      "nombre": "Carrera 14 con Calle 6",
+      "barrio": "Castillogrande",
+      "lat": 10.392668,
+      "lon": -75.546573,
+      "via_principal": "Carrera 14",
+      "via_secundaria": "Calle 6",
+      "fisico": false
+    },
+    {
+      "id": "cruce8",
+      "nombre": "Mamonal con Corredor Vial",
+      "barrio": "Mamonal",
+      "lat": 10.379324,
+      "lon": -75.502828,
+      "via_principal": "Vía Mamonal",
+      "via_secundaria": "Corredor Vial de Cartagena",
+      "fisico": false
+    }
+  ]
+}

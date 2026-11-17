@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maqueta virtual · SMA Cartagena</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --fondo: #0f1419; --panel: #171e26; --borde: #2a3441; --texto: #e6edf3; --tenue: #8b98a5;
+    --rojo: #ff4d4f; --amarillo: #fadb14; --verde: #52c41a; --apagado: #333c47;
+    --azul: #3b82f6; --corredor: #22c55e; --cerco: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--fondo); color: var(--texto);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .app { display: grid; grid-template-columns: 1fr 420px; grid-template-rows: auto 1fr; height: 100vh; }
+  header { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 10px 16px;
+    background: var(--panel); border-bottom: 1px solid var(--borde); }
+  header h1 { font-size: 17px; margin: 0; font-weight: 650; }
+  header .sub { color: var(--tenue); font-size: 13px; }
+  .conexion { margin-left: auto; font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--tenue); }
+  .punto { width: 9px; height: 9px; border-radius: 50%; background: var(--rojo); }
+  .punto.ok { background: var(--verde); }
+  #mapa { height: 100%; }
+  aside { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-left: 1px solid var(--borde); }
+  section { padding: 12px 14px; border-bottom: 1px solid var(--borde); }
+  section h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--tenue); margin: 0 0 8px; font-weight: 600; }
+  .controles { display: flex; gap: 8px; flex-wrap: wrap; }
+  select, button { font: inherit; border-radius: 6px; border: 1px solid var(--borde); background: #0f1419; color: var(--texto); padding: 6px 10px; }
+  select { flex: 1; min-width: 0; }
+  button { cursor: pointer; background: #b91c1c; border-color: #b91c1c; font-weight: 600; }
+  button:hover { background: #dc2626; }
+  button:disabled { background: #2a3441; border-color: #2a3441; color: var(--tenue); cursor: not-allowed; }
+  .alertas { max-height: 180px; overflow-y: auto; }
+  .alerta { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; padding: 7px 9px; margin-bottom: 6px;
+    border-radius: 6px; background: #0f1419; border-left: 4px solid var(--amarillo); font-size: 13px; }
+  .alerta.Critica { border-left-color: #a855f7; } .alerta.Alta { border-left-color: var(--rojo); }
+  .alerta.Media { border-left-color: var(--amarillo); } .alerta.Baja { border-left-color: var(--tenue); }
+  .alerta .id { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .alerta .estado { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: #7f1d1d; align-self: start; }
+  .alerta .estado.cerrada { background: #1f2937; color: var(--tenue); }
+  .alerta .det { grid-column: 1 / -1; color: var(--tenue); font-size: 12px; }
+  .vacio { color: var(--tenue); font-size: 13px; }
+  .bitacora-sec { flex: 1; min-height: 0; display: flex; flex-direction: column; border-bottom: 0; }
+  #bitacora { flex: 1; overflow-y: auto; font: 12px/1.45 ui-monospace, Consolas, monospace; }
+  .linea { padding: 2px 0; border-bottom: 1px solid #1d2630; word-break: break-word; }
+  .linea .h { color: var(--tenue); } .linea .ag { font-weight: 700; display: inline-block; min-width: 92px; }
+  .linea.mqtt { color: var(--tenue); font-style: italic; }
+  /* Marcadores de cruce */
+  .cruce { background: rgba(15,20,25,.92); border: 2px solid var(--borde); border-radius: 8px; padding: 4px 6px 3px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; width: 74px; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+  .cruce .nom { font-size: 11px; font-weight: 700; color: var(--texto); white-space: nowrap; }
+  .cruce .luces { display: flex; gap: 6px; }
+  .semaforo { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #000; border-radius: 4px; padding: 2px 3px; }
+  .semaforo i { width: 9px; height: 9px; border-radius: 50%; background: var(--apagado); display: block; }
+  .semaforo i.r.on { background: var(--rojo); box-shadow: 0 0 6px var(--rojo); }
+  .semaforo i.a.on { background: var(--amarillo); box-shadow: 0 0 6px var(--amarillo); }
+  .semaforo i.v.on { background: var(--verde); box-shadow: 0 0 6px var(--verde); }
+  .semaforo b { font-size: 9px; color: var(--tenue); line-height: 1; }
+  .cruce .modo { font-size: 10px; color: var(--tenue); text-transform: uppercase; letter-spacing: .04em; }
+  .cruce.corredor { border-color: var(--corredor); box-shadow: 0 0 14px var(--corredor); }
+  .cruce.corredor .modo { color: var(--corredor); font-weight: 700; }
+  .cruce.cerco { border-color: var(--cerco); animation: latido 1s infinite; }
+  .cruce.cerco .modo { color: var(--cerco); font-weight: 700; }
+  .cruce.sinsenal { opacity: .55; }
+  .cruce.evento { animation: evento .5s 6; }
+  /* Vista compacta (zoom lejano): círculo mitad A / mitad B */
+  .mini { display: flex; flex-direction: column; align-items: center; }
+  .mini .disco { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #0f1419; overflow: hidden; display: flex;
+    box-shadow: 0 1px 5px rgba(0,0,0,.6); }
+  .mini .disco i { flex: 1; background: var(--apagado); }
+  .mini .disco i.rojo { background: var(--rojo); } .mini .disco i.amarillo { background: var(--amarillo); }
+  .mini .disco i.verde { background: var(--verde); }
+  .mini.corredor .disco { border-color: var(--corredor); box-shadow: 0 0 12px var(--corredor); }
+  .mini.cerco .disco { border-color: var(--cerco); animation: latido 1s infinite; }
+  .mini.evento .disco { animation: evento .5s 6; }
+  .mini.sinsenal { opacity: .55; }
+  .mini .eti { font: 700 10px/1 system-ui, sans-serif; color: #111; background: rgba(255,255,255,.85); border-radius: 3px;
+    padding: 1px 3px; margin-top: 2px; white-space: nowrap; }
+  /* evita líneas entre teselas con escalado de pantalla de Windows */
+  .leaflet-container img.leaflet-tile { mix-blend-mode: plus-lighter; }
+  #mapa { background: #aad3df; }
+  .esp32 { font-size: 9px; background: var(--azul); color: #fff; border-radius: 3px; padding: 0 3px; margin-left: 3px; }
+  @keyframes latido { 50% { box-shadow: 0 0 18px var(--cerco); } }
+  @keyframes evento { 50% { border-color: var(--amarillo); box-shadow: 0 0 18px var(--amarillo); } }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--texto); }
+  .leaflet-popup-content { margin: 10px 12px; font-size: 13px; }
+  .leaflet-popup-content button { margin-top: 8px; width: 100%; }
+  .leyenda { background: rgba(23,30,38,.92); padding: 8px 10px; border-radius: 6px; font-size: 12px; color: var(--texto); line-height: 1.6; }
+  .leyenda span { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 55vh auto; height: auto; }
+    aside { border-left: 0; }
+    #bitacora { max-height: 50vh; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>SMA Movilidad y Seguridad · Cartagena</h1>
+      <div class="sub">Maqueta virtual: semáforos en vivo y conversación entre los 7 agentes</div>
+    </div>
+    <div class="conexion"><div class="punto" id="punto"></div><span id="estadoConexion">conectando…</span></div>
+  </header>
+
+  <div id="mapa"></div>
+
+  <aside>
+    <section>
+      <h2>Simular evento</h2>
+      <div class="controles">
+        <select id="selCruce"></select>
+        <button id="btnAccidente">Simular accidente</button>
+      </div>
+      <div class="controles" style="margin-top:8px">
+        <button id="btnPersona" disabled title="Caso 2: pendiente">Simular persona solicitada (Caso 2, pendiente)</button>
+      </div>
+    </section>
+    <section>
+      <h2>Alertas</h2>
+      <div class="alertas" id="alertas"><div class="vacio">Sin alertas todavía.</div></div>
+    </section>
+    <section class="bitacora-sec">
+      <h2>Bitácora de agentes</h2>
+      <div id="bitacora"></div>
+    </section>
+  </aside>
+</div>
+
+<script>
+const COLORES_AGENTE = {
+  Vigilancia: "#38bdf8", Clasificador: "#facc15", Coordinador: "#f472b6", Consultor: "#a78bfa",
+  Predictor: "#fb923c", Semaforico: "#4ade80", Comunicador: "#2dd4bf", "Simulación": "#94a3b8", MQTT: "#8b98a5"
+};
+const cruces = {};          // id -> {datos, marcador, estado}
+const alertas = [];         // {id, evento, tipo, prioridad, cruce, estado}
+const eventosPendientes = []; // cruces de sma/eventos esperando su alerta
+
+const mapa = L.map("mapa", { zoomControl: true }).setView([10.405, -75.525], 13);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19, attribution: '&copy; colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(mapa);
+
+const leyenda = L.control({ position: "bottomleft" });
+leyenda.onAdd = () => {
+  const d = L.DomUtil.create("div", "leyenda");
+  d.innerHTML = '<span style="background:#2a3441"></span>Normal (ciclo A/B)<br>' +
+    '<span style="background:#22c55e"></span>Corredor de emergencia<br>' +
+    '<span style="background:#ef4444"></span>Cerco de persecución<br>' +
+    '<b>A</b> = vía principal · <b>B</b> = vía secundaria';
+  return d;
+};
+leyenda.addTo(mapa);
+
+function esc(t) { return String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+function semaforo(letra, luz) {
+  return `<div class="semaforo"><i class="r ${luz === "rojo" ? "on" : ""}"></i><i class="a ${luz === "amarillo" ? "on" : ""}"></i>` +
+         `<i class="v ${luz === "verde" ? "on" : ""}"></i><b>${letra}</b></div>`;
+}
+
+function htmlCruce(c) {
+  const e = c.estado;
+  const clases = ["cruce", e ? e.modo : "sinsenal", c.evento ? "evento" : ""].join(" ");
+  const tag = c.datos.fisico ? '<span class="esp32">ESP32</span>' : "";
+  return `<div class="${clases}"><div class="nom">${esc(c.datos.id)}${tag}</div>` +
+    `<div class="luces">${semaforo("A", e && e.A)}${semaforo("B", e && e.B)}</div>` +
+    `<div class="modo">${e ? esc(e.modo) : "sin señal"}</div></div>`;
+}
+
+const ZOOM_DETALLE = 15;   // desde este zoom se ve la tarjeta completa con los dos semáforos
+
+function htmlMini(c) {
+  const e = c.estado;
+  const clases = ["mini", e ? e.modo : "sinsenal", c.evento ? "evento" : ""].join(" ");
+  return `<div class="${clases}"><div class="disco"><i class="${e ? e.A : ""}"></i><i class="${e ? e.B : ""}"></i></div>` +
+    `<div class="eti">${esc(c.datos.id.replace("cruce", "C"))}${c.datos.fisico ? " · ESP32" : ""}</div></div>`;
+}
+
+function pintar(id) {
+  const c = cruces[id];
+  if (!c) return;
+  const icono = mapa.getZoom() >= ZOOM_DETALLE
+    ? L.divIcon({ className: "", html: htmlCruce(c), iconSize: [74, 62], iconAnchor: [37, 31] })
+    : L.divIcon({ className: "", html: htmlMini(c), iconSize: [60, 40], iconAnchor: [30, 11] });
+  c.marcador.setIcon(icono);
+}
+mapa.on("zoomend", () => Object.keys(cruces).forEach(pintar));
+
+function popup(d) {
+  return `<b>${esc(d.nombre)}</b> (${esc(d.id)})${d.fisico ? " · cruce físico ESP32" : ""}<br>` +
+    `<span style="color:#8b98a5">${esc(d.barrio)}</span><br>A: ${esc(d.via_principal)}<br>B: ${esc(d.via_secundaria)}` +
+    `<button onclick="simular('${esc(d.id)}','accidente')">Simular accidente aquí</button>`;
+}
+
+async function cargarCruces() {
+  const lista = await (await fetch("/api/cruces")).json();
+  const sel = document.getElementById("selCruce");
+  for (const d of lista) {
+    const marcador = L.marker([d.lat, d.lon]).addTo(mapa).bindPopup(popup(d));
+    cruces[d.id] = { datos: d, marcador, estado: null, evento: false };
+    pintar(d.id);
+    sel.add(new Option(`${d.id} · ${d.nombre}${d.fisico ? " (ESP32)" : ""}`, d.id));
+  }
+  sel.value = "cruce3";
+  mapa.fitBounds(L.latLngBounds(lista.map(d => [d.lat, d.lon])).pad(0.15));
+}
+
+async function simular(cruce, tipo) {
+  try {
+    const r = await fetch("/api/evento", { method: "POST", headers: { "Content-Type": "application/json" },
+                                           body: JSON.stringify({ cruce, tipo }) });
+    if (!r.ok) agregarLinea({ hora: hora(), agente: "Panel", texto: "error: " + (await r.json()).detail });
+  } catch (e) { agregarLinea({ hora: hora(), agente: "Panel", texto: "error de red" }); }
+  mapa.closePopup();
+}
+document.getElementById("btnAccidente").onclick = () => simular(document.getElementById("selCruce").value, "accidente");
+
+function hora() { return new Date().toLocaleTimeString("es-CO", { hour12: false }); }
+
+function agregarLinea({ hora, agente, texto, mqtt }) {
+  const div = document.getElementById("bitacora");
+  const abajo = div.scrollHeight - div.scrollTop - div.clientHeight < 40;
+  const l = document.createElement("div");
+  l.className = "linea" + (mqtt ? " mqtt" : "");
+  l.innerHTML = `<span class="h">[${esc(hora)}]</span> <span class="ag" style="color:${COLORES_AGENTE[agente] || "#e6edf3"}">${esc(agente)}</span> ${esc(texto)}`;
+  div.appendChild(l);
+  while (div.children.length > 400) div.removeChild(div.firstChild);
+  if (abajo) div.scrollTop = div.scrollHeight;
+}
+
+function pintarAlertas() {
+  const div = document.getElementById("alertas");
+  if (!alertas.length) return;
+  div.innerHTML = alertas.slice().reverse().map(a =>
+    `<div class="alerta ${esc(a.prioridad)}"><span class="id">${esc(a.id)}</span>` +
+    `<span>${esc(a.tipo)} · ${esc(a.prioridad)}</span><span class="estado ${a.estado}">${a.estado}</span>` +
+    `<span class="det">${esc(a.evento)} en ${esc(a.cruce || "?")}${a.cruce && cruces[a.cruce] ? " · " + esc(cruces[a.cruce].datos.nombre) : ""} · ${esc(a.hora)}</span></div>`
+  ).join("");
+}
+
+// Las alertas se reconstruyen a partir de la bitácora de los agentes
+function procesarLog(l) {
+  let m;
+  if (l.agente === "Clasificador" && (m = l.texto.match(/^(AL-\d+): (.+?) -> (\w+), prioridad (\w+)/))) {
+    if (alertas.some(a => a.id === m[1])) return;
+    alertas.push({ id: m[1], evento: m[2], tipo: m[3], prioridad: m[4], cruce: eventosPendientes.shift(), estado: "activa", hora: l.ts });
+    pintarAlertas();
+  } else if (l.agente === "Coordinador" && (m = l.texto.match(/^(AL-\d+) cerrado/))) {
+    const a = alertas.find(a => a.id === m[1]);
+    if (a) { a.estado = "cerrada"; pintarAlertas(); }
+  }
+}
+
+function recibir(p) {
+  const partes = p.tema.split("/");
+  if (partes[1] === "estado" && cruces[partes[2]]) {
+    if (typeof p.datos === "object") { cruces[partes[2]].estado = p.datos; pintar(partes[2]); }
+  } else if (p.tema === "sma/panel/log") {
+    agregarLinea({ hora: p.datos.ts, agente: p.datos.agente, texto: p.datos.texto });
+    procesarLog(p.datos);
+  } else if (partes[1] === "eventos") {
+    const id = partes[2];
+    eventosPendientes.push(id);
+    agregarLinea({ hora: p.hora, agente: "MQTT", texto: `evento en ${id}: ${typeof p.datos === "object" ? JSON.stringify(p.datos) : p.datos}`, mqtt: true });
+    if (cruces[id]) { cruces[id].evento = true; pintar(id); setTimeout(() => { cruces[id].evento = false; pintar(id); }, 3000); }
+  } else if (partes[1] === "semaforo") {
+    agregarLinea({ hora: p.hora, agente: "MQTT", texto: `orden a ${partes[2]}: ${p.datos}`, mqtt: true });
+  }
+}
+
+function conectar() {
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+  const punto = document.getElementById("punto"), txt = document.getElementById("estadoConexion");
+  ws.onopen = () => {
+    // el servidor reenvía la historia reciente: se reconstruye desde cero
+    document.getElementById("bitacora").innerHTML = "";
+    alertas.length = 0; eventosPendientes.length = 0;
+    document.getElementById("alertas").innerHTML = '<div class="vacio">Sin alertas todavía.</div>';
+    punto.classList.add("ok"); txt.textContent = "en vivo";
+  };
+  ws.onmessage = e => recibir(JSON.parse(e.data));
+  ws.onclose = () => { punto.classList.remove("ok"); txt.textContent = "reconectando…"; setTimeout(conectar, 2000); };
+}
+
+cargarCruces().then(conectar);
+</script>
+</body>
+</html>
