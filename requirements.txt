@@ -1,0 +1,6 @@
+spade>=4.1
+paho-mqtt>=2.0
+greenlet
+# maqueta virtual (panel web)
+fastapi>=0.110
+uvicorn[standard]>=0.29

@@ -1,0 +1,246 @@
+======================================================================
+ SMA MOVILIDAD Y SEGURIDAD CTG - COMANDOS PARA INSTALAR, CORRER Y PROBAR
+ (Windows, PowerShell. Las líneas que empiezan con # son explicaciones)
+======================================================================
+
+----------------------------------------------------------------------
+ 0. PROGRAMAS QUE HAY QUE TENER INSTALADOS (una sola vez)
+----------------------------------------------------------------------
+# Python 3.11, 3.12 o 3.13 -> python.org  (marcar "Add Python to PATH")
+# Git                       -> git-scm.com/download/win
+# Mosquitto                 -> mosquitto.org/download  (instalador Windows 64 bits)
+# Arduino IDE 1.8.19        -> con el paquete esp32 versión 2.0.17 y la librería
+#                              PubSubClient (de Nick O'Leary)
+# Driver del ESP32          -> "CP210x Universal Windows Driver" de silabs.com
+
+# Comprobar que quedaron instalados:
+python --version
+git --version
+pip --version
+
+
+----------------------------------------------------------------------
+ 1. ESTRUCTURA DE LA CARPETA (ya organizada)
+----------------------------------------------------------------------
+# SMA_IA\
+#   agentes\sma_agentes.py
+#   esp32\esp32_cruce\esp32_cruce.ino
+#   esp32\esp32_mqtt_prueba\esp32_mqtt_prueba.ino
+#   maqueta_virtual\cruces.json, simulador_ciudad.py, panel\
+#   docs\  (diagramas, PDF, Word, checklist)
+#   CLAUDE.md, COMANDOS.txt, README.md, requirements.txt, .gitignore
+
+
+----------------------------------------------------------------------
+ 2. ENTORNO VIRTUAL DE PYTHON E INSTALAR LIBRERÍAS (una sola vez)
+----------------------------------------------------------------------
+cd C:\Users\Daniel\OneDrive\Desktop\SMA_IA
+
+python -m venv .venv
+
+# Si PowerShell no deja activar el entorno, ejecutar UNA vez:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Activar el entorno (hacerlo SIEMPRE que abras una terminal nueva):
+.venv\Scripts\Activate.ps1
+# (En CMD sería: .venv\Scripts\activate.bat)
+
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+# Si falta algo, instalar a mano:
+pip install spade paho-mqtt greenlet fastapi "uvicorn[standard]"
+
+
+----------------------------------------------------------------------
+ 3. MOSQUITTO (el "cartero" MQTT)
+----------------------------------------------------------------------
+# Una sola vez: abrir el Bloc de notas COMO ADMINISTRADOR, abrir
+#   C:\Program Files\mosquitto\mosquitto.conf
+# y agregar al final estas 2 líneas:
+#   listener 1883 0.0.0.0
+#   allow_anonymous true
+
+# Arrancar Mosquitto (TERMINAL 1, dejarla abierta):
+cd "C:\Program Files\mosquitto"
+.\mosquitto -c mosquitto.conf -v
+
+# Si dice que el puerto 1883 está ocupado, Mosquitto ya corre como servicio.
+# Reiniciarlo para que lea la configuración (PowerShell como administrador):
+Restart-Service mosquitto
+
+# Prueba rápida (dos terminales más, en la carpeta de Mosquitto):
+.\mosquitto_sub -h localhost -t "sma/#" -v
+.\mosquitto_pub -h localhost -t sma/semaforo/cruce1 -m corredor
+
+# Ver la IP del PC (la que va en el código del ESP32 como IP_BROKER):
+ipconfig
+# -> "Dirección IPv4", por ejemplo 192.168.1.7
+
+
+----------------------------------------------------------------------
+ 4. ESP32 (en Arduino IDE)
+----------------------------------------------------------------------
+# 1. Abrir esp32\esp32_cruce\esp32_cruce.ino
+# 2. Cambiar WIFI_NOMBRE, WIFI_CLAVE e IP_BROKER  (¡no subir esto a GitHub!)
+# 3. Herramientas -> Placa -> ESP32 Dev Module
+# 4. Herramientas -> Puerto -> COMx  (el de "Silicon Labs CP210x")
+# 5. Subir (->). Si se queda en "Connecting.....", mantener el botón BOOT.
+# 6. Monitor Serie a 115200: debe decir "WiFi OK" y "Conectando a Mosquitto... OK"
+
+
+----------------------------------------------------------------------
+ 5. CORRER LOS AGENTES (TERMINAL 2)
+----------------------------------------------------------------------
+cd C:\Users\Daniel\OneDrive\Desktop\SMA_IA
+.venv\Scripts\Activate.ps1
+python agentes\sma_agentes.py
+# Esperar: "=== Los 7 agentes del SMA están activos ==="
+# Detener con Ctrl + C
+
+# Probar SIN ESP32 (dispara un accidente de prueba solo):
+python agentes\sma_agentes.py --simular
+
+
+----------------------------------------------------------------------
+ 6. PROBAR EL CASO 1 (ACCIDENTE -> CORREDOR DE EMERGENCIA)
+----------------------------------------------------------------------
+# Opción A: presionar el botón físico de la maqueta (GPIO4).
+# Opción B: desde la carpeta de Mosquitto (TERMINAL 3):
+cd "C:\Program Files\mosquitto"
+.\mosquitto_pub -h localhost -t sma/eventos/cruce1 -m accidente
+
+# Resultado esperado:
+#  - En la terminal de agentes: Vigilancia -> Clasificador -> Coordinador ->
+#    Consultor -> Semaforico -> Comunicador, y a los 10 s "plan normal".
+#  - En el ESP32: el cruce pasa a corredor (A verde, B rojo) y luego vuelve al ciclo.
+
+# Órdenes manuales al cruce (para probar el ESP32 sin agentes):
+.\mosquitto_pub -h localhost -t sma/semaforo/cruce1 -m corredor
+.\mosquitto_pub -h localhost -t sma/semaforo/cruce1 -m cerco
+.\mosquitto_pub -h localhost -t sma/semaforo/cruce1 -m normal
+
+
+----------------------------------------------------------------------
+ 7. MAQUETA VIRTUAL (mapa de Cartagena con 8 cruces)
+----------------------------------------------------------------------
+# TERMINAL 1: Mosquitto (paso 3)
+# TERMINAL 2: simulador de cruces
+#   - SIN ESP32: simula los 8 cruces
+python maqueta_virtual\simulador_ciudad.py --incluir-cruce1
+#   - CON ESP32 conectado: simula cruce2..cruce8 (cruce1 lo maneja el ESP32)
+python maqueta_virtual\simulador_ciudad.py
+# TERMINAL 3: agentes (esperar "Los 7 agentes del SMA están activos", ~15 s)
+python agentes\sma_agentes.py
+# TERMINAL 4: panel web
+python maqueta_virtual\panel\servidor_panel.py
+# Abrir en el navegador:  http://localhost:8000
+
+# Probar el Caso 1 en la maqueta virtual:
+#   - En el panel: elegir el cruce y pulsar "Simular accidente"
+#     (o clic sobre un cruce del mapa -> "Simular accidente aquí")
+#   - O desde la carpeta de Mosquitto:
+.\mosquitto_pub -h localhost -t sma/eventos/cruce3 -m accidente
+# Resultado: el cruce pasa a CORREDOR (borde verde, A verde y B rojo), aparece la
+# alerta AL-000x en "Alertas", la bitácora muestra toda la cadena de agentes y
+# a los 10 s el cruce vuelve a NORMAL y la alerta queda "cerrada".
+
+# En el mapa: con poco zoom cada cruce es un círculo (mitad izquierda = A,
+# mitad derecha = B); al acercarse (zoom 15+) se ven los dos semáforos completos.
+
+# Ver la bitácora de los agentes por MQTT (sin el panel):
+.\mosquitto_sub -h localhost -t sma/panel/log -v
+
+# Opciones útiles:
+#   simulador_ciudad.py --broker 192.168.1.7
+#   servidor_panel.py   --host 0.0.0.0   (para abrir el panel desde otro equipo de la red)
+#   servidor_panel.py   --puerto-web 8080
+
+
+----------------------------------------------------------------------
+ 8. CLAUDE CODE (para construir la maqueta virtual)
+----------------------------------------------------------------------
+# Instalar (PowerShell, una sola vez; luego cerrar y abrir la terminal):
+irm https://claude.ai/install.ps1 | iex
+
+# Abrir Claude Code en la carpeta del proyecto (lee CLAUDE.md solo):
+cd C:\Users\Daniel\OneDrive\Desktop\SMA_IA
+claude
+
+# Primer mensaje sugerido dentro de Claude Code:
+#   Lee CLAUDE.md y construye la maqueta virtual descrita en la sección 8.
+#   Empieza por cruces.json y simulador_ciudad.py, pruébalos, y luego el panel.
+
+# Si "claude" no se reconoce: cerrar y abrir PowerShell, o ejecutar  claude doctor
+
+
+----------------------------------------------------------------------
+ 9. SUBIR EL PROYECTO A GITHUB (primera vez)
+----------------------------------------------------------------------
+cd C:\Users\Daniel\OneDrive\Desktop\SMA_IA
+
+# Configurar tu nombre y correo (una sola vez en el PC):
+git config --global user.name "Enmanuel Caraballo"
+git config --global user.email "tu_correo@ejemplo.com"
+
+# El archivo .gitignore ya existe en la raíz (lo que NO se sube: .venv, __pycache__, rostros_prueba, driver CP210x...)
+
+# El repositorio es PRIVADO: los .ino van con los datos reales del WiFi.
+
+git init
+git add .
+git commit -m "SMA CTG: agentes SPADE, ESP32 con MQTT, diagramas y documento"
+git branch -M main
+
+# Repositorio (privado) en GitHub:
+git remote add origin https://github.com/Enmanuel-caraballo/SMA_PROYECT_ENMANUEL.git
+git push -u origin main
+
+# Invitar a los compañeros: en GitHub -> Settings -> Collaborators -> Add people
+
+
+----------------------------------------------------------------------
+ 10. TRABAJO DIARIO CON GIT (cada integrante)
+----------------------------------------------------------------------
+# Antes de empezar a trabajar (traer lo último):
+git pull
+
+# Al terminar algo:
+git status
+git add .
+git commit -m "Describe lo que hiciste, ej: panel web con mapa de cruces"
+git push
+
+# Un compañero descarga el proyecto por primera vez:
+git clone https://github.com/Enmanuel-caraballo/SMA_PROYECT_ENMANUEL.git
+cd SMA_PROYECT_ENMANUEL
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+
+----------------------------------------------------------------------
+ 11. PROBLEMAS COMUNES
+----------------------------------------------------------------------
+# "No module named 'greenlet'" (o cualquier otro módulo)
+pip install greenlet          # o el nombre que diga el error
+
+# El ESP32 no aparece en Herramientas -> Puerto
+#   -> cable USB de datos + driver CP210x (Administrador de dispositivos)
+
+# Arduino: "cannot specify '-o' with '-c'..."
+#   -> Gestor de tarjetas -> esp32 -> instalar versión 2.0.17
+
+# ESP32: "Conectando a Mosquitto... falló"
+#   -> ¿Mosquitto corriendo? ¿IP_BROKER es la IP actual del PC (ipconfig)?
+#   -> ¿mosquitto.conf tiene "listener 1883 0.0.0.0" y "allow_anonymous true"?
+#   -> Firewall de Windows: permitir Mosquitto en redes privadas
+
+# Agentes: "no pude conectarme a Mosquitto"
+#   -> arrancar Mosquitto antes que los agentes
+
+# Panel: el accidente no hace nada
+#   -> ¿ya salió "Los 7 agentes del SMA están activos"? Los eventos enviados
+#      antes de que los agentes terminen de arrancar se pierden.
+# Panel: un cruce aparece "sin señal"
+#   -> no está corriendo el simulador (o el ESP32 para cruce1)

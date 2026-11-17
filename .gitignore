@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.vscode/
+*.log
+rostros_prueba/
+.env
+# driver del ESP32 (se descarga de silabs.com)
+CP210x_Universal_Windows_Driver/
+CP210x_Universal_Windows_Driver.zip
+# archivos temporales de Office
+~$*
