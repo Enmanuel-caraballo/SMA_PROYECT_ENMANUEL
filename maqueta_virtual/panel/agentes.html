@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mente de los agentes · SMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #03050a; --vidrio: rgba(8, 16, 30, .78); --borde: rgba(0, 229, 255, .22); --texto: #d9f4ff; --tenue: #6f8ba3;
+    --cian: #00e5ff; --verde: #00ff7a; --ambar: #ffb300; --violeta: #b04dff; --rojo: #ff1744; --magenta: #ff2bd6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.45 "Rajdhani", sans-serif;
+    background-image: radial-gradient(circle at 20% 0%, rgba(0,229,255,.08), transparent 45%), radial-gradient(circle at 90% 30%, rgba(176,77,255,.07), transparent 40%); }
+  header { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 16px; padding: 12px 20px;
+    background: rgba(3,5,10,.9); border-bottom: 1px solid var(--borde); backdrop-filter: blur(8px); }
+  h1 { font: 700 18px "Orbitron"; letter-spacing: .14em; margin: 0; color: var(--cian); text-shadow: 0 0 12px rgba(0,229,255,.5); }
+  header .sub { color: var(--tenue); font-size: 13px; }
+  header .der { margin-left: auto; display: flex; gap: 14px; align-items: center; font-size: 13px; }
+  header a { color: var(--cian); text-decoration: none; border: 1px solid var(--borde); padding: 4px 10px; border-radius: 6px; }
+  .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--rojo); display: inline-block; margin-right: 6px; }
+  .punto.ok { background: var(--verde); box-shadow: 0 0 8px var(--verde); }
+  main { max-width: 1500px; margin: 0 auto; padding: 18px 20px 40px; display: grid; gap: 16px; }
+  .caja { background: var(--vidrio); border: 1px solid var(--borde); border-radius: 14px; padding: 14px 16px; min-width: 0; }
+  h2 { font: 700 13px "Orbitron"; letter-spacing: .16em; color: var(--cian); margin: 0 0 4px; text-transform: uppercase; }
+  h3 { font: 600 12px "Orbitron"; letter-spacing: .1em; color: var(--texto); margin: 14px 0 6px; text-transform: uppercase; }
+  .tipo { color: var(--ambar); font-size: 13px; }
+  .tenue { color: var(--tenue); }
+  .ciclo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .ciclo div { border: 1px solid var(--borde); border-radius: 10px; padding: 10px; }
+  .ciclo b { font-family: "Orbitron"; font-size: 12px; color: var(--cian); letter-spacing: .1em; display: block; }
+  code, .mono { font-family: "JetBrains Mono", monospace; font-size: 12px; color: #9fe8ff; }
+  ul.reglas { margin: 4px 0; padding-left: 18px; } ul.reglas li { margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font: 600 11px "Orbitron"; letter-spacing: .08em; color: var(--tenue); padding: 4px 6px; border-bottom: 1px solid var(--borde); }
+  td { padding: 4px 6px; border-bottom: 1px solid rgba(0,229,255,.07); vertical-align: top; }
+  .barra { height: 8px; border-radius: 4px; background: rgba(255,255,255,.06); position: relative; min-width: 80px; }
+  .barra i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+  .grid2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+  .cruces { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+  .cruce { border: 1px solid var(--borde); border-radius: 12px; padding: 10px 12px; }
+  .cruce .cab { display: flex; align-items: center; gap: 8px; }
+  .cruce .cab b { font-family: "Orbitron"; font-size: 13px; color: var(--cian); }
+  .modo { font: 600 10px "Orbitron"; letter-spacing: .08em; padding: 2px 7px; border-radius: 4px; border: 1px solid currentColor; text-transform: uppercase; margin-left: auto; }
+  .m-normal { color: var(--cian); } .m-prioridad_a { color: var(--ambar); } .m-prioridad_b { color: var(--violeta); }
+  .m-peatonal { color: var(--magenta); } .m-cerco { color: var(--rojo); } .m-corredor { color: var(--verde); }
+  .colas { display: grid; grid-template-columns: 22px 1fr 34px; gap: 4px 6px; align-items: center; margin: 8px 0; font-size: 13px; }
+  .acciones { display: grid; gap: 3px; margin: 6px 0; }
+  .acc { display: grid; grid-template-columns: 90px 1fr 46px; gap: 6px; align-items: center; font-size: 13px; }
+  .acc.elegida span:first-child { color: var(--verde); font-weight: 600; }
+  .motivo { font-size: 13px; color: var(--texto); }
+  .aprende { font-size: 12px; color: var(--tenue); margin-top: 4px; }
+  .mapa-q { display: grid; grid-template-columns: 18px repeat(5, 1fr); gap: 2px; font-size: 10px; margin-top: 6px; }
+  .mapa-q div { aspect-ratio: 1.6; border-radius: 3px; display: grid; place-items: center; font-family: "Orbitron"; }
+  .mapa-q .eje { color: var(--tenue); background: none; }
+  .mapa-q .actual { outline: 2px solid #fff; }
+  .leyenda span { margin-right: 12px; font-size: 13px; } .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .kpis { display: flex; gap: 22px; flex-wrap: wrap; margin: 6px 0 10px; }
+  .kpis div b { display: block; font: 700 22px "Orbitron"; color: var(--cian); }
+  .kpis div span { color: var(--tenue); font-size: 12px; }
+  canvas { width: 100%; height: 70px; display: block; }
+  .feed { max-height: 330px; overflow-y: auto; font-family: "JetBrains Mono", monospace; font-size: 12px; }
+  .feed div { padding: 3px 0; border-bottom: 1px solid rgba(0,229,255,.06); }
+  .feed .ag { font-weight: 600; }
+  .vacio { color: var(--tenue); font-style: italic; }
+  .elegido td { color: var(--verde); }
+  @media (max-width: 1000px) { .grid2, .ciclo { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) { main { padding: 12px 16px; } header { flex-wrap: wrap; } header .der { margin-left: 0; } }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>MENTE DE LOS AGENTES</h1><div class="sub">Qué perciben, con qué reglas razonan, qué deciden y cómo aprenden · en vivo</div></div>
+  <div class="der"><span><span class="punto" id="punto"></span><span id="conexion">conectando…</span></span><a href="/">Gemelo 3D</a></div>
+</header>
+
+<main>
+  <section class="caja">
+    <h2>Cómo piensa cada agente</h2>
+    <div class="ciclo">
+      <div><b>1 · PERCIBE</b>Eventos (sma/eventos), colas por acceso medidas por el gemelo (sma/sensores) y mensajes FIPA-ACL de otros agentes.</div>
+      <div><b>2 · RAZONA</b>Con su base de conocimiento: reglas y parámetros en <code>agentes/conocimiento.py</code>.</div>
+      <div><b>3 · ACTÚA</b>Ordena semáforos (sma/semaforo), publica planes (sma/plan) y avisos, y conversa con los demás agentes.</div>
+      <div><b>4 · APRENDE</b>Semafórico: Q-learning. Coordinador: impacto real de cada plan. Lo guardan en <code>agentes/memoria/*.json</code> (<code>agentes/aprendizaje.py</code>).</div>
+    </div>
+  </section>
+
+  <section class="caja" id="semaforico">
+    <h2>Agente Semafórico</h2><div class="tipo" data-campo="tipo">—</div>
+    <div class="tenue" data-campo="rol"></div>
+    <div class="kpis">
+      <div><b id="sPasos">0</b><span>decisiones aprendidas</span></div>
+      <div><b id="sEps">—</b><span>ε (exploración)</span></div>
+      <div><b id="sRec">—</b><span>recompensa media (últimas 50)</span></div>
+    </div>
+    <canvas id="graficaRec"></canvas>
+    <h3>Decisión por cruce (cada intervalo de control)</h3>
+    <div class="cruces" id="sCruces"><div class="vacio">Esperando sensores: abre el gemelo 3D (los sensores de cola se miden allí).</div></div>
+    <div class="leyenda" style="margin-top:10px">
+      Tabla Q aprendida (fila = cola en A, columna = cola en B; color = mejor acción; borde blanco = estado actual):
+      <span><i style="background:var(--cian)"></i>normal</span><span><i style="background:var(--ambar)"></i>prioridad A</span><span><i style="background:var(--violeta)"></i>prioridad B</span>
+      <span class="tenue">cubetas 0 · 1-3 · 4-7 · 8-12 · 13+ vehículos</span>
+    </div>
+    <div class="grid2" style="margin-top:6px">
+      <div><h3>Reglas</h3><ul class="reglas" data-campo="reglas"></ul></div>
+      <div><h3>Parámetros</h3><table data-campo="parametros"></table><h3>Código</h3><div data-campo="codigo"></div></div>
+    </div>
+  </section>
+
+  <section class="caja" id="coordinador">
+    <h2>Agente Coordinador</h2><div class="tipo" data-campo="tipo">—</div>
+    <div class="tenue" data-campo="rol"></div>
+    <div class="grid2">
+      <div>
+        <h3>Catálogo de planes y lo aprendido</h3>
+        <table id="cCatalogo"></table>
+        <h3>Última decisión</h3>
+        <div id="cUltima" class="vacio">Aún no hay alertas.</div>
+      </div>
+      <div>
+        <h3>Contingencias activas</h3><div id="cActivas" class="vacio">Ninguna.</div>
+        <h3>Experiencia (efecto medido de cada plan)</h3><div id="cAprendido" class="vacio">Aún no ha cerrado ningún plan.</div>
+        <h3>Reglas</h3><ul class="reglas" data-campo="reglas"></ul>
+        <h3>Parámetros</h3><table data-campo="parametros"></table>
+        <h3>Código</h3><div data-campo="codigo"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid3" id="otros"></div>
+
+  <section class="caja">
+    <h2>Decisiones en vivo</h2>
+    <div class="feed" id="feed"><div class="vacio">Sin decisiones todavía.</div></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const COLOR_ACC = { normal: "var(--cian)", prioridad_a: "var(--ambar)", prioridad_b: "var(--violeta)" };
+const COLORES = { Vigilancia: "#38bdf8", Clasificador: "#facc15", Coordinador: "#f472b6", Consultor: "#a78bfa",
+  Predictor: "#fb923c", Semaforico: "#4ade80", Comunicador: "#2dd4bf" };
+const OTROS = ["vigilancia", "clasificador", "consultor", "predictor", "comunicador"];
+const mentes = {};
+
+function valor(v) {
+  if (v === null || v === undefined) return "—";
+  if (Array.isArray(v)) return v.join(", ");
+  if (typeof v === "object") return Object.entries(v).map(([k, x]) => `${k}: ${typeof x === "object" ? JSON.stringify(x) : x}`).join(" · ");
+  return String(v);
+}
+function pintarComun(raiz, m) {
+  raiz.querySelector('[data-campo="tipo"]').textContent = m.tipo || "";
+  raiz.querySelector('[data-campo="rol"]').textContent = m.rol || "";
+  raiz.querySelector('[data-campo="reglas"]').innerHTML = (m.reglas || []).map(r => `<li>${esc(r)}</li>`).join("");
+  raiz.querySelector('[data-campo="parametros"]').innerHTML = Object.entries(m.parametros || {})
+    .map(([k, v]) => `<tr><td class="mono">${esc(k)}</td><td>${esc(valor(v))}</td></tr>`).join("") || '<tr><td class="vacio">—</td></tr>';
+  raiz.querySelector('[data-campo="codigo"]').innerHTML = (m.codigo || []).map(c => `<div><code>${esc(c)}</code></div>`).join("");
+}
+
+function barra(v, max, color) {
+  const p = Math.max(0, Math.min(100, (v / max) * 100));
+  return `<div class="barra"><i style="width:${p}%;background:${color}"></i></div>`;
+}
+
+function mapaQ(q, visitas, actual) {
+  let html = '<div class="eje"></div>' + [0, 1, 2, 3, 4].map(b => `<div class="eje">B${b}</div>`).join("");
+  for (let a = 0; a < 5; a++) {
+    html += `<div class="eje">A${a}</div>`;
+    for (let b = 0; b < 5; b++) {
+      const e = `a${a}-b${b}`, fila = q?.[e];
+      let color = "rgba(255,255,255,.04)", txt = "", op = .25;
+      if (fila) {
+        const mejor = Object.entries(fila).sort((x, y) => y[1] - x[1])[0][0];
+        const n = Object.values(visitas?.[e] || {}).reduce((s, x) => s + x, 0);
+        color = COLOR_ACC[mejor]; op = n ? Math.min(1, .35 + n / 20) : .2; txt = n || "";
+      }
+      html += `<div class="${e === actual ? "actual" : ""}" title="${e}" style="background:${color};opacity:${op};color:#03050a">${txt}</div>`;
+    }
+  }
+  return `<div class="mapa-q">${html}</div>`;
+}
+
+function pintarSemaforico(m) {
+  pintarComun($("semaforico"), m);
+  const s = m.estado || {};
+  $("sPasos").textContent = s.decisiones_aprendidas ?? 0;
+  $("sEps").textContent = m.parametros?.epsilon ?? "—";
+  $("sRec").textContent = s.recompensa_media_50 ?? "—";
+  graficaRecompensas(s.recompensas || []);
+  const cruces = Object.entries(s.cruces || {}).sort();
+  if (!cruces.length) return;
+  $("sCruces").innerHTML = cruces.map(([id, d]) => {
+    const pts = d.puntajes || {};
+    const maxP = Math.max(1, ...Object.values(pts).map(Math.abs));
+    const acciones = Object.entries(pts).map(([a, v]) => `<div class="acc ${a === d.modo ? "elegida" : ""}">
+        <span>${esc(a)}</span>${barra(v + maxP, 2 * maxP, COLOR_ACC[a])}<span class="mono">${v.toFixed(2)}</span></div>`).join("");
+    const ap = d.aprendizaje;
+    return `<div class="cruce"><div class="cab"><b>${esc(id)}</b><span class="tenue mono">${esc(d.estado)}</span>
+        <span class="modo m-${esc(d.modo)}">${esc(d.modo)}</span></div>
+      <div class="colas"><span>A</span>${barra(d.A, 15, "var(--ambar)")}<span class="mono">${d.A}</span>
+        <span>B</span>${barra(d.B, 15, "var(--violeta)")}<span class="mono">${d.B}</span></div>
+      ${d.bloqueado ? "" : `<div class="tenue" style="font-size:12px">Q(estado, acción)${d.sugerido ? " · el plan sugiere " + esc(d.sugerido) : ""}</div><div class="acciones">${acciones}</div>`}
+      <div class="motivo">${d.cambio ? "▶ cambió: " : ""}${esc(d.motivo || "")}</div>
+      ${ap ? `<div class="aprende">aprendió en ${esc(ap.estado)} con ${esc(ap.accion)}: recompensa ${ap.recompensa} → Q ${ap.q_antes} → ${ap.q_despues}</div>` : ""}
+      ${mapaQ(s.q?.[id], s.visitas?.[id], d.estado)}</div>`;
+  }).join("");
+}
+
+function graficaRecompensas(v) {
+  const cv = $("graficaRec"), g = cv.getContext("2d");
+  cv.width = cv.clientWidth * devicePixelRatio; cv.height = cv.clientHeight * devicePixelRatio;
+  g.clearRect(0, 0, cv.width, cv.height);
+  g.fillStyle = "#6f8ba3"; g.font = `${11 * devicePixelRatio}px Rajdhani`;
+  g.fillText("recompensa de cada decisión (verde = la cola bajó)", 4, 12 * devicePixelRatio);
+  if (!v.length) return;
+  const max = Math.max(1, ...v.map(Math.abs)), w = cv.width / Math.max(v.length, 50), mid = cv.height / 2 + 6;
+  v.forEach((x, i) => {
+    const h = x / max * (cv.height / 2 - 12);
+    g.fillStyle = x >= 0 ? "#00ff7a" : "#ff1744";
+    g.fillRect(i * w + 1, h >= 0 ? mid - h : mid, Math.max(1, w - 2), Math.abs(h) || 1);
+  });
+}
+
+function pintarCoordinador(m) {
+  pintarComun($("coordinador"), m);
+  const s = m.estado || {};
+  $("cCatalogo").innerHTML = `<tr><th>Plan</th><th>Costo</th><th>Impacto inicial</th><th>Impacto aprendido</th><th>Usos</th></tr>` +
+    (s.catalogo || []).map(p => `<tr><td>${esc(p.nombre)}</td><td>${p.costo}</td><td>${p.impacto_inicial}</td>
+      <td>${barra(p.impacto_aprendido, 1, p.impacto_aprendido >= p.impacto_inicial ? "var(--verde)" : "var(--ambar)")}<span class="mono">${p.impacto_aprendido}</span></td>
+      <td>${p.veces}</td></tr>`).join("");
+  const u = s.ultima_decision;
+  if (u) $("cUltima").outerHTML = `<div id="cUltima"><div class="tenue">${esc(u.alerta)} en ${esc(u.cruce)} · tráfico ${esc(u.nivel)} (factor ${u.factor})</div>
+      <table><tr><th>Plan</th><th>Impacto</th><th>Costo</th><th>Utilidad</th></tr>${u.planes.map(p => `<tr class="${p.clave === u.elegido ? "elegido" : ""}">
+      <td>${p.clave === u.elegido ? "▶ " : ""}${esc(p.nombre)}</td><td>${p.impacto}</td><td>${p.costo}</td><td>${p.utilidad}</td></tr>`).join("")}</table></div>`;
+  const act = s.activas || [];
+  $("cActivas").className = act.length ? "" : "vacio";
+  $("cActivas").innerHTML = act.length ? act.map(a => `<div>${esc(a.alerta)} · ${esc(a.plan)} en ${esc(a.cruce)} desde ${esc(a.desde)}</div>`).join("") : "Ninguna.";
+  const ap = s.aprendido || [];
+  $("cAprendido").className = ap.length ? "" : "vacio";
+  $("cAprendido").innerHTML = ap.length ? `<table><tr><th>Alerta</th><th>Plan</th><th>Cola antes → durante</th><th>Efecto</th><th>Impacto</th></tr>` +
+    ap.slice().reverse().map(x => `<tr><td>${esc(x.alerta)}</td><td>${esc(x.plan)}</td><td>${x.antes} → ${x.durante}</td>
+      <td style="color:${x.efecto >= 0 ? "var(--verde)" : "var(--rojo)"}">${x.efecto >= 0 ? "+" : ""}${x.efecto}</td><td>${x.impacto[0]} → ${x.impacto[1]}</td></tr>`).join("") + "</table>"
+    : "Aún no ha cerrado ningún plan.";
+}
+
+function pintarOtros() {
+  $("otros").innerHTML = OTROS.filter(k => mentes[k]).map(k => {
+    const m = mentes[k], est = m.estado || {};
+    let extra = "";
+    if (k === "consultor" && est.niveles) extra = `<h3>Modelo del tráfico</h3><table><tr><th>Cruce</th><th>Nivel</th><th>A</th><th>B</th></tr>` +
+      Object.entries(est.niveles).map(([c, e]) => `<tr><td>${esc(c)}</td><td>${esc(e.nivel)}</td><td>${e.A ?? "—"}</td><td>${e.B ?? "—"}</td></tr>`).join("") + "</table>";
+    else extra = `<h3>Estado</h3><div class="mono">${esc(valor(est))}</div>`;
+    return `<section class="caja"><h2 style="color:${COLORES[m.agente] || "var(--cian)"}">Agente ${esc(m.agente)}</h2>
+      <div class="tipo">${esc(m.tipo)}</div><div class="tenue">${esc(m.rol)}</div>
+      <h3>Percibe</h3><div>${esc(m.percibe)}</div><h3>Actúa</h3><div>${esc(m.actua)}</div>
+      <h3>Reglas</h3><ul class="reglas">${(m.reglas || []).map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+      ${Object.keys(m.parametros || {}).length ? `<h3>Parámetros</h3><table>${Object.entries(m.parametros).map(([a, b]) => `<tr><td class="mono">${esc(a)}</td><td>${esc(valor(b))}</td></tr>`).join("")}</table>` : ""}
+      ${extra}<h3>Código</h3>${(m.codigo || []).map(c => `<div><code>${esc(c)}</code></div>`).join("")}</section>`;
+  }).join("");
+}
+
+function linea(l) {
+  if (!/^(Semaforico|Coordinador|Consultor)$/.test(l.agente)) return;
+  if (l.agente === "Consultor" && !/estado vial|cola media/.test(l.texto)) return;
+  const f = $("feed");
+  if (f.querySelector(".vacio")) f.innerHTML = "";
+  const d = document.createElement("div");
+  d.innerHTML = `<span class="tenue">${esc(l.ts)}</span> <span class="ag" style="color:${COLORES[l.agente]}">${esc(l.agente)}</span> ${esc(l.texto)}`;
+  f.prepend(d);
+  while (f.children.length > 200) f.removeChild(f.lastChild);
+}
+
+function recibir(p) {
+  const partes = p.tema.split("/");
+  if (partes[1] === "agentes" && typeof p.datos === "object") {
+    mentes[partes[2]] = p.datos;
+    if (partes[2] === "semaforico") pintarSemaforico(p.datos);
+    else if (partes[2] === "coordinador") pintarCoordinador(p.datos);
+    else pintarOtros();
+  } else if (p.tema === "sma/panel/log" && typeof p.datos === "object") linea(p.datos);
+}
+
+function conectar() {
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => { $("punto").classList.add("ok"); $("conexion").textContent = "en vivo"; $("feed").innerHTML = '<div class="vacio">Sin decisiones todavía.</div>'; };
+  ws.onmessage = e => recibir(JSON.parse(e.data));
+  ws.onclose = () => { $("punto").classList.remove("ok"); $("conexion").textContent = "reconectando…"; setTimeout(conectar, 2000); };
+}
+conectar();
+</script>
+</body>
+</html>

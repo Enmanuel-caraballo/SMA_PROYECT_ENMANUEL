@@ -42,6 +42,7 @@ TIEMPOS_MODO = {
     "prioridad_b": [5.0, 2.0, 1.0, 20.0, 2.0, 1.0],    # verde largo para la vía B
     "peatonal":    [8.0, 2.0, 8.0, 6.0, 2.0, 8.0],     # todo rojo largo: cruzan los peatones
 }
+CICLICOS = {"normal", "prioridad_a", "prioridad_b", "peatonal"}
 ORDENES = {"normal": "normal", "rojo": "normal",
            "corredor": "corredor", "verde": "corredor",
            "cerco": "cerco", "prioridad_a": "prioridad_a",
@@ -68,9 +69,12 @@ class Cruce:
         self.forzar_publicacion = True
 
     def cambiar_modo(self, modo):
+        # entre modos cíclicos (normal / prioridad_* / peatonal) se conserva la fase: solo cambian los tiempos,
+        # así el control adaptativo del Agente Semafórico no reinicia el ciclo en cada decisión
+        if not (modo in CICLICOS and self.modo in CICLICOS):
+            self.fase = 0
+            self.inicio_fase = time.monotonic()
         self.modo = modo
-        self.fase = 0
-        self.inicio_fase = time.monotonic()
         self.forzar_publicacion = True
         log(f"{self.id}: modo -> {modo}")
 

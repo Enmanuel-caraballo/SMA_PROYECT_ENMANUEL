@@ -68,6 +68,7 @@
   .plan b { font-family: "Orbitron"; font-size: 12px; color: #ffb300; letter-spacing: .08em; }
   .plan .t { font-family: "Orbitron"; font-size: 16px; color: var(--texto); min-width: 52px; text-align: right; }
   .plan .det { color: var(--tenue); font-size: 12px; }
+  .plan .btn { padding: 5px 10px; font-size: 12px; }
   .etq-plan { font-family: "Orbitron"; font-size: 11px; letter-spacing: .1em; color: var(--c); padding: 3px 8px; border-radius: 5px;
     border: 1px solid var(--c); background: rgba(3,8,16,.85); box-shadow: 0 0 12px var(--c); white-space: nowrap; pointer-events: none; }
   #sentido { padding: 8px 8px; }
@@ -131,6 +132,7 @@
   <div class="der">
     <span><span class="punto" id="punto"></span><span id="conexion">conectando…</span></span>
     <span id="reloj">--:--:--</span>
+    <a href="/agentes" target="_blank">Mente de los agentes</a>
     <a href="/mapa2d">Mapa 2D</a>
   </div>
 </header>
@@ -203,11 +205,12 @@ function pintarCruces() {
   $("listaCruces").innerHTML = sim.estado.cruces.map(c => {
     const e = sim.estado.semaforos[c.id];
     const cola = sim.estado.metricas.colas[c.id] || 0;
+    const g = (sim.estado.metricas.colasGrupo || {})[c.id] || { A: 0, B: 0 };
     return `<div class="cruce ${c.id === seleccionado ? "sel" : ""}" data-id="${c.id}">
       <div class="luces"><div class="luz ${e ? e.A : ""}" title="A: ${esc(c.via_principal)}"></div><div class="luz ${e ? e.B : ""}" title="B"></div></div>
       <div class="nom"><span class="id">${c.id}</span>${c.fisico ? '<span class="esp">ESP32</span>' : ""} ${esc(c.nombre || "")}</div>
       <span class="modo ${e ? e.modo : ""}">${e ? e.modo : "sin señal"}</span>
-      <div class="det">cola: ${cola} veh.</div></div>`;
+      <div class="det">cola: ${cola} veh. · sensor A ${g.A} · B ${g.B}</div></div>`;
   }).join("");
 }
 $("listaCruces").addEventListener("click", ev => { const d = ev.target.closest(".cruce"); if (d) sim.seleccionar(d.dataset.id); });
@@ -249,14 +252,37 @@ setInterval(() => {
 
 function pintarPlanes() {
   const ahora = Date.now();
+  // red de seguridad: si el SMA no avisó el cierre 20 s después de la hora, se limpia el plan en la vista
+  for (const p of [...planes.values()]) if (ahora > p.finMs + 20000) terminarPlanLocal(p, "sin aviso de cierre del SMA");
   $("planes").innerHTML = [...planes.values()].map(p => {
     const r = Math.max(0, Math.round((p.finMs - ahora) / 1000));
     return `<div class="plan vidrio" data-cruce="${esc(p.cruce)}"><b>${esc(p.alerta)} · PLAN ACTIVO</b>
       <span>${esc(p.nombre)}<div class="det">${esc(p.evento || "")} en ${esc(p.cruce)}${p.sentido ? " · sentido " + esc(p.sentido) : ""}</div></span>
-      <span class="t">${Math.floor(r / 60)}:${String(r % 60).padStart(2, "0")}</span></div>`;
+      <span class="t">${Math.floor(r / 60)}:${String(r % 60).padStart(2, "0")}</span>
+      <button class="btn rojo" data-terminar="${esc(p.alerta)}" title="Dar por terminada la contingencia ahora">Terminar</button></div>`;
   }).join("");
 }
-$("planes").addEventListener("click", ev => {
+
+function terminarPlanLocal(d, motivo) {
+  sim.desactivarPlan(d);
+  planes.delete(d.alerta);
+  if (d.plan && d.plan.startsWith("contraflujo")) sim.volverDeVistaPlan();
+  if (d.evento === "accidente") { const t0 = sim.tiempoSimulado(); setTimeout(() => sim.terminarAccidente(d.cruce, t0), 15000); }
+  else if (d.evento === "congestion") sim.congestion(0);
+  else if (d.evento === "aglomeracion") sim.terminarAglomeracion(d.cruce);
+  if (motivo) linea({ hora: hora(), agente: "Panel", texto: `plan ${d.alerta} retirado de la vista (${motivo})` });
+}
+
+$("planes").addEventListener("click", async ev => {
+  const bt = ev.target.closest("[data-terminar]");
+  if (bt) {
+    const p = planes.get(bt.dataset.terminar); bt.disabled = true; bt.textContent = "Terminando…";
+    try {
+      await fetch("/api/terminar", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alerta: p.alerta, cruce: p.cruce }) });
+    } catch { linea({ hora: hora(), agente: "Panel", texto: "error de red al terminar la contingencia" }); }
+    return;
+  }
   const d = ev.target.closest(".plan"); if (!d) return;
   if (sim.estado.centroPlan && sim.estado.contraflujo) sim.vistaPlan(); else sim.seleccionar(d.dataset.cruce);
 });
@@ -349,19 +375,22 @@ function recibir(p) {
       if (vivo && d.evento === "accidente") sim.enviarEmergencia(d.cruce, "ambulancia");
       if (vivo && sim.estado.contraflujo && d.plan === sim.estado.contraflujo) sim.vistaPlan();
     } else {
-      sim.desactivarPlan(d);
-      planes.delete(d.alerta);
       linea({ hora: p.hora, agente: "MQTT", texto: `plan terminado en ${id}: ${d.nombre}`, mqtt: true });
-      if (d.evento === "accidente") { const t0 = sim.tiempoSimulado(); setTimeout(() => sim.terminarAccidente(d.cruce, t0), 15000); }
-      else if (d.evento === "congestion") sim.congestion(0);
-      else if (d.evento === "aglomeracion") sim.terminarAglomeracion(d.cruce);
+      terminarPlanLocal(d);
     }
     pintarPlanes();
   }
 }
 
+// sensores de cola: el gemelo digital mide las colas por acceso y se las manda al SMA cada 2 s
+let ws = null;
+setInterval(() => {
+  if (ws && ws.readyState === 1 && sim.estado.metricas.colasGrupo)
+    ws.send(JSON.stringify({ tipo: "sensores", datos: sim.estado.metricas.colasGrupo }));
+}, 2000);
+
 function conectar() {
-  const ws = new WebSocket(`ws://${location.host}/ws`);
+  ws = new WebSocket(`ws://${location.host}/ws`);
   ws.onopen = () => {
     $("bitacora").innerHTML = ""; alertas.length = 0; pendientes.length = 0;
     for (const d of planes.values()) sim.desactivarPlan(d);

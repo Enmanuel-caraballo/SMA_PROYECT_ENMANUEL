@@ -40,9 +40,9 @@ la tarea actual (ver sección 8).
 | AgenteVigilancia | reactivo simple | Escucha `sma/eventos/#` por MQTT y envía `AlertaNovedad` al Clasificador |
 | AgenteClasificadorAlertas | basado en objetivos | Tabla `REGLAS`: tipo de evento → (TipoAlerta, NivelPrioridad). Envía `Alerta` al Coordinador |
 | AgenteCoordinador | basado en utilidad | Consulta al Consultor, genera planes de desvío (`generar_planes`), elige el de mayor utilidad, ordena al Semafórico (`activarPlan`) y al Comunicador, mantiene el plan `SEGUNDOS_PLAN`=300 s (`--duracion N`) y restaura el normal |
-| AgenteConsultor | reactivo basado en modelos | Responde `query-ref` (estado vial) con caché |
+| AgenteConsultor | reactivo basado en modelos | Modelo del tráfico con los sensores `sma/sensores/<cruce>`: responde `consultarEstadoVial` (nivel por umbrales) y `consultarColaMedia` (historia 15 min), con caché de 5 s |
 | AgentePredictor | híbrido: basado en modelos + utilidad | Responde `predecirRutaHuida` (por ahora reglas simples) |
-| AgenteSemaforico | basado en objetivos | `activarPlan` trae un modo por cruce y lo publica en `sma/semaforo/<cruce>`, además publica el plan en `sma/plan/<cruce>`; `restaurarPlanNormal`→`normal` (se conservan `abrirCorredorEmergencia`→`corredor` y `activarCerco`→`cerco`) |
+| AgenteSemaforico | objetivos + **Q-learning** | Control adaptativo cada 12 s: con las colas A/B decide `normal`/`prioridad_a`/`prioridad_b` y aprende (tabla Q en `agentes/memoria/`); los modos del plan son sugerencias (`cerco`/`peatonal` se respetan). `activarPlan` trae un modo por cruce y lo publica en `sma/semaforo/<cruce>`, además publica el plan en `sma/plan/<cruce>`; `restaurarPlanNormal`→`normal` (se conservan `abrirCorredorEmergencia`→`corredor` y `activarCerco`→`cerco`) |
 | AgenteComunicador | basado en objetivos | Redacta el aviso (por ahora lo imprime; luego Telegram + LLM) |
 
 Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
@@ -65,6 +65,8 @@ Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
 |---|---|---|---|
 | `sma/eventos/<cruce>` | ESP32 (botón), simulador, panel | AgenteVigilancia | texto (`accidente`) o JSON `{"tipo": "...", ...}` |
 | `sma/semaforo/<cruce>` | AgenteSemaforico | ESP32 / simulador | `normal` \| `prioridad_a` \| `prioridad_b` \| `peatonal` \| `cerco` \| `corredor` (compat.: `verde`=corredor, `rojo`=normal) |
+| `sma/sensores/<cruce>` | Panel (lo mide el gemelo 3D, vía WebSocket) | Semafórico, Consultor | JSON `{"A": n, "B": n}` cada 2 s |
+| `sma/agentes/<agente>` | cada agente | Panel `/agentes` | JSON **retenido**: tipo, reglas, parámetros, estado interno |
 | `sma/plan/<cruce>` | AgenteSemaforico | Panel (gemelo 3D) | JSON `{"plan","nombre","semaforos","alerta","cruce","evento","sentido","duracion","activo"}` |
 | `sma/estado/<cruce>` | ESP32 / simulador | Panel | JSON **retenido** `{"modo":"normal","A":"verde","B":"rojo"}` |
 
@@ -116,7 +118,10 @@ SMA_IA/
 ├── requirements.txt
 ├── .gitignore
 ├── agentes/
-│   └── sma_agentes.py
+│   ├── sma_agentes.py         (los 7 agentes)
+│   ├── conocimiento.py        (TODAS las reglas y parámetros)
+│   ├── aprendizaje.py         (Q-learning del Semafórico, experiencia del Coordinador)
+│   └── memoria/               (lo aprendido, *.json; ignorado por Git; --olvidar lo reinicia)
 ├── esp32/
 │   ├── esp32_mqtt_prueba/esp32_mqtt_prueba.ino   (prueba del LED azul)
 │   └── esp32_cruce/esp32_cruce.ino               (cruce con 2 semáforos + botón en GPIO4)
@@ -216,6 +221,14 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
   recalcula rutas (Dijkstra respeta cierres, sin vueltas en U). 20 % de los carros nuevos van a la salida vigente.
 - Duración de cada evento/plan: **5 min** (decisión 16-nov; las decisiones de los agentes siguen siendo inmediatas).
 - Vehículos ×1.5 y peatones ×2 de escala real a propósito (si no, no se ven junto a las torres).
+- Inteligencia (decisión 17-nov): reglas/parámetros SOLO en `agentes/conocimiento.py`; aprendizaje en
+  `agentes/aprendizaje.py`. El gemelo envía cada 2 s las colas por acceso (`metricas.colasGrupo`: vehículos con
+  v < 2 m/s a menos de 100 m de la línea de pare) por WebSocket y el servidor las publica en `sma/sensores/<cruce>`
+  (si la pestaña 3D está oculta Chrome pausa la simulación y no hay sensores). Página `/agentes` = `panel/agentes.html`.
+  Entre modos cíclicos el simulador y el ESP32 conservan la fase (solo cambian los tiempos).
+- Terminar contingencia: botón "Terminar" del aviso → `POST /api/terminar` → `sma/eventos/<cruce>`
+  `{"tipo":"fin_contingencia","alerta"}` → Vigilancia → Coordinador (`TerminarAlerta`). Si el SMA no avisa el cierre
+  20 s después de la hora, el panel retira el plan de la vista por su cuenta.
 - Depuración desde la consola: `window.__bocagrande` (cámara, controles, escena, geo, aristasDir, `avanzar(s)`) e
   `import('/static/bocagrande3d.js')` para leer `estado` (carros, peatones, métricas, planes, fps, ms).
   Ojo: `avanzar(s)` es síncrono y los semáforos no cambian mientras corre; para medir colas usar pasos cortos

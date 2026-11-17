@@ -35,6 +35,7 @@ args = None
 clientes_ws: set[WebSocket] = set()
 estados = {}                    # último sma/estado/<cruce>
 planes = {}                     # planes activos (sma/plan/<cruce>) por id de alerta
+mentes = {}                     # último sma/agentes/<agente>: reglas, parámetros y estado interno de cada agente
 bitacora = deque(maxlen=300)    # últimos mensajes para quien abra la página tarde
 cliente_mqtt = None
 
@@ -66,7 +67,11 @@ def al_mensaje_mqtt(loop):
             datos = cuerpo
         paquete = {"tema": msg.topic, "datos": datos, "hora": f"{datetime.now():%H:%M:%S}", "recibido": time.time()}
         partes = msg.topic.split("/")
-        if len(partes) == 3 and partes[1] == "estado":
+        if len(partes) == 3 and partes[1] == "sensores":
+            return                      # los publica el propio navegador; no hace falta reenviarlos
+        if len(partes) == 3 and partes[1] == "agentes":
+            mentes[partes[2]] = paquete
+        elif len(partes) == 3 and partes[1] == "estado":
             estados[partes[2]] = paquete
         elif len(partes) == 3 and partes[1] == "plan" and isinstance(datos, dict):
             if datos.get("activo"):
@@ -117,6 +122,12 @@ def pagina_2d():
     return FileResponse(CARPETA / "mapa2d.html")
 
 
+@app.get("/agentes")
+def pagina_agentes():
+    """Mente de los agentes: reglas, parámetros, aprendizaje y decisiones en vivo."""
+    return FileResponse(CARPETA / "agentes.html")
+
+
 @app.get("/datos/bocagrande.json")
 def datos_bocagrande():
     return FileResponse(RUTA_MAPA_3D, media_type="application/json")
@@ -153,17 +164,49 @@ def api_evento(evento: Evento):
     return {"ok": True}
 
 
+class Terminar(BaseModel):
+    alerta: str | None = None
+    cruce: str = "cruce1"
+
+
+@app.post("/api/terminar")
+def api_terminar(t: Terminar):
+    """El operador da por terminada una contingencia antes de tiempo (lo recibe el Agente Vigilancia)."""
+    if cliente_mqtt is None or not cliente_mqtt.is_connected():
+        raise HTTPException(503, "sin conexión a Mosquitto")
+    cliente_mqtt.publish(f"sma/eventos/{t.cruce}", json.dumps({"tipo": "fin_contingencia", "alerta": t.alerta}))
+    log(f"el operador termina la contingencia {t.alerta or ''} en {t.cruce}")
+    return {"ok": True}
+
+
+def publicar_sensores(datos):
+    """Colas por acceso que mide el gemelo digital -> sma/sensores/<cruce> (las usan Semafórico y Consultor)."""
+    validos = {c["id"] for c in cruces()}
+    if not isinstance(datos, dict) or cliente_mqtt is None or not cliente_mqtt.is_connected():
+        return
+    for cruce, v in datos.items():
+        if cruce in validos and isinstance(v, dict):
+            cliente_mqtt.publish(f"sma/sensores/{cruce}",
+                                 json.dumps({"A": float(v.get("A", 0)), "B": float(v.get("B", 0))}))
+
+
 @app.websocket("/ws")
 async def ws(websocket: WebSocket):
     await websocket.accept()
     clientes_ws.add(websocket)
     # lo que ya pasó: estados actuales + bitácora reciente + planes en curso (marcado como historial
     # para que la vista 3D no vuelva a disparar accidentes viejos; los planes sí se redibujan)
-    for paquete in list(estados.values()) + list(bitacora) + list(planes.values()):
+    for paquete in list(estados.values()) + list(mentes.values()) + list(bitacora) + list(planes.values()):
         await websocket.send_text(json.dumps({**paquete, "historial": True}, ensure_ascii=False))
     try:
         while True:
-            await websocket.receive_text()   # el navegador no envía nada; solo mantiene viva la conexión
+            texto = await websocket.receive_text()   # el navegador envía las lecturas de sus sensores de cola
+            try:
+                datos = json.loads(texto)
+            except ValueError:
+                continue
+            if isinstance(datos, dict) and datos.get("tipo") == "sensores":
+                publicar_sensores(datos.get("datos"))
     except WebSocketDisconnect:
         pass
     finally:

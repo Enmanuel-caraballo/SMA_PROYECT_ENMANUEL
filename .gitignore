@@ -10,3 +10,6 @@ CP210x_Universal_Windows_Driver/
 CP210x_Universal_Windows_Driver.zip
 # archivos temporales de Office
 ~$*
+
+# Experiencia aprendida por los agentes (se genera al correrlos)
+agentes/memoria/

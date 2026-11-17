@@ -822,9 +822,20 @@ function animarPlan(destello) {
   }
 }
 
+let vistaAntesDelPlan = null;
 export function vistaPlan() {
   const c = estado.centroPlan;
-  if (c) volarA(c.x, c.z, c.dist, new THREE.Vector3(-0.25, 1, 0.35));   // casi cenital: se ven las vías entre las torres
+  if (!c) return;
+  vistaAntesDelPlan ||= { pos: camara.position.clone(), obj: controles.target.clone() };
+  volarA(c.x, c.z, c.dist, new THREE.Vector3(-0.25, 1, 0.35));   // casi cenital: se ven las vías entre las torres
+}
+
+// al terminar el contraflujo la cámara vuelve a donde estaba antes de mostrar el desvío
+export function volverDeVistaPlan() {
+  const v = vistaAntesDelPlan; vistaAntesDelPlan = null;
+  if (!v) return;
+  const dir = v.pos.clone().sub(v.obj);
+  volarA(v.obj.x, v.obj.z, dir.length(), dir);
 }
 
 // =====================================================================
@@ -883,11 +894,15 @@ function medir() {
   m.detenidos = normales.filter(c => c.v < 0.8).length;
   m.peatones = estado.peatones.length;
   m.esperando = estado.peatones.filter(p => p.espera > 0).length;
-  m.colas = {};
-  for (const c of estado.cruces) m.colas[c.id] = 0;
+  // sensores de cola por acceso (como los lazos inductivos de un semáforo real): vehículos detenidos o
+  // casi detenidos a menos de 100 m de la línea de pare; se envían al SMA por sma/sensores/<cruce>
+  m.colas = {}; m.colasGrupo = {};
+  for (const c of estado.cruces) { m.colas[c.id] = 0; m.colasGrupo[c.id] = { A: 0, B: 0 }; }
   for (const car of normales) {
     const ctl = control[car.e.id];
-    if (ctl && car.v < 0.8 && car.e.largo - car.s < 80) m.colas[ctl.cruce]++;
+    if (!ctl || car.e.largo - car.s > 100) continue;
+    if (car.v < 0.8) m.colas[ctl.cruce]++;
+    if (car.v < 2) m.colasGrupo[ctl.cruce][ctl.grupo]++;
   }
 }
 

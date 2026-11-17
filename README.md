@@ -31,6 +31,8 @@ Sobre esa red circulan carros y peatones simulados que **obedecen los semáforos
 |---|---|
 | `sma/eventos/<cruce>` | `accidente` o JSON `{"tipo": ...}` (botón del ESP32, panel o `mosquitto_pub`) |
 | `sma/semaforo/<cruce>` | `normal` \| `prioridad_a` \| `prioridad_b` \| `peatonal` \| `cerco` \| `corredor` (órdenes del Agente Semafórico) |
+| `sma/sensores/<cruce>` | JSON `{"A": n, "B": n}`: colas por acceso medidas por el gemelo 3D cada 2 s |
+| `sma/agentes/<agente>` | JSON retenido con reglas, parámetros y estado interno de cada agente (página `/agentes`) |
 | `sma/plan/<cruce>` | JSON del plan activo `{"plan","nombre","semaforos","alerta","cruce","sentido","duracion","activo"}` (lo dibuja el gemelo 3D) |
 | `sma/estado/<cruce>` | JSON retenido `{"modo":"normal","A":"verde","B":"rojo"}` |
 | `sma/panel/log` | JSON `{"ts","agente","texto"}`: bitácora de los agentes para el panel |
@@ -39,6 +41,8 @@ Sobre esa red circulan carros y peatones simulados que **obedecen los semáforos
 
 ```
 agentes/sma_agentes.py                  los 7 agentes del SMA
+agentes/conocimiento.py                 reglas y parámetros de todos los agentes
+agentes/aprendizaje.py                  aprendizaje (Q-learning del Semafórico, experiencia del Coordinador)
 esp32/esp32_cruce/                      cruce físico (2 semáforos + botón)
 esp32/esp32_mqtt_prueba/                prueba de conexión (LED azul)
 maqueta_virtual/cruces.json             5 cruces semaforizados de Bocagrande (generado)
@@ -82,6 +86,31 @@ En Cartagena no existen corredores de emergencia, así que ante un evento el **C
 
 Modos de semáforo (ESP32 y simulador): `normal` (A 8 s / B 6 s), `prioridad_a` (A 20 s / B 5 s),
 `prioridad_b` (A 5 s / B 20 s), `peatonal`, `cerco` (todo rojo) y `corredor` (se conserva por compatibilidad).
+
+## Inteligencia de los agentes: reglas, decisiones y aprendizaje
+
+Todo se ve en vivo en **http://localhost:8000/agentes** ("Mente de los agentes"): qué percibe cada agente, sus reglas,
+sus parámetros, la decisión que tomó y por qué, y lo que lleva aprendido.
+
+| Dónde | Qué hay |
+|---|---|
+| `agentes/conocimiento.py` | **Todas** las reglas y parámetros: tabla del Clasificador, umbrales del Consultor, catálogo de planes (impacto, costo), fórmula de utilidad, parámetros de Q-learning del Semafórico. |
+| `agentes/aprendizaje.py` | `QSemaforo` (Q-learning) y `ExperienciaPlanes` (impacto real de cada plan). |
+| `agentes/memoria/*.json` | Lo aprendido; se conserva entre ejecuciones (`--olvidar` empieza de cero). No va a Git. |
+
+- **Agente Semafórico: decide por su cuenta y aprende con Q-learning.** Cada 12 s mira las colas de cada acceso
+  (sensores del gemelo, `sma/sensores/<cruce>`) y decide `normal`, `prioridad_a` o `prioridad_b`. El estado es la
+  cubeta de cola en A y en B (0, 1-3, 4-7, 8-12, 13+). La recompensa es cuánto bajó la cola total menos una
+  penalización por cambiar de modo. Empieza con la regla experta ("dar prioridad al acceso más cargado") y la corrige
+  con la experiencia. Los modos de un plan del Coordinador son **sugerencias**: si las colas dicen otra cosa, el
+  Semafórico prioriza el acceso cargado ("las colas pesan más que el plan"). No toca `cerco` ni `peatonal`.
+- **Agente Coordinador: decide por utilidad y aprende el impacto real de cada plan.** Cada plan tiene un impacto
+  esperado y un costo; utilidad = impacto × factor de tráfico − 0,5 × costo. Al cerrar un plan mide las colas de todo
+  el sector antes y durante el plan y corrige el impacto (sube si Bocagrande fluyó mejor, baja si fluyó peor).
+- **Agente Consultor: modelo del tráfico.** Calcula el nivel (bajo/medio/alto) con las colas reales de los sensores y
+  guarda 15 min de historia para que el Coordinador mida el efecto de sus planes.
+- **Terminar una contingencia antes de tiempo:** botón **Terminar** en el aviso del plan (o
+  `sma/eventos/<cruce>` = `{"tipo":"fin_contingencia","alerta":"AL-0001"}`).
 
 ## Gemelo digital 3D
 

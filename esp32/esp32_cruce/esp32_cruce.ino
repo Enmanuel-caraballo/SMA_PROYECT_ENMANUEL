@@ -116,10 +116,16 @@ void ponerLuces(Luz a, Luz b) {
   publicarEstado();
 }
 
+bool esCiclico(Modo m) { return m == NORMAL || m == PRIORIDAD_A || m == PRIORIDAD_B || m == PEATONAL; }
+
 void cambiarModo(Modo nuevo) {
+  // entre modos cíclicos se conserva la fase (solo cambian los tiempos): el control adaptativo
+  // del Agente Semafórico no reinicia el ciclo en cada decisión
+  if (!(esCiclico(nuevo) && esCiclico(modo))) {
+    fase = 0;
+    inicioFase = millis();
+  }
   modo = nuevo;
-  fase = 0;
-  inicioFase = millis();
   Serial.print("Modo -> "); Serial.println(nombreModo(modo));
   primeraVez = true;   // fuerza publicar el estado aunque las luces no cambien
 }
