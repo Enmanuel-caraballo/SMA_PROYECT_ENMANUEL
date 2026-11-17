@@ -36,7 +36,9 @@ BROKER_MQTT = "localhost"      # PC donde corre Mosquitto
 PUERTO_MQTT = 1883
 TEMA_EVENTOS = "sma/eventos/#"          # lo que publica el ESP32 (o mosquitto_pub)
 TEMA_SEMAFORO = "sma/semaforo/{cruce}"  # lo que escucha el ESP32
-SEGUNDOS_CORREDOR = 10                  # tiempo que dura el corredor antes de restaurar
+SEGUNDOS_CORREDOR = 30                  # cuánto se mantiene el plan (corredor) antes de restaurar
+if "--duracion" in sys.argv:             # p. ej. --duracion 60 (las decisiones siguen siendo inmediatas)
+    SEGUNDOS_CORREDOR = float(sys.argv[sys.argv.index("--duracion") + 1])
 
 JID = {n: f"{n}@{DOMINIO}" for n in
        ["vigilancia", "clasificador", "coordinador", "consultor",
@@ -209,7 +211,8 @@ class AgenteCoordinador(Agent):
             await self.send(mensaje("comunicador", "request", "comunicar",
                                     {"receptor": "Ciudadania", "alerta": self.alerta, "resultado": resultado}))
 
-            # 5) Restaurar el plan normal pasado un tiempo
+            # 5) Mantener el plan SEGUNDOS_CORREDOR para que se vea su efecto y restaurar
+            log("Coordinador", f"{self.alerta['id']}: plan activo {SEGUNDOS_CORREDOR:g} s en {cruce}")
             await asyncio.sleep(SEGUNDOS_CORREDOR)
             await self.send(mensaje("semaforico", "request", "restaurarPlanNormal", {"cruces": [cruce]}))
             await self.esperar("ResultadoAccion")

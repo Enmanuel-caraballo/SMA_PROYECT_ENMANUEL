@@ -39,7 +39,7 @@ la tarea actual (ver sección 8).
 |---|---|---|
 | AgenteVigilancia | reactivo simple | Escucha `sma/eventos/#` por MQTT y envía `AlertaNovedad` al Clasificador |
 | AgenteClasificadorAlertas | basado en objetivos | Tabla `REGLAS`: tipo de evento → (TipoAlerta, NivelPrioridad). Envía `Alerta` al Coordinador |
-| AgenteCoordinador | basado en utilidad | Consulta al Consultor, genera planes, elige el de mayor utilidad, ordena al Semafórico y al Comunicador, restaura el plan normal a los 10 s |
+| AgenteCoordinador | basado en utilidad | Consulta al Consultor, genera planes, elige el de mayor utilidad, ordena al Semafórico y al Comunicador, mantiene el plan `SEGUNDOS_CORREDOR`=30 s (`--duracion N`) y restaura el normal |
 | AgenteConsultor | reactivo basado en modelos | Responde `query-ref` (estado vial) con caché |
 | AgentePredictor | híbrido: basado en modelos + utilidad | Responde `predecirRutaHuida` (por ahora reglas simples) |
 | AgenteSemaforico | basado en objetivos | Traduce órdenes a MQTT: `abrirCorredorEmergencia`→`corredor`, `restaurarPlanNormal`→`normal`, `activarCerco`→`cerco` |
@@ -90,7 +90,7 @@ Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
 
 - **Caso 1 – Accidente → corredor de emergencia** (YA FUNCIONA de punta a punta con el ESP32):
   evento → Vigilancia → Clasificador (Movilidad, Alta) → Coordinador consulta estado vial y elige plan por
-  utilidad → Semafórico pone `corredor` → Comunicador avisa a la ciudadanía → a los 10 s `normal`.
+  utilidad → Semafórico pone `corredor` → Comunicador avisa a la ciudadanía → a los 30 s `normal`.
 - **Caso 2 – Persona solicitada → cerco semafórico** (PENDIENTE):
   cámara detecta rostro → Consultor confirma coincidencia → alerta Crítica → Predictor da ruta de huida →
   Semafórico pone `cerco` en **todos los cruces de la ruta** → Comunicador avisa **solo a la Policía**.
@@ -199,7 +199,9 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
   por importmap desde unpkg. La simulación de tráfico corre en el navegador; las luces vienen de `sma/estado/<cruce>`.
 - El servidor reenvía la historia al conectar con `"historial": true`; la vista 3D no dispara efectos con eso.
 - Efectos: `sma/eventos` accidente → `eventoAccidente`; congestion → `congestion`; aglomeracion → `aglomerar`;
-  `sma/semaforo` corredor → ambulancia; cerco → 2 patrullas; normal → retira el accidente a los 8 s.
+  `sma/semaforo` corredor → ambulancia; cerco → 2 patrullas; normal → retira el accidente a los 15 s.
+- Duraciones (alargadas 16-nov para apreciar el efecto; las decisiones siguen siendo inmediatas): corredor 30 s,
+  congestión 90 s, aglomeración 75 s, curiosos del accidente 60 s.
 - Vehículos ×1.5 y peatones ×2 de escala real a propósito (si no, no se ven junto a las torres).
 - Depuración desde la consola: `window.__bocagrande` (cámara, controles, escena) e `import('/static/bocagrande3d.js')`
   para leer `estado` (carros, peatones, métricas, fps, ms).

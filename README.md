@@ -72,8 +72,8 @@ en OSM, se pueden agregar en OpenStreetMap y volver a correr `preparar_bocagrand
 - **Eventos** (botones del panel o `sma/eventos/<cruce>`):
   - *Accidente*: dos carros chocados bloquean un carril, se forma cola, se acercan curiosos y, cuando el SMA abre el
     corredor, entra una **ambulancia** por la ruta más corta.
-  - *Congestión*: se duplica el tráfico durante 45 s.
-  - *Aglomeración*: 60 peatones extra alrededor del cruce durante 40 s.
+  - *Congestión*: se duplica el tráfico durante 90 s.
+  - *Aglomeración*: 60 peatones extra alrededor del cruce durante 75 s.
   - *Cerco* (Caso 2): todos los accesos en rojo y llegan **patrullas**.
 - **Métricas en vivo**: vehículos, velocidad promedio (con gráfica), detenidos, peatones esperando y cola por cruce.
 - Si el equipo no llega a ~24 FPS se apaga solo el efecto de brillo (bloom).
@@ -96,7 +96,8 @@ python maqueta_virtual\panel\servidor_panel.py
 Abrir **http://localhost:8000** (requiere internet la primera vez para cargar Three.js y las fuentes).
 Elegir un cruce (lista de la izquierda o clic en su anillo) y pulsar **Accidente**: el cruce pasa a *corredor*
 (anillo verde), aparecen los carros chocados y la cola, entra la ambulancia, la bitácora muestra la cadena
-Vigilancia → Clasificador → Coordinador → Consultor → Semafórico → Comunicador y a los 10 s vuelve a *normal*.
+Vigilancia → Clasificador → Coordinador → Consultor → Semafórico → Comunicador el corredor se mantiene 30 s (`--duracion N` para cambiarlo) y vuelve a *normal*;
+los carros chocados se retiran 15 s después.
 Controles: arrastrar = girar, rueda = zoom, clic derecho = desplazar.
 
 Más detalles (instalación, ESP32, Git, problemas comunes) en [`COMANDOS.txt`](COMANDOS.txt).

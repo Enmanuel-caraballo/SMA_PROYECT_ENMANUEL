@@ -515,14 +515,14 @@ export function eventoAccidente(id) {
   const acc = accesos.find(a => a.ctl.grupo === "B" && a.e.largo > 30) || accesos.find(a => a.e.largo > 30) || accesos[0];
   if (!acc) return;
   const s = Math.max(8, acc.e.largo - 22);
-  const accidente = { cruce: id, e: acc.e, carril: 0, s, hasta: tiempo + 60, carros: [] };
+  const accidente = { cruce: id, e: acc.e, carril: 0, s, hasta: tiempo + 300, carros: [] };   // respaldo: normalmente lo retira el "normal" del SMA
   for (const d of [0, LARGO_CARRO - 1]) {
     const choc = { e: acc.e, carril: 0, s: s + d, v: 0, tipo: "chocado", color: 0xff6d00 };
     acc.e.ocup.push(choc); estado.carros.push(choc); accidente.carros.push(choc);
   }
   estado.accidentes.push(accidente);
   // curiosos alrededor
-  aglomerar(id, 18, 45);
+  aglomerar(id, 18, 60);
 }
 
 export function terminarAccidente(id) {
@@ -546,7 +546,7 @@ export function enviarEmergencia(id, tipo) {
   }
 }
 
-export function aglomerar(id, n = 60, segundos = 40) {
+export function aglomerar(id, n = 60, segundos = 75) {
   const c = cruceObj(id); if (!c) return;
   const cerca = aristasDir.filter(e => c.nodosSet.has(e.hasta) || c.nodosSet.has(e.desde));
   const grupo = { n, hasta: tiempo + segundos };
@@ -558,7 +558,7 @@ export function aglomerar(id, n = 60, segundos = 40) {
   estado.aglomeraciones.push(grupo);
 }
 
-export function congestion(segundos = 45) { estado.congestionHasta = tiempo + segundos; }
+export function congestion(segundos = 90) { estado.congestionHasta = tiempo + segundos; }
 
 // =====================================================================
 // 6. Bucle principal

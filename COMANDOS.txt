@@ -112,7 +112,8 @@ cd "C:\Program Files\mosquitto"
 
 # Resultado esperado:
 #  - En la terminal de agentes: Vigilancia -> Clasificador -> Coordinador ->
-#    Consultor -> Semaforico -> Comunicador, y a los 10 s "plan normal".
+#    Consultor -> Semaforico -> Comunicador, y a los 30 s "plan normal"
+#    (python agentes\sma_agentes.py --duracion 60  para que dure más).
 #  - En el ESP32: el cruce pasa a corredor (A verde, B rojo) y luego vuelve al ciclo.
 
 # Órdenes manuales al cruce (para probar el ESP32 sin agentes):
@@ -143,8 +144,8 @@ python maqueta_virtual\panel\servidor_panel.py
 # Botones: ACCIDENTE, CONGESTIÓN, AGLOMERACIÓN (publican en sma/eventos/<cruce>).
 #   Accidente   -> carros chocados (naranja), cola, curiosos (amarillo), corredor (anillo verde)
 #                  y una ambulancia (blanca con baliza) entra por la ruta más corta.
-#   Congestión  -> el tráfico se duplica 45 s.
-#   Aglomeración-> 60 peatones extra alrededor del cruce durante 40 s.
+#   Congestión  -> el tráfico se duplica 90 s.
+#   Aglomeración-> 60 peatones extra alrededor del cruce durante 75 s.
 
 # También desde la carpeta de Mosquitto:
 .\mosquitto_pub -h localhost -t sma/eventos/cruce3 -m accidente

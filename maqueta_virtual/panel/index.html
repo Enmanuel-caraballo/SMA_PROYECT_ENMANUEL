@@ -293,7 +293,7 @@ function recibir(p) {
     if (vivo) {
       if (p.datos === "corredor") sim.enviarEmergencia(id, "ambulancia");
       else if (p.datos === "cerco") sim.enviarEmergencia(id, "policia");
-      else if (p.datos === "normal") setTimeout(() => sim.terminarAccidente(id), 8000);
+      else if (p.datos === "normal") setTimeout(() => sim.terminarAccidente(id), 15000);
     }
   }
 }
