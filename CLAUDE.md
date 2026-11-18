@@ -121,7 +121,7 @@ SMA_IA/
 │   ├── sma_agentes.py         (los 7 agentes)
 │   ├── conocimiento.py        (TODAS las reglas y parámetros)
 │   ├── aprendizaje.py         (Q-learning del Semafórico, experiencia del Coordinador)
-│   └── memoria/               (lo aprendido, *.json; ignorado por Git; --olvidar lo reinicia)
+│   └── memoria/               (lo aprendido, *.json; se versiona en Git desde el 17-nov; --olvidar lo reinicia)
 ├── esp32/
 │   ├── esp32_mqtt_prueba/esp32_mqtt_prueba.ino   (prueba del LED azul)
 │   └── esp32_cruce/esp32_cruce.ino               (cruce con 2 semáforos + botón en GPIO4)

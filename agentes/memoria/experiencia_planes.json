@@ -1,0 +1,26 @@
+{
+ "contraflujo_salida": {
+  "impacto": 0.498,
+  "n": 3,
+  "historial": [
+   {
+    "antes": 5.8,
+    "durante": 6.0,
+    "efecto": -0.04,
+    "impacto": 0.938
+   },
+   {
+    "antes": 2.7,
+    "durante": 5.1,
+    "efecto": -0.81,
+    "impacto": 0.711
+   },
+   {
+    "antes": 2.2,
+    "durante": 7.1,
+    "efecto": -1.0,
+    "impacto": 0.498
+   }
+  ]
+ }
+}

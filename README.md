@@ -96,7 +96,7 @@ sus parámetros, la decisión que tomó y por qué, y lo que lleva aprendido.
 |---|---|
 | `agentes/conocimiento.py` | **Todas** las reglas y parámetros: tabla del Clasificador, umbrales del Consultor, catálogo de planes (impacto, costo), fórmula de utilidad, parámetros de Q-learning del Semafórico. |
 | `agentes/aprendizaje.py` | `QSemaforo` (Q-learning) y `ExperienciaPlanes` (impacto real de cada plan). |
-| `agentes/memoria/*.json` | Lo aprendido; se conserva entre ejecuciones (`--olvidar` empieza de cero). No va a Git. |
+| `agentes/memoria/*.json` | Lo aprendido; se conserva entre ejecuciones (`--olvidar` empieza de cero). Se sube a Git para conservar la experiencia del equipo. |
 
 - **Agente Semafórico: decide por su cuenta y aprende con Q-learning.** Cada 12 s mira las colas de cada acceso
   (sensores del gemelo, `sma/sensores/<cruce>`) y decide `normal`, `prioridad_a` o `prioridad_b`. El estado es la
