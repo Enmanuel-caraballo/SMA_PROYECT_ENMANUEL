@@ -84,7 +84,23 @@
       <div><b>1 · PERCIBE</b>Eventos (sma/eventos), colas por acceso medidas por el gemelo (sma/sensores) y mensajes FIPA-ACL de otros agentes.</div>
       <div><b>2 · RAZONA</b>Con su base de conocimiento: reglas y parámetros en <code>agentes/conocimiento.py</code>.</div>
       <div><b>3 · ACTÚA</b>Ordena semáforos (sma/semaforo), publica planes (sma/plan) y avisos, y conversa con los demás agentes.</div>
-      <div><b>4 · APRENDE</b>Semafórico: Q-learning. Coordinador: impacto real de cada plan. Lo guardan en <code>agentes/memoria/*.json</code> (<code>agentes/aprendizaje.py</code>).</div>
+      <div><b>4 · APRENDE</b>Semafórico: red neuronal DQN (entrenada en SUMO) + tabla Q de respaldo. Predictor: red T-GCN. Coordinador: modelo matemático de rutas + impacto real medido de cada plan.</div>
+    </div>
+  </section>
+
+  <section class="caja" id="modelos">
+    <h2>Redes neuronales, modelo matemático y datos reales</h2>
+    <div class="tenue">Entrenados con datos abiertos reales y limpiados (<code>modelos/datos/reporte_limpieza.md</code>): accidentes del DATT de
+      Cartagena, semáforos oficiales y flujo vehicular del SIMM de Medellín. Simulación de entrenamiento: SUMO con la red real de Bocagrande.</div>
+    <div class="grid2">
+      <div>
+        <h3>Predicción (T-GCN = convolución de grafo + GRU) vs. líneas base</h3><div id="mPredictor" class="vacio">Sin métricas: corra <code>python modelos/entrenar_predictor.py</code>.</div>
+        <h3>Datos reales usados</h3><div id="mDatos" class="vacio">—</div>
+      </div>
+      <div>
+        <h3>Controladores de semáforos en SUMO (mismas semillas)</h3><div id="mControl" class="vacio">Sin comparación: corra <code>python modelos/entrenar_dqn.py</code>.</div>
+        <div id="mImgs"></div>
+      </div>
     </div>
   </section>
 
@@ -95,6 +111,7 @@
       <div><b id="sPasos">0</b><span>decisiones aprendidas</span></div>
       <div><b id="sEps">—</b><span>ε (exploración)</span></div>
       <div><b id="sRec">—</b><span>recompensa media (últimas 50)</span></div>
+      <div><b id="sCtl">—</b><span>controlador activo</span></div>
     </div>
     <canvas id="graficaRec"></canvas>
     <h3>Decisión por cruce (cada intervalo de control)</h3>
@@ -193,6 +210,7 @@ function pintarSemaforico(m) {
   $("sPasos").textContent = s.decisiones_aprendidas ?? 0;
   $("sEps").textContent = m.parametros?.epsilon ?? "—";
   $("sRec").textContent = s.recompensa_media_50 ?? "—";
+  $("sCtl").textContent = m.controlador || "tabla Q";
   graficaRecompensas(s.recompensas || []);
   const cruces = Object.entries(s.cruces || {}).sort();
   if (!cruces.length) return;
@@ -206,7 +224,8 @@ function pintarSemaforico(m) {
         <span class="modo m-${esc(d.modo)}">${esc(d.modo)}</span></div>
       <div class="colas"><span>A</span>${barra(d.A, 15, "var(--ambar)")}<span class="mono">${d.A}</span>
         <span>B</span>${barra(d.B, 15, "var(--violeta)")}<span class="mono">${d.B}</span></div>
-      ${d.bloqueado ? "" : `<div class="tenue" style="font-size:12px">Q(estado, acción)${d.sugerido ? " · el plan sugiere " + esc(d.sugerido) : ""}</div><div class="acciones">${acciones}</div>`}
+      ${d.prediccion ? `<div class="tenue" style="font-size:12px">predicción T-GCN (36 s): A ${d.prediccion[0]} · B ${d.prediccion[1]}</div>` : ""}
+      ${d.bloqueado ? "" : `<div class="tenue" style="font-size:12px">${d.controlador === "DQN" ? "Q de la red neuronal (DQN)" : "Q(estado, acción) de la tabla"}${d.sugerido ? " · el plan sugiere " + esc(d.sugerido) : ""}</div><div class="acciones">${acciones}</div>`}
       <div class="motivo">${d.cambio ? "▶ cambió: " : ""}${esc(d.motivo || "")}</div>
       ${ap ? `<div class="aprende">aprendió en ${esc(ap.estado)} con ${esc(ap.accion)}: recompensa ${ap.recompensa} → Q ${ap.q_antes} → ${ap.q_despues}</div>` : ""}
       ${mapaQ(s.q?.[id], s.visitas?.[id], d.estado)}</div>`;
@@ -242,8 +261,14 @@ function pintarCoordinador(m) {
   const u = s.ultima_decision;
   if (u) $("cUltima").outerHTML = `<div id="cUltima"><div class="tenue">${esc(u.alerta)} · situación <span class="mono">${esc(u.situacion || u.cruce)}</span> · tráfico ${esc(u.nivel)} (factor ${u.factor})</div>
       ${u.explorado ? `<div style="color:var(--ambar)">Exploró: probó un plan menos usado en vez del de mayor utilidad, para medirlo con datos.</div>` : ""}
-      <table><tr><th>Plan</th><th>Impacto</th><th>Costo</th><th>Utilidad</th><th>Usos</th></tr>${u.planes.map(p => `<tr class="${p.clave === u.elegido ? "elegido" : ""}">
-      <td>${p.clave === u.elegido ? "▶ " : ""}${esc(p.nombre)}${p.clave === u.optimo && u.explorado ? " (mayor utilidad)" : ""}</td><td>${p.impacto}</td><td>${p.costo}</td><td>${p.utilidad}</td><td>${p.veces}</td></tr>`).join("")}</table></div>`;
+      ${u.modelo ? `<div class="tenue">Modelo de tráfico: ${Math.round(u.modelo.demanda_vh)} viajes/h en equilibrio (Frank-Wolfe). TSTT = horas-vehículo perdidas en la red por hora.</div>` : ""}
+      <table><tr><th>Plan</th><th>TSTT</th><th>Viaje medio</th><th>Beneficio modelo</th><th>Impacto aprendido</th><th>Costo</th><th>Utilidad</th><th>Usos</th></tr>${u.planes.map(p => `<tr class="${p.clave === u.elegido ? "elegido" : ""}">
+      <td>${p.clave === u.elegido ? "▶ " : ""}${esc(p.nombre)}${p.clave === u.optimo && u.explorado ? " (mayor utilidad)" : ""}${p.detalle ? `<div class="tenue mono">${esc(p.detalle)}</div>` : ""}${p.ajuste_modelo ? `<div class="tenue">el modelo ajustó: ${esc(valor(p.ajuste_modelo))}</div>` : ""}</td>
+      <td>${p.tstt ?? "—"}</td><td>${p.viaje_min != null ? p.viaje_min + " min" : "—"}</td><td>${p.beneficio != null ? barra(p.beneficio, 1, "var(--verde)") + p.beneficio : "—"}</td>
+      <td>${p.impacto}</td><td>${p.costo}</td><td>${p.utilidad}</td><td>${p.veces}</td></tr>`).join("")}</table>
+      ${u.rutas && Object.keys(u.rutas).length ? `<h3>Rutas sugeridas (Yen, k = 3)</h3>` + Object.entries(u.rutas).map(([t, rs]) =>
+        `<div><b>${esc({ salir: "Salir de Bocagrande", entrar_centro: "Entrar desde el Centro", entrar_norte: "Entrar por la Carrera 1" }[t] || t)}</b>` +
+        rs.map((r, i) => `<div class="${i ? "tenue" : ""}">${i + 1}. ${esc(r.calles.join(" → "))} · ${r.minutos} min · ${r.km} km</div>`).join("") + "</div>").join("") : ""}</div>`;
   const act = s.activas || [];
   $("cActivas").className = act.length ? "" : "vacio";
   $("cActivas").innerHTML = act.length ? act.map(a => `<div>${esc(a.alerta)} · ${esc(a.plan)} en ${esc(a.cruce)} desde ${esc(a.desde)}</div>`).join("") : "Ninguna.";
@@ -259,7 +284,8 @@ function pintarOtros() {
   $("otros").innerHTML = OTROS.filter(k => mentes[k]).map(k => {
     const m = mentes[k], est = m.estado || {};
     let extra = "";
-    if (k === "consultor" && est.niveles) extra = `<h3>Modelo del tráfico</h3><table><tr><th>Cruce</th><th>Nivel</th><th>A</th><th>B</th></tr>` +
+    if (k === "predictor") extra = pintarPredictor(est);
+    else if (k === "consultor" && est.niveles) extra = `<h3>Modelo del tráfico</h3><table><tr><th>Cruce</th><th>Nivel</th><th>A</th><th>B</th></tr>` +
       Object.entries(est.niveles).map(([c, e]) => `<tr><td>${esc(c)}</td><td>${esc(e.nivel)}</td><td>${e.A ?? "—"}</td><td>${e.B ?? "—"}</td></tr>`).join("") + "</table>";
     else extra = `<h3>Estado</h3><div class="mono">${esc(valor(est))}</div>`;
     return `<section class="caja"><h2 style="color:${COLORES[m.agente] || "var(--cian)"}">Agente ${esc(m.agente)}</h2>
@@ -271,8 +297,51 @@ function pintarOtros() {
   }).join("");
 }
 
+function pintarPredictor(est) {
+  const p = est.prediccion;
+  let html = `<h3>Predicción de colas (${esc(p?.fuente || "—")}, a ${p?.horizonte_s ?? 36} s)</h3>`;
+  if (p && p.cruces) html += `<table><tr><th>Cruce</th><th>Ahora A · B</th><th>Predicho A · B</th></tr>` + Object.entries(p.cruces).sort().map(([c, v]) =>
+    `<tr><td>${esc(c)}</td><td>${(est.colas?.[c] || ["—", "—"]).join(" · ")}</td><td><b>${v[0]} · ${v[1]}</b></td></tr>`).join("") + "</table>";
+  html += `<div class="tenue">Error medio absoluto medido en vivo: ${est.error_medio_abs_veh ?? "—"} veh</div>`;
+  const comp = est.comparacion_cruce5 || [];
+  if (comp.length > 1) {
+    const max = Math.max(1, ...comp.flatMap(x => [x[1], x[2]])), w = 300, h = 70;
+    const pts = k => comp.map((x, i) => `${(i / (comp.length - 1) * w).toFixed(1)},${(h - x[k] / max * (h - 6)).toFixed(1)}`).join(" ");
+    html += `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:80px"><polyline fill="none" stroke="#00e5ff" stroke-width="2" points="${pts(1)}"/>
+      <polyline fill="none" stroke="#fb923c" stroke-width="2" stroke-dasharray="4 3" points="${pts(2)}"/></svg>
+      <div class="tenue">cruce5: <span style="color:#00e5ff">real</span> vs <span style="color:#fb923c">lo que la T-GCN predijo 36 s antes</span></div>`;
+  }
+  return html;
+}
+
+async function cargarModelos() {
+  try {
+    const d = await (await fetch("/api/modelos")).json();
+    const tabla = (m, titulo) => m ? `<div class="tenue">${esc(titulo)} · ${m.nodos} nodos · paso ${esc(m.paso)} · ventana ${m.ventana} · horizonte ${m.horizonte}
+      · prueba ${m.muestras.prueba} muestras · <b>mejora del MAE vs. persistencia: ${m["mejora_vs_persistencia_%"]} %</b></div>
+      <table><tr><th>Modelo</th><th>MAE</th><th>RMSE</th><th>MAPE</th></tr>` + Object.entries(m.resultados).map(([k, v]) =>
+      `<tr class="${k.startsWith("T-GCN") ? "elegido" : ""}"><td>${esc(k)}</td><td>${v.MAE.toFixed(2)}</td><td>${v.RMSE.toFixed(2)}</td><td>${v["MAPE_%"] != null ? v["MAPE_%"].toFixed(1) + " %" : "—"}</td></tr>`).join("") + "</table>" : "";
+    const pred = tabla(d.metricas_bocagrande, "Bocagrande (SUMO, colas en veh)") + tabla(d.metricas_simm, "Medellín, flujo REAL SIMM (veh/h)");
+    if (pred) { $("mPredictor").className = ""; $("mPredictor").innerHTML = pred; }
+    if (d.comparacion) {
+      $("mControl").className = "";
+      $("mControl").innerHTML = `<div class="tenue">${d.comparacion.escenarios} escenarios de ${d.comparacion.duracion_s / 60} min (horas 8, 13, 17, 19; sin accidente, accidente en el cruce5 y accidente real del DATT)</div>
+        <table><tr><th>Controlador</th><th>Demora (veh·h)</th><th>Viaje medio (s)</th><th>Cola media</th><th>Mejora vs fijo</th></tr>` +
+        d.comparacion.resumen.map(r => `<tr class="${r.controlador.startsWith("DQN") ? "elegido" : ""}"><td>${esc(r.controlador)}</td><td>${r.demora_veh_h}</td><td>${r.viaje_medio_s}</td><td>${r.cola_media}</td><td>${r["mejora_demora_vs_fijo_%"]} %</td></tr>`).join("") + "</table>";
+    }
+    $("mImgs").innerHTML = (d.imagenes || []).map(n => `<img src="/modelos/img/${encodeURIComponent(n)}" alt="${esc(n)}" style="width:100%;margin-top:8px;border-radius:8px">`).join("");
+    if (d.datos) {
+      const a = d.datos.accidentes;
+      $("mDatos").className = "";
+      $("mDatos").innerHTML = (a ? `<div>Accidentes reales en Bocagrande (DATT ${a.periodo.join(" a ")}): <b>${a.total}</b> · por cruce: ${esc(valor(a.por_cruce))}</div>` : "") +
+        (d.datos.perfil ? `<div>Perfil de demanda (SIMM): hora pico ${d.datos.perfil.hora_pico_habil}:00; 3:00 = ${Math.round(d.datos.perfil.habil[3] * 100)} % del pico</div>` : "");
+    }
+  } catch { /* sin modelos entrenados */ }
+}
+cargarModelos();
+
 function linea(l) {
-  if (!/^(Semaforico|Coordinador|Consultor)$/.test(l.agente)) return;
+  if (!/^(Semaforico|Coordinador|Consultor|Predictor)$/.test(l.agente)) return;
   if (l.agente === "Consultor" && !/estado vial|cola media/.test(l.texto)) return;
   const f = $("feed");
   if (f.querySelector(".vacio")) f.innerHTML = "";

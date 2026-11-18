@@ -48,6 +48,32 @@ import conocimiento as K
 import rutas
 from aprendizaje import ExperienciaPlanes, QSemaforo
 
+# Modelos neuronales (modelos/): si falta PyTorch o un modelo entrenado, los agentes siguen con sus reglas y la tabla Q
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "modelos"))
+try:
+    import numpy as np
+    import torch
+    from dqn import MODOS as MODOS_DQN, RASGOS as RASGOS_DQN, cargar_politica, vector_estado
+    from predictor_colas import PredictorColas
+    NEURONAL = True
+    _ERROR_NEURONAL = ""
+except Exception as _error:          # noqa: BLE001 - cualquier fallo de importación deja el modo clásico
+    NEURONAL = False
+    _ERROR_NEURONAL = str(_error)
+RUTA_DQN = Path(__file__).resolve().parent.parent / "modelos" / "entrenados" / "dqn_semaforico.pt"
+
+
+def vecinos_cruces():
+    """Los 2 cruces más cercanos de cada cruce (mismo criterio que en el entrenamiento en SUMO)."""
+    try:
+        geo = json.loads((Path(__file__).resolve().parent.parent / "maqueta_virtual" / "bocagrande" / "bocagrande.json")
+                         .read_text(encoding="utf-8"))
+        pos = {c["id"]: (c["x"], c["z"]) for c in geo["cruces"]}
+    except (OSError, ValueError, KeyError):
+        return {}
+    import math
+    return {c: sorted((o for o in pos if o != c), key=lambda o: math.dist(pos[c], pos[o]))[:2] for c in pos}
+
 # la consola de Windows (cp1252) no puede imprimir algunos símbolos: se reemplazan en vez de fallar
 for _flujo in (sys.stdout, sys.stderr):
     try:
@@ -657,15 +683,84 @@ class AgenteConsultor(Agent):
 # 5. AGENTE PREDICTOR  (basado en modelos + utilidad) - listo para el Caso 2
 # =====================================================================
 class AgentePredictor(Agent):
+    """Predice cómo van a evolucionar las colas (red neuronal T-GCN entrenada) y la ruta probable de huida (Caso 2)."""
+
     async def setup(self):
-        publicar_mente("Predictor", {
-            "tipo": "Híbrido: basado en modelos + utilidad", "rol": "Predice la ruta de huida (Caso 2).",
-            "percibe": "request predecirRutaHuida", "actua": "inform Ruta",
-            "codigo": ["agentes/sma_agentes.py · AgentePredictor", "agentes/conocimiento.py · RUTA_HUIDA_POR_DEFECTO"],
-            "reglas": ["Por ahora regla fija (pendiente Caso 2): ruta " + " → ".join(K.RUTA_HUIDA_POR_DEFECTO["cruces"])],
-            "parametros": K.RUTA_HUIDA_POR_DEFECTO, "estado": {},
-        })
+        self.modelo = PredictorColas() if NEURONAL else None
+        self.lecturas = {}          # cruce -> [(A, B)] del intervalo
+        self.colas = {}             # cruce -> (A, B) media del último intervalo
+        self.ultima = None          # última predicción
+        self.pendientes = deque(maxlen=60)   # (instante objetivo, cruce, total predicho) para medir el error real
+        self.errores = deque(maxlen=200)
+        self.comparacion = deque(maxlen=40)  # (hora, real, predicho) del cruce5 para la gráfica del panel
+        self.avisado = {}
+        self.sensores = escuchar_sensores("Predictor", "sma-predictor-sensores",
+                                          lambda c, a, b: self.lecturas.setdefault(c, []).append((a, b)))
+        modo = self.modelo.info["modelo"] if self.modelo else f"heurístico (sin PyTorch: {_ERROR_NEURONAL[:60]})"
+        log("Predictor", f"modelo de predicción de colas: {modo}")
+        self.mente()
         self.add_behaviour(self.Predecir(), plantilla("request", "predecirRutaHuida"))
+        self.add_behaviour(self.Anticipar(period=K.INTERVALO_CONTROL))
+
+    def mente(self):
+        mae = round(float(sum(self.errores) / len(self.errores)), 2) if self.errores else None
+        info = self.modelo.info if self.modelo else {"modelo": "heurístico"}
+        publicar_mente("Predictor", {
+            "tipo": "Híbrido: basado en modelos (red neuronal T-GCN) + utilidad",
+            "rol": "Anticipa las colas de los 5 cruces (36 s) para el Semafórico; predice la ruta de huida (Caso 2).",
+            "percibe": "sma/sensores/<cruce>; request predecirRutaHuida",
+            "actua": "inform PrediccionColas -> Semafórico (cada 12 s); inform Ruta",
+            "codigo": ["modelos/tgcn.py · TGCN (GCN + GRU)", "modelos/predictor_colas.py", "modelos/entrenar_predictor.py",
+                       "agentes/rutas.py · Yen (ruta de huida)"],
+            "reglas": ["Cada 12 s: cola media por acceso de los 5 cruces -> ventana de 15 pasos (3 min) -> T-GCN -> colas en 12, 24 y 36 s",
+                       "La T-GCN mezcla cada cruce con sus vecinos (convolución de grafo) y con su historia (GRU)",
+                       "Entrenada con colas de SUMO (demanda horaria real SIMM + accidentes reales DATT); la misma arquitectura "
+                       "se validó con flujo real de 156 estaciones de Medellín (modelos/entrenados/metricas_simm.json)",
+                       "SI no hay modelo o historia suficiente ENTONCES responde con la cola actual (heurístico)",
+                       f"SI predice que una cola sube {K.AVISO_CRECIMIENTO_COLA} veh o más ENTONCES lo anuncia en la bitácora",
+                       "Ruta de huida: k-rutas más rápidas (Yen) desde el lugar hacia la salida de Bocagrande"],
+            "parametros": info,
+            "estado": {"prediccion": self.ultima, "error_medio_abs_veh": mae, "comparacion_cruce5": list(self.comparacion),
+                       "colas": {c: [round(a, 1), round(b, 1)] for c, (a, b) in self.colas.items()}},
+        })
+
+    class Anticipar(PeriodicBehaviour):
+        async def run(self):
+            ag = self.agent
+            for c, l in list(ag.lecturas.items()):
+                if l:
+                    ag.colas[c] = (sum(x for x, _ in l) / len(l), sum(y for _, y in l) / len(l))
+                    ag.lecturas[c] = []
+            if not ag.colas:
+                return
+            ahora = time.monotonic()
+            # error real de lo que se predijo hace 36 s
+            while ag.pendientes and ag.pendientes[0][0] <= ahora:
+                _, c, pred = ag.pendientes.popleft()
+                if c in ag.colas:
+                    real = sum(ag.colas[c])
+                    ag.errores.append(abs(real - pred))
+                    if c == "cruce5":
+                        ag.comparacion.append((f"{datetime.now():%H:%M:%S}", round(real, 1), round(pred, 1)))
+            hora = datetime.now().hour + datetime.now().minute / 60
+            pred = None
+            if ag.modelo is not None and ag.modelo.disponible:
+                ag.modelo.agregar(ag.colas, hora)
+                pred = await asyncio.to_thread(ag.modelo.predecir)
+            fuente = "T-GCN" if pred else "heurístico"
+            cruces = pred["cruces"] if pred else dict(ag.colas)
+            ag.ultima = {"fuente": fuente, "horizonte_s": 36,
+                         "cruces": {c: [round(a, 1), round(b, 1)] for c, (a, b) in cruces.items()}}
+            if pred:
+                for c, (a, b) in cruces.items():
+                    ag.pendientes.append((ahora + 36, c, a + b))
+                    actual = sum(ag.colas.get(c, (0, 0)))
+                    if a + b - actual >= K.AVISO_CRECIMIENTO_COLA and ahora - ag.avisado.get(c, 0) > 60:
+                        ag.avisado[c] = ahora
+                        log("Predictor", f"la T-GCN anticipa que la cola de {c} sube de {actual:.1f} a {a + b:.1f} veh "
+                                         f"en ~36 s (A={a:.1f}, B={b:.1f}); aviso al Semafórico")
+            await self.send(mensaje("semaforico", "inform", "PrediccionColas", ag.ultima))
+            ag.mente()
 
     class Predecir(CyclicBehaviour):
         async def run(self):
@@ -673,9 +768,37 @@ class AgentePredictor(Agent):
             if not msg:
                 return
             pedido = json.loads(msg.body)
-            ruta = dict(K.RUTA_HUIDA_POR_DEFECTO)
-            log("Predictor", f"ruta probable desde {pedido.get('ubicacion')}: {ruta['cruces']}")
+            try:
+                ruta = await asyncio.to_thread(ruta_huida, pedido.get("ubicacion"))
+            except Exception as error:   # el modelo de rutas no debe tumbar al agente
+                log("Predictor", f"AVISO: sin modelo de rutas ({error}); uso la ruta por defecto")
+                ruta = dict(K.RUTA_HUIDA_POR_DEFECTO)
+            log("Predictor", f"ruta probable desde {pedido.get('ubicacion')}: {ruta['cruces']} (confianza {ruta['confianza']})")
             await self.send(responder(msg, "Ruta", ruta))
+
+
+def ruta_huida(ubicacion):
+    """Caso 2: rutas más rápidas (Yen, casi sin tráfico) desde el cruce hacia la salida de Bocagrande.
+    Confianza = probabilidad logit de la mejor ruta entre las k (la más rápida es la más probable)."""
+    import math
+    R = rutas.red()
+    origen = R.cruces[ubicacion]["nodos"][0] if ubicacion in R.cruces else R.cruces["cruce1"]["nodos"][0]
+    base = R.evaluar(escala=0.3)
+    candidatas = R.rutas(base, origen, R.geo["nodoSalida"], k=K.K_RUTAS)
+    if not candidatas:
+        return dict(K.RUTA_HUIDA_POR_DEFECTO)
+    minimo = min(c["minutos"] for c in candidatas)
+    pesos = [math.exp(-(c["minutos"] - minimo) / 0.5) for c in candidatas]
+    mejor = candidatas[pesos.index(max(pesos))]
+    orden = []
+    for i in mejor["aristas"]:
+        for c, d in R.cruces.items():
+            if R.E[i]["hasta"] in d["nodosSet"] and c not in orden:
+                orden.append(c)
+    if ubicacion in R.cruces and ubicacion not in orden:
+        orden.insert(0, ubicacion)
+    return {"cruces": orden, "confianza": round(max(pesos) / sum(pesos), 2), "calles": mejor["calles"],
+            "minutos": mejor["minutos"]}
 
 
 # =====================================================================
@@ -701,6 +824,11 @@ class AgenteSemaforico(Agent):
         self.lecturas = {}      # cruce -> [(A, B)] desde la última decisión
         self.previo = {}        # cruce -> (estado, acción, cola total, cambió) de la decisión anterior
         self.decision = {}      # cruce -> resumen de la última decisión (para la página /agentes)
+        self.colas = {}         # cruce -> (A, B) media del último intervalo (para el estado de la DQN)
+        self.colas_previas = {}
+        self.prediccion = None  # última predicción del Agente Predictor (T-GCN)
+        self.vecinos = vecinos_cruces()
+        self.dqn, self.dqn_info = (cargar_politica(RUTA_DQN) if NEURONAL and K.USAR_DQN else (None, None))
         self.mqtt = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="sma-semaforico")
         try:
             self.mqtt.connect(BROKER_MQTT, PUERTO_MQTT)
@@ -711,8 +839,12 @@ class AgenteSemaforico(Agent):
             log("Semaforico", "AVISO: sin Mosquitto, solo simulo los semáforos")
         self.sensores = escuchar_sensores("Semaforico", "sma-semaforico-sensores",
                                           lambda c, a, b: self.lecturas.setdefault(c, []).append((a, b)))
-        log("Semaforico", f"control adaptativo cada {K.INTERVALO_CONTROL} s; experiencia previa: {self.q.pasos} decisiones, epsilon={self.q.epsilon:.3f}")
+        controlador = (f"DQN neuronal (entrenada {self.dqn_info.get('episodios', '?')} episodios en SUMO) + tabla Q de respaldo"
+                       if self.dqn else "tabla Q (sin DQN entrenada)")
+        log("Semaforico", f"control adaptativo cada {K.INTERVALO_CONTROL} s con {controlador}; tabla Q: {self.q.pasos} "
+                          f"decisiones, epsilon={self.q.epsilon:.3f}")
         self.add_behaviour(self.Obedecer(), plantilla("request"))
+        self.add_behaviour(self.RecibirPrediccion(), plantilla("inform", "PrediccionColas"))
         self.add_behaviour(self.ControlAdaptativo(period=K.INTERVALO_CONTROL))
 
     def ordenar(self, cruce, modo):
@@ -723,13 +855,21 @@ class AgenteSemaforico(Agent):
     def mente(self):
         recientes = self.q.recompensas[-50:]
         publicar_mente("Semaforico", {
-            "tipo": "Basado en objetivos + aprendizaje por refuerzo (Q-learning)",
+            "tipo": ("Basado en objetivos + aprendizaje por refuerzo profundo (DQN) con tabla Q de respaldo" if self.dqn
+                     else "Basado en objetivos + aprendizaje por refuerzo (Q-learning)"),
+            "controlador": "DQN" if self.dqn else "tabla Q",
+            "dqn": ({"rasgos": RASGOS_DQN, "episodios": self.dqn_info.get("episodios"),
+                     "historia": (self.dqn_info.get("historia") or [])[-60:]} if self.dqn else None),
             "rol": "Obedece los planes del Coordinador y, por su cuenta, da prioridad al acceso con más cola.",
             "percibe": "sma/sensores/<cruce> (cola en A y B); request activarPlan / restaurarPlanNormal",
             "actua": "sma/semaforo/<cruce> = normal | prioridad_a | prioridad_b | peatonal | cerco",
             "codigo": ["agentes/sma_agentes.py · AgenteSemaforico.ControlAdaptativo",
                        "agentes/aprendizaje.py · QSemaforo", "agentes/conocimiento.py · Semafórico"],
-            "reglas": [f"Cada {K.INTERVALO_CONTROL} s: estado = (cubeta cola A, cubeta cola B), cubetas {K.CUBETAS_COLA}",
+            "reglas": [f"DQN (red 13 → 64 → 64 → 3, Double DQN entrenada en SUMO): estado = colas A/B, su tendencia, la "
+                       "PREDICCIÓN de la T-GCN (36 s), cola de los 2 cruces vecinos, modo actual y hora -> Q(normal), Q(prioridad_a), Q(prioridad_b)",
+                       f"Con la DQN: elige el mayor Q (+{K.DQN_BONO_PLAN} si el plan lo sugiere); cambia solo si mejora más de {K.DQN_MARGEN}",
+                       "La tabla Q sigue aprendiendo en paralelo (Q-learning es off-policy) y toma el control si falta la DQN",
+                       f"Cada {K.INTERVALO_CONTROL} s: estado = (cubeta cola A, cubeta cola B), cubetas {K.CUBETAS_COLA}",
                        "Elige el modo con mayor Q(estado, modo) (+ bono si el plan del Coordinador lo sugiere);"
                        f" con probabilidad ε explora otro modo",
                        "Recompensa = cola total antes − cola total después − penalización si cambió de modo",
@@ -745,23 +885,55 @@ class AgenteSemaforico(Agent):
                            "margen_cambio": K.MARGEN_CAMBIO},
             "estado": {"decisiones_aprendidas": self.q.pasos,
                        "recompensa_media_50": round(sum(recientes) / len(recientes), 2) if recientes else None,
-                       "recompensas": recientes, "cruces": self.decision, "q": self.q.q, "visitas": self.q.visitas},
+                       "recompensas": recientes, "cruces": self.decision, "q": self.q.q, "visitas": self.q.visitas,
+                       "prediccion": self.prediccion},
         })
+
+    class RecibirPrediccion(CyclicBehaviour):
+        async def run(self):
+            msg = await self.receive(timeout=60)
+            if msg:
+                self.agent.prediccion = json.loads(msg.body)
+
+    def elegir_dqn(self, cruce, anterior):
+        """Política neuronal con la capa de seguridad del agente (bono del plan, histéresis, cruce vacío)."""
+        pred = self.prediccion if self.prediccion and self.prediccion.get("fuente") == "T-GCN" else None
+        pred_cruces = {c: tuple(v) for c, v in pred["cruces"].items()} if pred else None
+        s = vector_estado(cruce, self.colas, self.colas_previas, anterior, pred_cruces,
+                          datetime.now().hour + datetime.now().minute / 60, self.vecinos.get(cruce, []))
+        with torch.no_grad():
+            q = self.dqn(torch.as_tensor(s).unsqueeze(0))[0].numpy()
+        sugerido = self.sugerido.get(cruce)
+        puntajes = {m: float(v) + (K.DQN_BONO_PLAN if m == sugerido else 0.0) for m, v in zip(MODOS_DQN, q)}
+        a, b = self.colas[cruce]
+        if a < 0.5 and b < 0.5:
+            return (sugerido or "normal"), "cruce vacío: " + ("modo del plan" if sugerido else "sin cola no hay a quién dar prioridad"), puntajes
+        accion = max(puntajes, key=puntajes.get)
+        motivo = "DQN: mayor Q" + (" (con predicción T-GCN)" if pred else " (sin predicción aún)")
+        if sugerido and accion != sugerido:
+            motivo = f"DQN: las colas pesan más que el plan (sugería {sugerido})"
+        if anterior in puntajes and accion != anterior and puntajes[accion] - puntajes[anterior] < K.DQN_MARGEN:
+            return anterior, f"se mantiene {anterior}: {accion} solo mejora {puntajes[accion] - puntajes[anterior]:.2f} (< {K.DQN_MARGEN})", puntajes
+        return accion, motivo, puntajes
 
     class ControlAdaptativo(PeriodicBehaviour):
         async def run(self):
             ag = self.agent
+            nuevas = {}
             for cruce, lecturas in list(ag.lecturas.items()):
-                if not lecturas:
-                    continue
-                a = sum(x for x, _ in lecturas) / len(lecturas)
-                b = sum(y for _, y in lecturas) / len(lecturas)
-                ag.lecturas[cruce] = []
+                if lecturas:
+                    nuevas[cruce] = (sum(x for x, _ in lecturas) / len(lecturas), sum(y for _, y in lecturas) / len(lecturas))
+                    ag.lecturas[cruce] = []
+            if not nuevas:
+                return
+            ag.colas_previas = dict(ag.colas)
+            ag.colas.update(nuevas)
+            for cruce, (a, b) in nuevas.items():
                 total = a + b
                 estado = ag.q.estado(a, b)
                 info = {"A": round(a, 1), "B": round(b, 1), "estado": estado, "modo": ag.modo.get(cruce, "normal"),
                         "sugerido": ag.sugerido.get(cruce), "bloqueado": ag.bloqueado.get(cruce)}
-                # aprender de la decisión anterior en este cruce
+                # la tabla Q aprende de lo que pasó con la decisión anterior (sea de la DQN o suya: Q-learning es off-policy)
                 previo = ag.previo.pop(cruce, None)
                 if previo:
                     est0, acc0, total0, cambio0 = previo
@@ -774,11 +946,19 @@ class AgenteSemaforico(Agent):
                     ag.decision[cruce] = info
                     continue
                 anterior = ag.modo.get(cruce, "normal")
-                accion, motivo, puntajes = ag.q.elegir(cruce, estado, ag.sugerido.get(cruce), anterior)
+                if ag.dqn is not None:
+                    accion, motivo, puntajes = ag.elegir_dqn(cruce, anterior)
+                    info["controlador"] = "DQN"
+                else:
+                    accion, motivo, puntajes = ag.q.elegir(cruce, estado, ag.sugerido.get(cruce), anterior)
+                    info["controlador"] = "tabla Q"
+                if ag.prediccion and cruce in ag.prediccion.get("cruces", {}):
+                    info["prediccion"] = ag.prediccion["cruces"][cruce]
                 cambio = accion != anterior
                 if cambio:
                     ag.ordenar(cruce, accion)
-                    log("Semaforico", f"{cruce}: cola A={a:.1f} B={b:.1f} ({estado}) -> {accion} [{motivo}; "
+                    pred = f"; predicción 36 s A={info['prediccion'][0]:.1f} B={info['prediccion'][1]:.1f}" if info.get("prediccion") else ""
+                    log("Semaforico", f"{cruce}: cola A={a:.1f} B={b:.1f} ({estado}{pred}) -> {accion} [{motivo}; "
                                       + ", ".join(f"{k}={v:.2f}" for k, v in puntajes.items()) + "]")
                 ag.previo[cruce] = (estado, accion, total, cambio)
                 ag.decision[cruce] = {**info, "modo": accion, "motivo": motivo, "cambio": cambio,

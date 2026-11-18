@@ -180,6 +180,41 @@ def api_datos_reales():
     return JSONResponse(salida)
 
 
+ENTRENADOS = CARPETA.parent.parent / "modelos" / "entrenados"
+
+
+@app.get("/api/modelos")
+def api_modelos():
+    """Métricas de las redes neuronales (T-GCN, DQN) y comparación de controladores en SUMO."""
+    def leer(nombre):
+        try:
+            return json.loads((ENTRENADOS / nombre).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+    imagenes = sorted(p.name for p in ENTRENADOS.glob("*.png")) if ENTRENADOS.exists() else []
+    return JSONResponse({"metricas_simm": leer("metricas_simm.json"), "metricas_bocagrande": leer("metricas_bocagrande.json"),
+                         "comparacion": leer("comparacion_controladores.json"), "imagenes": imagenes,
+                         "datos": api_datos_reales_dict()})
+
+
+@app.get("/modelos/img/{nombre}")
+def imagen_modelo(nombre: str):
+    ruta = (ENTRENADOS / nombre).resolve()
+    if ruta.parent != ENTRENADOS.resolve() or ruta.suffix != ".png" or not ruta.exists():
+        raise HTTPException(404, "imagen no encontrada")
+    return FileResponse(ruta, media_type="image/png")
+
+
+def api_datos_reales_dict():
+    salida = {}
+    for clave, archivo in (("perfil", "perfil_demanda.json"), ("accidentes", "accidentes_resumen.json")):
+        try:
+            salida[clave] = json.loads((DATOS_REALES / archivo).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            salida[clave] = None
+    return salida
+
+
 def accidentes_reales():
     try:
         with open(DATOS_REALES / "accidentes_bocagrande.csv", encoding="utf-8") as f:

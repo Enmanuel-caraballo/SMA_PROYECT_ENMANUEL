@@ -51,6 +51,31 @@ pip install -r requirements.txt
 # Si falta algo, instalar a mano:
 pip install spade paho-mqtt greenlet fastapi "uvicorn[standard]"
 
+# Redes neuronales y SUMO (PyTorch sin GPU, ~200 MB):
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install numpy scipy pandas networkx matplotlib eclipse-sumo traci libsumo
+
+----------------------------------------------------------------------
+ 2b. DATOS REALES Y ENTRENAMIENTO DE LAS REDES (opcional: ya vienen en Git)
+----------------------------------------------------------------------
+# 1) Descargar y limpiar los datos reales (DATT Cartagena, semáforos oficiales, SIMM Medellín)
+python modelos\datos_reales.py                 # -> modelos\datos\reporte_limpieza.md
+
+# 2) Probar el modelo matemático de rutas (Frank-Wolfe + Yen) sin agentes
+python agentes\rutas.py
+
+# 3) Red T-GCN con flujo REAL de Medellín (validación de la arquitectura)
+python modelos\entrenar_predictor.py --datos simm
+
+# 4) Bocagrande en SUMO -> datos de colas -> T-GCN de Bocagrande
+python modelos\sumo_red.py
+python modelos\entorno_sumo.py --recolectar 45
+python modelos\entrenar_predictor.py --datos bocagrande
+
+# 5) Semafórico neuronal (DQN) + comparación fijo / max-pressure / tabla Q / DQN
+python modelos\entrenar_dqn.py --episodios 60
+# Resultados: modelos\entrenados\*.json y *.png (también en http://localhost:8000/agentes)
+
 
 ----------------------------------------------------------------------
  3. MOSQUITTO (el "cartero" MQTT)

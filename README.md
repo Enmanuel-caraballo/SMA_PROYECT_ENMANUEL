@@ -115,6 +115,37 @@ sus parámetros, la decisión que tomó y por qué, y lo que lleva aprendido.
 - **Terminar una contingencia antes de tiempo:** botón **Terminar** en el aviso del plan (o
   `sma/eventos/<cruce>` = `{"tipo":"fin_contingencia","alerta":"AL-0001"}`).
 
+## Datos reales, redes neuronales y modelo matemático de rutas
+
+| Dónde | Qué hay |
+|---|---|
+| `modelos/datos_reales.py` | Descarga y **limpia** datos abiertos reales; deja el detalle de cada regla en `modelos/datos/reporte_limpieza.md`. |
+| `agentes/rutas.py` | Modelo matemático del Coordinador: grafo dirigido de Bocagrande, costo **Akçelik/BPR**, equilibrio de usuario por **Frank-Wolfe**, rutas alternativas con **Yen** y semáforos optimizados. |
+| `modelos/tgcn.py` | Red **T-GCN** (convolución de grafo + GRU, Zhao et al. 2019) en PyTorch puro. |
+| `modelos/dqn.py` | **DQN** (Double DQN) del Semafórico. |
+| `modelos/sumo_red.py`, `modelos/entorno_sumo.py` | Bocagrande en **SUMO** (mismo grafo que el gemelo) con demanda horaria real y accidentes reales. |
+| `modelos/entrenar_predictor.py`, `modelos/entrenar_dqn.py` | Entrenamiento, líneas base y comparación de controladores; resultados en `modelos/entrenados/`. |
+
+**Datos reales usados (todos abiertos y gratuitos):**
+- *Accidentes de Tránsito en Cartagena* (Alcaldía/DATT, datos.gov.co `5z62-bn99`): 8.066 registros 2020-2025; tras la
+  limpieza quedan **204 en Bocagrande**, ubicados por coordenadas sobre las vías del gemelo. Se usan para reproducir
+  accidentes reales (botón **Accidente real**) y para sortear dónde ocurren en SUMO.
+- *Registro de Semaforización de Cartagena* (datos.gov.co `mybb-py6y`): confirma que los 5 cruces son semáforos oficiales.
+- *Velocidad e intensidad vehicular de Medellín* (SIMM, MEData): 431.490 registros por carril y hora; tras la limpieza,
+  156 estaciones × 744 horas. Cartagena no publica aforos abiertos: con este flujo real colombiano se entrena y valida la
+  T-GCN y se saca la **forma horaria de la demanda** (pico a las 17:00) que usan el gemelo (selector de hora) y SUMO.
+
+**Cómo deciden ahora los agentes:**
+- **Coordinador**: para cada plan calcula el **equilibrio de tráfico** de Bocagrande (Frank-Wolfe) y su TSTT (horas-vehículo
+  perdidas). Utilidad = (0,6 × beneficio del modelo + 0,4 × impacto aprendido midiendo) × factor de tráfico − 0,5 × costo.
+  **Propone** un plan propio ("Semáforos optimizados", descenso por coordenadas sobre el modo de cada cruce), **ajusta los
+  semáforos del contraflujo** y sugiere **3 rutas alternativas** (Yen) que el Comunicador anuncia y el gemelo dibuja.
+- **Predictor**: red **T-GCN** que cada 12 s predice las colas de los 5 cruces a 36 s y se las envía al Semafórico
+  (`inform PrediccionColas`); mide su propio error en vivo. Caso 2: ruta de huida con Yen.
+- **Semafórico**: red **DQN** entrenada en SUMO; su estado incluye la predicción de la T-GCN y la cola de los cruces
+  vecinos. La tabla Q sigue aprendiendo en paralelo y toma el control si falta la red. Sin PyTorch o sin modelos
+  entrenados todo sigue funcionando con las reglas y la tabla Q.
+
 ## Gemelo digital 3D
 
 - **Vehículos**: siguen la red real (sentidos únicos incluidos), mantienen distancia y frenan en la línea de pare

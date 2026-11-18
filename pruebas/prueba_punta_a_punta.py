@@ -14,10 +14,12 @@ from __future__ import annotations
 
 import argparse
 import os
+import queue
 import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -26,21 +28,40 @@ import paho.mqtt.client as mqtt
 RAIZ = Path(__file__).resolve().parents[1]
 
 
+# En Windows: grupo de procesos propio (para poder enviarle CTRL_BREAK sin afectar a la prueba)
+GRUPO = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
+ENTORNO = {**os.environ, "PYTHONIOENCODING": "utf-8"}   # tildes iguales en Windows y Linux
+_salidas: dict[int, queue.Queue] = {}
+
+
+def leer_en_segundo_plano(proceso: subprocess.Popen[str]) -> None:
+    """readline() bloquea: se lee en un hilo y se pasa por una cola para que el tiempo límite sí funcione."""
+    cola: queue.Queue = queue.Queue()
+    _salidas[proceso.pid] = cola
+
+    def leer():
+        for linea in proceso.stdout:
+            cola.put(linea)
+        cola.put(None)
+    threading.Thread(target=leer, daemon=True).start()
+
+
 def esperar_linea(proceso: subprocess.Popen[str], texto: str, timeout: float) -> str:
     """Lee la salida del proceso hasta encontrar ``texto`` o agotar el tiempo."""
     limite = time.monotonic() + timeout
     lineas: list[str] = []
+    cola = _salidas[proceso.pid]
     while time.monotonic() < limite:
-        linea = proceso.stdout.readline() if proceso.stdout else ""
-        if linea:
-            lineas.append(linea.rstrip())
-            print(lineas[-1], flush=True)
-            if texto in linea:
-                return "\n".join(lineas)
-        elif proceso.poll() is not None:
+        try:
+            linea = cola.get(timeout=0.5)
+        except queue.Empty:
+            continue
+        if linea is None:
             break
-        else:
-            time.sleep(0.1)
+        lineas.append(linea.rstrip())
+        print(lineas[-1], flush=True)
+        if texto in linea:
+            return "\n".join(lineas)
     raise TimeoutError(f"No apareció '{texto}' en {timeout:.0f} s")
 
 
@@ -71,9 +92,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--duracion", type=float, default=3,
                         help="duración del plan en segundos (por defecto: 3)")
-    parser.add_argument("--timeout", type=float, default=35,
+    parser.add_argument("--timeout", type=float, default=60,
                         help="tiempo máximo de espera de cada etapa")
     args = parser.parse_args()
+    sys.stdout.reconfigure(errors="replace")      # la consola de Windows (cp1252) no imprime algunos símbolos
 
     broker = agentes = None
     broker_propio = False
@@ -90,21 +112,21 @@ def main() -> int:
         # ejecutar la prueba junto a la demo normal sin competir por el puerto.
         try:
             cliente.connect("127.0.0.1", 1883, keepalive=10)
+            cliente.loop_start()              # sin el bucle de red el broker corta la conexión por keepalive
         except OSError:
             broker = subprocess.Popen(
                 ["mosquitto", "-c", configuracion],
                 cwd=RAIZ,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                start_new_session=(os.name != "nt"),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                **GRUPO,
             )
             broker_propio = True
             time.sleep(1)
             if broker.poll() is not None:
                 raise RuntimeError("Mosquitto no pudo iniciar en localhost:1883")
             cliente.connect("127.0.0.1", 1883, keepalive=10)
+            cliente.loop_start()
 
         agentes = subprocess.Popen(
             [sys.executable, "agentes/sma_agentes.py", "--duracion", str(args.duracion), "--olvidar"],
@@ -112,12 +134,15 @@ def main() -> int:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             bufsize=1,
-            start_new_session=(os.name != "nt"),
+            env=ENTORNO,
+            **GRUPO,
         )
+        leer_en_segundo_plano(agentes)
         esperar_linea(agentes, "Los 7 agentes del SMA están activos", args.timeout)
 
-        cliente.loop_start()
         publicar(cliente, "sma/sensores/cruce1", '{"A":8,"B":2}')
         publicar(cliente, "sma/eventos/cruce1", "accidente")
 

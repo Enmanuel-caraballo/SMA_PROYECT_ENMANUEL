@@ -121,7 +121,13 @@ SMA_IA/
 │   ├── sma_agentes.py         (los 7 agentes)
 │   ├── conocimiento.py        (TODAS las reglas y parámetros)
 │   ├── aprendizaje.py         (Q-learning del Semafórico, experiencia del Coordinador)
+│   ├── rutas.py               (modelo matemático: Akçelik/BPR, Frank-Wolfe, Yen, semáforos optimizados)
 │   └── memoria/               (lo aprendido, *.json; se versiona en Git desde el 17-nov; --olvidar lo reinicia)
+├── modelos/                   (datos reales + redes neuronales; ver sección 10)
+│   ├── datos_reales.py, tgcn.py, dqn.py, predictor_colas.py, sumo_red.py, entorno_sumo.py
+│   ├── entrenar_predictor.py, entrenar_dqn.py
+│   ├── datos/ (limpios + reporte_limpieza.md; crudos/ ignorado)   sumo/ (red SUMO)   entrenados/ (.pt, métricas, gráficas)
+├── pruebas/prueba_punta_a_punta.py (Caso 1 sin ESP32 ni panel; funciona en Windows)
 ├── esp32/
 │   ├── esp32_mqtt_prueba/esp32_mqtt_prueba.ino   (prueba del LED azul)
 │   └── esp32_cruce/esp32_cruce.ino               (cruce con 2 semáforos + botón en GPIO4)
@@ -236,7 +242,32 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
 - Terminar contingencia: botón "Terminar" del aviso → `POST /api/terminar` → `sma/eventos/<cruce>`
   `{"tipo":"fin_contingencia","alerta"}` → Vigilancia → Coordinador (`TerminarAlerta`). Si el SMA no avisa el cierre
   20 s después de la hora, el panel retira el plan de la vista por su cuenta.
+- Datos reales y redes (decisión 17-nov, ver sección 10): selector de **hora** (densidad según el perfil SIMM) y botón
+  **Accidente real** (`POST /api/accidente_real`: un accidente del DATT en su tramo real; el evento lleva `arista` y `real`).
+  Planes que no son contraflujo dibujan las **rutas sugeridas** (`d.rutas` del plan, `dibujarRutasModelo`).
 - Depuración desde la consola: `window.__bocagrande` (cámara, controles, escena, geo, aristasDir, `avanzar(s)`) e
   `import('/static/bocagrande3d.js')` para leer `estado` (carros, peatones, métricas, planes, fps, ms).
   Ojo: `avanzar(s)` es síncrono y los semáforos no cambian mientras corre; para medir colas usar pasos cortos
   (p. ej. `avanzar(0.8)` + esperar 1 s) para que lleguen los cambios de luz por MQTT.
+
+## 10. Datos reales, redes neuronales y modelo matemático (17-nov-2026)
+
+Pedido del usuario: que los agentes aprendan "de verdad" (redes neuronales), que las rutas se calculen con modelos
+matemáticos sobre el grafo vial y que flujo y eventos salgan de datasets reales limpiados.
+
+- **Datos** (`modelos/datos_reales.py`): accidentes DATT (datos.gov.co `5z62-bn99`) -> 204 en Bocagrande por coordenadas;
+  semáforos oficiales (`mybb-py6y`) validan los 5 cruces; SIMM Medellín (MEData, flujo por carril y hora) -> 156 estaciones
+  de julio 2020 y perfil horario. Cartagena no publica aforos: se dice así en el informe. Fechas del SIMM mezclan texto y
+  serie de Excel; las cámaras FT no clasifican categorías (no es error).
+- **Coordinador** (`agentes/rutas.py`): mismo grafo dirigido que el gemelo (`RedVial` replica construirGrafo/prepararGeografia
+  /aplicarContraflujo). Costo **Akçelik** (BPR subestima las colas; `FUNCION_COSTO`), demanda calibrada para que la
+  Av. San Martín de salida quede en v/c 0,9 en la hora pico, Frank-Wolfe (tol 1e-3), TSTT, Yen k=3, descenso por coordenadas
+  de los modos. Corre en `asyncio.to_thread` (2-4 s por alerta). El contraflujo se evalúa con sus semáforos ajustados por el modelo.
+- **Predictor**: T-GCN (`modelos/tgcn.py`, PyTorch puro, sin torch-geometric) entrenada con colas de SUMO a pasos de 12 s
+  (ventana 15, horizonte 3); envía `inform PrediccionColas` al Semafórico cada 12 s. Misma arquitectura validada con el SIMM.
+- **Semafórico**: DQN (`modelos/dqn.py`, Double DQN, una red compartida por los 5 cruces) entrenada en SUMO
+  (`modelos/entrenar_dqn.py`); `vector_estado` es el mismo en SUMO y en el agente. Capa de seguridad: bono del plan,
+  histéresis `DQN_MARGEN`, cruce vacío, modos bloqueados. La tabla Q sigue aprendiendo (off-policy) y es el respaldo.
+- **SUMO** (`eclipse-sumo` + `libsumo` por pip): `modelos/sumo_red.py` genera la red desde el mismo grafo; el entorno usa los
+  mismos modos/tiempos y el mismo sensor de cola (v < 2 m/s a < 100 m). Sin la pestaña 3D: entrena rápido (~40 s por hora simulada).
+- Si falta PyTorch o un `.pt`, los agentes siguen con reglas + tabla Q (`NEURONAL`, `cargar_politica`).

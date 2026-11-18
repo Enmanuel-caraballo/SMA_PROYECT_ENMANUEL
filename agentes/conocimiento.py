@@ -134,6 +134,16 @@ PESO_DESBALANCE = 1.0
 COSTO_PRIORIDAD_SIN_COLA = 1.2             # con 1 cubeta de diferencia sigue en normal; con 2 o más da prioridad
 
 # =====================================================================
+# Semafórico neuronal (DQN entrenada en SUMO: modelos/entrenar_dqn.py) - la tabla Q queda de respaldo
+# =====================================================================
+USAR_DQN = True                            # si existe modelos/entrenados/dqn_semaforico.pt
+DQN_PESO_VECINOS = 0.3                     # la recompensa también cuenta la cola de los 2 cruces vecinos
+DQN_BONO_PLAN = 0.3                        # preferencia por el modo que sugiere el plan (en unidades de Q de la red)
+DQN_MARGEN = 0.05                          # histéresis: cambiar de modo solo si el Q mejora más que esto
+AVISO_CRECIMIENTO_COLA = 4                 # el Predictor anuncia cuando anticipa que una cola sube 4 veh o más
+SUMO_FRACCION_DEMANDA = 1.0                # SUMO usa la misma demanda calibrada del modelo de rutas (con el perfil horario real)
+
+# =====================================================================
 # Agente Predictor (Caso 2): por ahora regla simple
 # =====================================================================
 RUTA_HUIDA_POR_DEFECTO = {"cruces": ["cruce2", "cruce1"], "confianza": 0.7}

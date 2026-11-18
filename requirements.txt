@@ -4,3 +4,16 @@ greenlet
 # maqueta virtual (panel web)
 fastapi>=0.110
 uvicorn[standard]>=0.29
+# modelo matemático de rutas (Frank-Wolfe, Yen) y datos reales
+numpy
+scipy
+pandas
+networkx
+matplotlib
+# redes neuronales (T-GCN, DQN). En Windows sin GPU:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch
+# simulador SUMO para entrenar el Semafórico neuronal
+eclipse-sumo
+traci
+libsumo
