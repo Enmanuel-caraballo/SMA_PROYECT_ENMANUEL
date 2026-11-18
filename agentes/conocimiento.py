@@ -52,6 +52,31 @@ NO_EXPLORAR_SOLO_AVISAR_EN = ["Alta", "Critica"]   # con alertas graves no se "p
 
 SALIDA_BOCAGRANDE = "cruce5"               # única salida/entrada de Bocagrande hacia el Centro
 
+# ---------------------------------------------------------------------
+# Modelo matemático de rutas (agentes/rutas.py): BPR + equilibrio de usuario (Frank-Wolfe) + Yen k-rutas
+#   costo de un tramo  t = t0 · (1 + BPR_ALFA · (flujo / capacidad)^BPR_BETA)
+#   El Coordinador evalúa cada plan por el TSTT (tiempo total de viaje en la red) que deja el equilibrio.
+# ---------------------------------------------------------------------
+FUNCION_COSTO = "akcelik"                  # "akcelik" (urbana con semáforos, modela colas) o "bpr"
+AKCELIK_T_H = 1.0                          # periodo de análisis (h)
+AKCELIK_J = 0.4                            # parámetro de demora: 0.4 = vía urbana interrumpida (Akçelik 1991)
+BPR_ALFA = 0.15                            # valores estándar del Bureau of Public Roads (1964)
+BPR_BETA = 4.0
+FLUJO_SATURACION = 1800                    # veh/h por carril con verde (HCM; Medellín SIMM: máx. limpio ~2200)
+CAPACIDAD_RESIDUAL_ACCIDENTE = 0.25        # el carril del accidente deja pasar ~1/4 (se pasa despacio, a 3 m/s)
+DEMANDA_PICO_VEH_H = 3000                  # viajes/h en la hora pico (se recalibra: ver VC_PICO_OBJETIVO)
+VC_PICO_OBJETIVO = 0.90                    # en hora pico normal la vía más cargada queda al 90 % de su capacidad
+REPARTO_DEMANDA = {"salir": 0.30, "entrar_centro": 0.22, "entrar_norte": 0.08, "interna": 0.40}
+PENALIZACION_SIN_RUTA_S = 600              # viaje que el plan deja sin ruta interna: rodeo por fuera de Bocagrande (10 min)
+FW_TOLERANCIA = 1e-3                       # brecha relativa de equilibrio
+FW_MAX_ITER = 120
+K_RUTAS = 3                                # rutas alternativas que propone el Coordinador (Yen)
+PESO_MODELO = 0.6                          # peso del modelo matemático vs. lo aprendido midiendo en la utilidad
+MEJORA_MINIMA = 0.005                      # si ningún plan baja el TSTT más de 0.5 %, el modelo no distingue (beneficio 0)
+# demanda que se le pone al modelo según lo que MIDEN los sensores (nivel del Consultor) y el tipo de evento
+ESCALA_POR_NIVEL = {"alto": 1.0, "medio": 0.85, "bajo": 0.7, "desconocido": 0.85}
+ESCALA_POR_EVENTO = {"congestion": 1.25}   # una congestión es demanda por encima de lo normal
+
 # Catálogo de planes: costo para la movilidad (0..1) e impacto esperado ANTES de tener experiencia
 CATALOGO_PLANES = {
     "solo_avisar":         {"nombre": "Solo avisar", "impacto": 0.30, "costo": 0.00},
@@ -63,12 +88,14 @@ CATALOGO_PLANES = {
     "priorizar_principal": {"nombre": "Verde largo para la vía principal", "impacto": 0.70, "costo": 0.20},
     "fase_peatonal":       {"nombre": "Fase peatonal extendida", "impacto": 0.70, "costo": 0.25},
     "cerco":               {"nombre": "Cerco semafórico", "impacto": 0.90, "costo": 0.50},
+    # plan que PROPONE el modelo matemático: modo de cada cruce elegido minimizando el TSTT (rutas.optimizar_semaforos)
+    "semaforos_optimos":   {"nombre": "Semáforos optimizados", "impacto": 0.65, "costo": 0.10},
 }
 
 # Qué planes se consideran para cada evento (reglas de generación de planes)
 PLANES_POR_EVENTO = {
-    "accidente":    ["solo_avisar", "desvio_local"],      # + contraflujo si es en SALIDA_BOCAGRANDE
-    "congestion":   ["solo_avisar", "priorizar_principal"],
+    "accidente":    ["solo_avisar", "desvio_local", "semaforos_optimos"],   # + contraflujo si es en SALIDA_BOCAGRANDE
+    "congestion":   ["solo_avisar", "priorizar_principal", "semaforos_optimos"],
     "aglomeracion": ["solo_avisar", "fase_peatonal"],
     "Seguridad":    ["cerco", "solo_avisar"],              # por TipoAlerta: aviso SOLO a la Policía
 }

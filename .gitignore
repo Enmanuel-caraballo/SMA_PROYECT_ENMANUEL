@@ -11,3 +11,6 @@ CP210x_Universal_Windows_Driver.zip
 # archivos temporales de Office
 ~$*
 
+
+# datos reales descargados (se regeneran con python modelos/datos_reales.py)
+modelos/datos/crudos/

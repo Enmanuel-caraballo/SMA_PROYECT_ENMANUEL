@@ -18,6 +18,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 const ANCHO_CARRIL = 3.2;
 const VEL_MAX = { trunk: 14, primary: 13, secondary: 12, tertiary: 10, unclassified: 8, residential: 8, living_street: 5 };
 const CARROS_BASE = 260, PEATONES_BASE = 220;
+const CARROS_PICO = 380;                   // carros en la hora pico; las demás horas siguen el perfil real (SIMM)
 const MAX_CARROS = 600, MAX_PEATONES = 500;
 const ESC_CARRO = 1.5, ESC_PEATON = 2.0;   // exagerados para que se vean junto a las torres
 const LARGO_CARRO = 4.3 * ESC_CARRO + 1.5; // separación mínima entre carros
@@ -634,10 +635,34 @@ function pasoPeatones(dt) {
 // =====================================================================
 function cruceObj(id) { return estado.cruces.find(c => c.id === id); }
 
-export function eventoAccidente(id, sentido = null) {
+// Demanda según la hora del día: forma horaria REAL (intensidad vehicular del SIMM, limpiada en modelos/datos_reales.py)
+export function fijarHora(hora, perfil, finDeSemana = false) {
+  estado.hora = hora;
+  const curva = perfil && (finDeSemana ? perfil.fin_de_semana : perfil.habil);
+  const factor = curva ? curva[hora % 24] : 1;
+  estado.factorDemanda = factor;
+  estado.objetivoCarros = Math.max(60, Math.round(CARROS_PICO * factor));
+  estado.objetivoPeatones = Math.max(60, Math.round(PEATONES_BASE * Math.max(0.3, factor)));
+  return estado.objetivoCarros;
+}
+
+// real = {arista, x, z}: accidente del dataset DATT en su tramo y posición reales
+export function eventoAccidente(id, sentido = null, real = null) {
   const c = cruceObj(id); if (!c) return;
   let acc, s;
-  if (id === "cruce5" && geo.accSalida && geo.accEntrada) {
+  const tramos = real ? aristasDir.filter(e => e.base === real.arista && !e.reserva && e.largo > 12) : [];
+  if (tramos.length) {
+    const e = tramos[Math.floor(Math.random() * tramos.length)];
+    let mejor = { d: Infinity, s: e.largo / 2 };
+    for (let k = 0; k < e.p.length - 1; k++) {        // proyección del punto real sobre el tramo
+      const [ax, az] = e.p[k], [bx, bz] = e.p[k + 1], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((real.x - ax) * dx + (real.z - az) * dz) / l2));
+      const d = Math.hypot(real.x - (ax + t * dx), real.z - (az + t * dz));
+      if (d < mejor.d) mejor = { d, s: e.acum[k] + t * Math.sqrt(l2) };
+    }
+    acc = { e };
+    s = Math.min(Math.max(8, mejor.s), e.largo - 6);
+  } else if (id === "cruce5" && geo.accSalida && geo.accEntrada) {
     // cruce5 = única salida/entrada de Bocagrande: el accidente ocurre a ~100 m del cruce sobre la Av. San Martín
     const e = sentido === "entrada" ? geo.accEntrada : geo.accSalida;
     s = sentido === "entrada" ? Math.min(100, e.largo - 20) : Math.max(10, e.largo - 100);
@@ -712,7 +737,9 @@ export function terminarAglomeracion(id) {
 // =====================================================================
 export function activarPlan(d) {
   estado.planes[d.alerta] = d;
-  if (!d.plan?.startsWith("contraflujo") || !geo.c1Norte) return;
+  // rutas que propone el Coordinador con el modelo matemático (Yen sobre el equilibrio de Frank-Wolfe)
+  if (!d.plan?.startsWith("contraflujo")) { dibujarRutasModelo(d.rutas); return; }
+  if (!geo.c1Norte) return;
   if (estado.contraflujo && estado.contraflujo !== d.plan) aplicarContraflujo(estado.contraflujo, false);
   estado.contraflujo = d.plan;
   aplicarContraflujo(d.plan, true);
@@ -720,6 +747,7 @@ export function activarPlan(d) {
 
 export function desactivarPlan(d) {
   delete estado.planes[d.alerta];
+  if (!d.plan?.startsWith("contraflujo")) dibujarRutasModelo(null);
   if (d.plan === estado.contraflujo) { aplicarContraflujo(d.plan, false); estado.contraflujo = null; }
 }
 
@@ -747,6 +775,39 @@ function aplicarContraflujo(clave, activo) {
   for (const e of prestar) e.prestamo = activo;
   reencaminar();
   dibujarPlan(clave, activo, cerrar.filter(Boolean));
+}
+
+let capaRutas = null;
+function dibujarRutasModelo(rutas) {
+  if (capaRutas) {
+    escena.remove(capaRutas);
+    capaRutas.traverse(o => { o.geometry?.dispose(); if (o.isCSS2DObject) o.element.remove(); });
+    capaRutas = null;
+    if (!capaPlan) estado.centroPlan = null;
+  }
+  if (!rutas) return;
+  const estilos = { salir: [0x00ff7a, "SALIR"], entrar_centro: [0x2979ff, "ENTRAR DESDE EL CENTRO"],
+    entrar_norte: [0xb04dff, "ENTRAR POR LA CRA. 1"] };
+  capaRutas = new THREE.Group();
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  for (const [tipo, lista] of Object.entries(rutas)) {
+    const r = lista && lista[0];
+    if (!r || !r.p) continue;
+    const pts = r.p.filter((q, i) => i === 0 || Math.hypot(q[0] - r.p[i - 1][0], q[1] - r.p[i - 1][1]) > 0.5);
+    if (pts.length < 2) continue;
+    const [color, texto] = estilos[tipo] || [0xffffff, tipo.toUpperCase()];
+    capaRutas.add(new THREE.Mesh(cinta(pts, 5, 1.3 + Object.keys(estilos).indexOf(tipo) * 0.05),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide })));
+    for (const q of pts) { minX = Math.min(minX, q[0]); maxX = Math.max(maxX, q[0]); minZ = Math.min(minZ, q[1]); maxZ = Math.max(maxZ, q[1]); }
+    const m = pts[Math.floor(pts.length / 2)];
+    const div = document.createElement("div");
+    div.className = "etq-plan"; div.style.setProperty("--c", "#" + color.toString(16).padStart(6, "0"));
+    div.textContent = `RUTA SUGERIDA · ${texto} · ${r.minutos} MIN`;
+    const etq = new CSS2DObject(div); etq.position.set(m[0], 26, m[1]); capaRutas.add(etq);
+  }
+  escena.add(capaRutas);
+  if (!capaPlan && minX < Infinity)
+    estado.centroPlan = { x: (minX + maxX) / 2, z: (minZ + maxZ) / 2, dist: Math.max(maxX - minX, maxZ - minZ) * 0.85 + 120 };
 }
 
 let capaPlan = null, flechasPlan = [], barreras = null;

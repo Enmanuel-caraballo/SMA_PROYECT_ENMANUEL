@@ -12,7 +12,10 @@ Opciones: --broker 192.168.1.7   --puerto-web 8000   --host 0.0.0.0 (para verlo 
 
 import argparse
 import asyncio
+import csv
 import json
+import math
+import random
 import time
 from collections import deque
 from contextlib import asynccontextmanager
@@ -29,6 +32,7 @@ from pydantic import BaseModel
 CARPETA = Path(__file__).resolve().parent
 RUTA_CRUCES = CARPETA.parent / "cruces.json"
 RUTA_MAPA_3D = CARPETA.parent / "bocagrande" / "bocagrande.json"
+DATOS_REALES = CARPETA.parent.parent / "modelos" / "datos"     # generados por modelos/datos_reales.py
 TIPOS_EVENTO = {"accidente", "congestion", "aglomeracion", "placa_reportada", "persona_solicitada"}
 
 args = None
@@ -162,6 +166,57 @@ def api_evento(evento: Evento):
     cliente_mqtt.publish(f"sma/eventos/{evento.cruce}", cuerpo)
     log(f"evento simulado desde el panel: {evento.tipo} en {evento.cruce}" + (f" ({evento.sentido})" if evento.sentido else ""))
     return {"ok": True}
+
+
+@app.get("/api/datos_reales")
+def api_datos_reales():
+    """Perfil horario de demanda (SIMM Medellín) y resumen de accidentes reales de Bocagrande (DATT Cartagena)."""
+    salida = {}
+    for clave, archivo in (("perfil", "perfil_demanda.json"), ("accidentes", "accidentes_resumen.json")):
+        try:
+            salida[clave] = json.loads((DATOS_REALES / archivo).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            salida[clave] = None
+    return JSONResponse(salida)
+
+
+def accidentes_reales():
+    try:
+        with open(DATOS_REALES / "accidentes_bocagrande.csv", encoding="utf-8") as f:
+            return list(csv.DictReader(f))
+    except OSError:
+        return []
+
+
+class AccidenteReal(BaseModel):
+    hora: int | None = None          # hora del día simulada: se prefieren accidentes reales a esa hora
+
+
+@app.post("/api/accidente_real")
+def api_accidente_real(pedido: AccidenteReal):
+    """Reproduce un accidente REAL de Bocagrande (dataset DATT, limpio) en su tramo y posición reales."""
+    filas = accidentes_reales()
+    if not filas:
+        raise HTTPException(404, "no hay datos: corra python modelos/datos_reales.py")
+    if cliente_mqtt is None or not cliente_mqtt.is_connected():
+        raise HTTPException(503, "sin conexión a Mosquitto")
+    a_esa_hora = [f for f in filas if pedido.hora is not None and abs(int(f["hora_dia"]) - pedido.hora) <= 1]
+    f = random.choice(a_esa_hora or filas)
+    x, z = float(f["x"]), float(f["z"])
+    cruce = f["cruce"] or min(cruces_3d(), key=lambda c: math.hypot(c["x"] - x, c["z"] - z))["id"]
+    via = " x ".join(v for v in (f["via1"], f["via2"]) if v) or f["via_osm"]
+    real = {"ipat": f["ipat"], "momento": f["momento"][:16], "gravedad": f["gravedad"].lower(),
+            "clase": f["clase_accidente"].lower(), "via": via, "x": x, "z": z}
+    cuerpo = {"tipo": "accidente", "arista": int(f["arista"]), "real": real}
+    if cruce == "cruce5":
+        cuerpo["sentido"] = "salida"
+    cliente_mqtt.publish(f"sma/eventos/{cruce}", json.dumps(cuerpo, ensure_ascii=False))
+    log(f"accidente REAL del DATT (IPAT {real['ipat']}, {real['momento']}, {via}) reproducido en {cruce}")
+    return {"ok": True, "cruce": cruce, **real}
+
+
+def cruces_3d():
+    return json.loads(RUTA_MAPA_3D.read_text(encoding="utf-8"))["cruces"]
 
 
 class Terminar(BaseModel):

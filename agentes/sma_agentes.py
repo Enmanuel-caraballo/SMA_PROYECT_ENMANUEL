@@ -45,6 +45,7 @@ from spade.message import Message
 from spade.template import Template
 
 import conocimiento as K
+import rutas
 from aprendizaje import ExperienciaPlanes, QSemaforo
 
 # la consola de Windows (cp1252) no puede imprimir algunos símbolos: se reemplazan en vez de fallar
@@ -296,8 +297,68 @@ def generar_planes(alerta, cruce, experiencia):
         elif clave == "fase_peatonal":
             p.update(semaforos={cruce: "peatonal"},
                      aviso=f"aglomeración de personas en {lugar}; fase peatonal extendida, conduzca despacio.")
+        elif clave == "semaforos_optimos":       # los modos los calcula el modelo (evaluar_con_modelo)
+            p.update(semaforos={}, aviso=f"{evento} en {lugar}; semáforos del sector ajustados para repartir el flujo.")
         planes.append(p)
     return planes
+
+
+def accidente_de(alerta, cruce):
+    """Cómo entra el evento al modelo de rutas: un accidente reduce la capacidad del tramo donde ocurre."""
+    if alerta.get("tipo_evento") != "accidente":
+        return None
+    if alerta.get("arista") is not None:                 # accidente real del dataset: tramo exacto
+        return {"arista_base": int(alerta["arista"])}
+    return {"cruce": cruce, "sentido": alerta.get("sentido") or "salida"}
+
+
+def evaluar_con_modelo(alerta, cruce, planes, nivel):
+    """Modelo matemático (agentes/rutas.py): para cada plan calcula el equilibrio de tráfico (Frank-Wolfe con costo
+    Akçelik/BPR) y su TSTT; propone los semáforos óptimos del sector; deja en cada plan su 'beneficio' (0..1).
+    Corre en un hilo aparte (asyncio.to_thread) para no frenar a los demás agentes."""
+    if alerta.get("tipo") == "Seguridad":
+        return None
+    R = rutas.red()
+    evento = alerta.get("tipo_evento")
+    acc = accidente_de(alerta, cruce)
+    escala = K.ESCALA_POR_NIVEL.get(nivel, K.ESCALA_POR_NIVEL["desconocido"]) * K.ESCALA_POR_EVENTO.get(evento, 1.0)
+    for p in planes:
+        if p["clave"] == "semaforos_optimos":
+            modos, _ = R.optimizar_semaforos(None, acc, escala=escala)
+            p["semaforos"] = modos
+            p["nombre"] = f"Semáforos optimizados ({len(modos)} cruces)" if modos else "Semáforos optimizados (sin cambios)"
+            p["detalle"] = ", ".join(f"{c}: {m}" for c, m in modos.items())
+    resultados = {}
+    for p in planes:
+        contra = p["clave"] if p["clave"].startswith("contraflujo") else None
+        if contra:   # el contraflujo cambia la red: el modelo ajusta sus semáforos partiendo de los del catálogo
+            catalogo = dict(p["semaforos"])
+            modos, r = R.optimizar_semaforos(contra, acc, escala=escala, base=catalogo)
+            ajustes = {c: (catalogo.get(c, "normal"), m) for c, m in {**{c: "normal" for c in catalogo}, **modos}.items()
+                       if catalogo.get(c, "normal") != m}
+            p["semaforos"] = {**{c: "normal" for c in catalogo}, **modos}
+            p["ajuste_modelo"] = {c: f"{a} → {b}" for c, (a, b) in ajustes.items()}
+        else:
+            r = R.evaluar(contra, p["semaforos"], acc, escala=escala)
+        resultados[p["clave"]] = r
+        p["tstt"], p["viaje_min"], p["sin_ruta"] = r["tstt_vh"], r["viaje_medio_min"], r["sin_ruta_vh"]
+    base = next((p["tstt"] for p in planes if p["clave"] == "solo_avisar"), max(p["tstt"] for p in planes))
+    mejor = min(p["tstt"] for p in planes)
+    for p in planes:   # 1 = el plan que más baja el TSTT, 0 = no mejora frente a solo avisar
+        p["beneficio"] = round(max(0.0, min(1.0, (base - p["tstt"]) / (base - mejor))), 3) \
+            if base - mejor > K.MEJORA_MINIMA * base else 0.0
+    return {"escala": round(escala, 2), "demanda_vh": resultados[planes[0]["clave"]]["demanda_vh"],
+            "resultados": resultados}
+
+
+def rutas_sugeridas(resultado):
+    """Yen k-rutas más rápidas con los tiempos del equilibrio del plan elegido (para el aviso y el gemelo 3D)."""
+    R = rutas.red()
+    salida = {}
+    for tipo, lista in R.rutas_plan(resultado).items():
+        salida[tipo] = [{"calles": x["calles"], "minutos": x["minutos"], "km": x["km"],
+                         "p": [[round(v, 1) for v in q] for i in x["aristas"] for q in R.E[i]["p"]]} for x in lista]
+    return salida
 
 
 class AgenteCoordinador(Agent):
@@ -319,9 +380,16 @@ class AgenteCoordinador(Agent):
             "rol": "Genera planes para cada alerta, elige el de mayor utilidad, los mantiene y los cierra.",
             "percibe": "inform Alerta; estado vial y colas medias (Consultor); TerminarAlerta (operador)",
             "actua": "request activarPlan / restaurarPlanNormal -> Semafórico; request comunicar -> Comunicador",
-            "codigo": ["agentes/sma_agentes.py · AgenteCoordinador, generar_planes",
+            "codigo": ["agentes/sma_agentes.py · AgenteCoordinador, generar_planes, evaluar_con_modelo",
+                       "agentes/rutas.py · RedVial (Frank-Wolfe, Akçelik/BPR, Yen)",
                        "agentes/aprendizaje.py · ExperienciaPlanes", "agentes/conocimiento.py · Coordinador"],
-            "reglas": ["utilidad = impacto × factor de tráfico − " + f"{K.PESO_COSTO} × costo",
+            "reglas": [f"utilidad = ({K.PESO_MODELO} × beneficio del modelo + {1 - K.PESO_MODELO:.1f} × impacto aprendido) × factor de tráfico − "
+                       f"{K.PESO_COSTO} × costo",
+                       "Modelo matemático (agentes/rutas.py): grafo dirigido de Bocagrande (OSM); costo de cada tramo con la función "
+                       f"{'Akçelik' if K.FUNCION_COSTO == 'akcelik' else 'BPR'}; equilibrio de usuario (Wardrop) por Frank-Wolfe; "
+                       "TSTT = tiempo total de viaje en la red; beneficio = cuánto baja el TSTT frente a solo avisar (1 = el mejor plan)",
+                       "El modelo PROPONE 'Semáforos optimizados': descenso por coordenadas del modo de cada cruce minimizando el TSTT",
+                       f"Rutas sugeridas: Yen, {K.K_RUTAS} caminos más rápidos con los tiempos del equilibrio (aviso + gemelo 3D)",
                        f"SI accidente en {K.SALIDA_BOCAGRANDE} (única salida de Bocagrande) ENTONCES considerar contraflujo de la Carrera 1",
                        "SI alerta de Seguridad ENTONCES cerco y aviso SOLO a la Policía",
                        "Al cerrar un plan mide las colas de TODO el sector: efecto = (cola antes − cola durante) / máx(cola antes, 3)",
@@ -332,6 +400,7 @@ class AgenteCoordinador(Agent):
                        f"(ε baja ×{K.EPSILON_PLANES_DECAIMIENTO} por alerta hasta {K.EPSILON_PLANES_MINIMO}); nunca en alertas de "
                        f"Seguridad, y no prueba 'Solo avisar' con prioridad {' o '.join(K.NO_EXPLORAR_SOLO_AVISAR_EN)}"],
             "parametros": {"duracion_plan_s": SEGUNDOS_PLAN, "factor_trafico": K.FACTOR_TRAFICO, "peso_costo": K.PESO_COSTO,
+                           "peso_modelo": K.PESO_MODELO, "funcion_costo": K.FUNCION_COSTO, "k_rutas": K.K_RUTAS,
                            "alfa_aprendizaje": K.ALFA_PLANES, "linea_base_s": K.SEGUNDOS_LINEA_BASE,
                            "epsilon_planes": self.experiencia.epsilon},
             "estado": {"catalogo": catalogo, "experiencia": self.experiencia.entradas(),
@@ -392,13 +461,25 @@ class AgenteCoordinador(Agent):
             log("Coordinador", f"estado vial en {cruce}: {estado['nivel']}" +
                 (f" (cola A={estado['A']:.0f}, B={estado['B']:.0f})" if "A" in estado else ""))
 
-            # 2) Generar planes y elegir el de mayor utilidad (impacto aprendido con la experiencia)
+            # 2) Generar planes, evaluarlos con el modelo matemático y elegir el de mayor utilidad
             factor = K.FACTOR_TRAFICO.get(estado["nivel"], K.FACTOR_TRAFICO_DESCONOCIDO)
             planes = generar_planes(a, cruce, ag.experiencia)
+            try:
+                modelo = await asyncio.to_thread(evaluar_con_modelo, a, cruce, planes, estado["nivel"])
+            except Exception as error:                         # el modelo nunca debe tumbar al agente
+                log("Coordinador", f"AVISO: modelo de rutas no disponible ({error}); decido solo con lo aprendido")
+                modelo = None
             for p in planes:
-                p["utilidad"] = round(p["impacto"] * factor - K.PESO_COSTO * p["costo"], 2)
+                if modelo:   # utilidad = (modelo matemático + lo aprendido midiendo) x tráfico − costo
+                    mezcla = K.PESO_MODELO * p["beneficio"] + (1 - K.PESO_MODELO) * p["impacto"]
+                    p["utilidad"] = round(mezcla * factor - K.PESO_COSTO * p["costo"], 2)
+                else:
+                    p["utilidad"] = round(p["impacto"] * factor - K.PESO_COSTO * p["costo"], 2)
             optimo = max(planes, key=lambda p: p["utilidad"])
             situacion = optimo["situacion"]
+            if modelo:
+                log("Coordinador", f"modelo de tráfico (equilibrio Frank-Wolfe, {modelo['demanda_vh']:.0f} viajes/h): " + "; ".join(
+                    f"{p['nombre']}: TSTT {p['tstt']:.1f} veh·h, viaje medio {p['viaje_min']:.2f} min" for p in planes))
             log("Coordinador", f"situación {situacion} · utilidades: " + ", ".join(
                 f"{p['nombre']}={p['utilidad']}" + (f" (medido en {p['veces']} usos)" if p["veces"] else " (sin medir)")
                 for p in planes))
@@ -415,10 +496,29 @@ class AgenteCoordinador(Agent):
             if explorado:
                 log("Coordinador", f"exploro (ε={eps:.2f}): pruebo '{mejor['nombre']}' (usado {mejor['veces']} veces en "
                                    f"esta situación) en vez de '{optimo['nombre']}', para medirlo con datos reales")
-            log("Coordinador", f"plan elegido: {mejor['nombre']}")
+            log("Coordinador", f"plan elegido: {mejor['nombre']}" + (f" [{mejor['detalle']}]" if mejor.get("detalle") else "")
+                + (f" [el modelo ajustó sus semáforos: {mejor['ajuste_modelo']}]" if mejor.get("ajuste_modelo") else ""))
+            # rutas alternativas (Yen) con los tiempos del equilibrio del plan elegido
+            sugeridas = {}
+            if modelo:
+                try:
+                    sugeridas = await asyncio.to_thread(rutas_sugeridas, modelo["resultados"][mejor["clave"]])
+                except Exception as error:
+                    log("Coordinador", f"AVISO: no pude calcular rutas ({error})")
+            textos = {"salir": "para salir de Bocagrande", "entrar_centro": "para entrar desde el Centro",
+                      "entrar_norte": "para entrar por la Carrera 1"}
+            frases = [f"{textos[t]}: {' → '.join(rs[0]['calles'])} (~{rs[0]['minutos']:g} min)"
+                      for t, rs in sugeridas.items() if rs]
+            if frases:
+                log("Coordinador", "rutas sugeridas (Yen, k=" + str(K.K_RUTAS) + "): " + " | ".join(frases))
+                mejor = {**mejor, "aviso": mejor["aviso"] + " Ruta sugerida " + "; ".join(frases) + "."}
+            columnas = ("clave", "nombre", "impacto", "costo", "utilidad", "veces", "tstt", "viaje_min", "beneficio", "semaforos",
+                        "detalle", "ajuste_modelo")
             ag.ultima = {"alerta": hilo, "cruce": cruce, "situacion": situacion, "nivel": estado["nivel"], "factor": factor,
                          "elegido": mejor["clave"], "optimo": optimo["clave"], "explorado": explorado,
-                         "planes": [{k: p[k] for k in ("clave", "nombre", "impacto", "costo", "utilidad", "veces")} for p in planes]}
+                         "modelo": {"escala": modelo["escala"], "demanda_vh": modelo["demanda_vh"]} if modelo else None,
+                         "rutas": {t: [{k: x[k] for k in ("calles", "minutos", "km")} for x in rs] for t, rs in sugeridas.items()},
+                         "planes": [{k: p.get(k) for k in columnas} for p in planes]}
 
             # línea base para aprender: cola media de todo el sector justo antes de actuar
             cruces_plan = sorted(set(mejor["semaforos"]) | {cruce})
@@ -428,7 +528,7 @@ class AgenteCoordinador(Agent):
             sentido = {"contraflujo_salida": "salida", "contraflujo_entrada": "entrada"}.get(mejor["clave"])
             plan = {"plan": mejor["clave"], "nombre": mejor["nombre"], "semaforos": mejor["semaforos"],
                     "alerta": hilo, "cruce": cruce, "evento": a.get("tipo_evento"),
-                    "sentido": a.get("sentido") or sentido, "duracion": SEGUNDOS_PLAN}
+                    "sentido": a.get("sentido") or sentido, "duracion": SEGUNDOS_PLAN, "rutas": sugeridas}
             await self.send(mensaje("semaforico", "request", "activarPlan", plan, hilo))
             resultado = await self.esperar("ResultadoAccion") or {"estado": "sin respuesta"}
             log("Coordinador", f"resultado del Semafórico: {resultado}")

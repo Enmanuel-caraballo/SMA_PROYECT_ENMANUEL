@@ -1,0 +1,157 @@
+estacion,corredor,sentido,operacion,x,y,carriles
+"Autopista Norte | NS | 834248,75",Autopista Norte,NS,continuo,834248.75,1184524.125,3
+"Autopista Norte | NS | 834322,25",Autopista Norte,NS,continuo,834322.25,1185129.625,2
+"Autopista Norte | NS | 834568,6875",Autopista Norte,NS,continuo,834568.6875,1186285.625,2
+"Autopista Norte | NS | 834698,0625",Autopista Norte,NS,continuo,834698.0625,1186848.0,2
+"Autopista Norte | NS | 834987,25",Autopista Norte,NS,continuo,834987.25,1187770.25,2
+"Autopista Norte | NS | 835128,9375",Autopista Norte,NS,continuo,835128.9375,1188244.75,2
+"Autopista Norte | NS | 835453,375",Autopista Norte,NS,continuo,835453.375,1188752.875,2
+"Autopista Norte | NS | 835934,875",Autopista Norte,NS,continuo,835934.875,1189695.875,2
+"Autopista Norte | SN | 834322,25",Autopista Norte,SN,continuo,834322.25,1185129.625,2
+"Autopista Norte | SN | 834568,6875",Autopista Norte,SN,continuo,834568.6875,1186285.625,2
+"Autopista Norte | SN | 834698,0625",Autopista Norte,SN,continuo,834698.0625,1186848.0,2
+"Autopista Norte | SN | 834987,25",Autopista Norte,SN,continuo,834987.25,1187770.25,2
+"Autopista Norte | SN | 835128,9375",Autopista Norte,SN,continuo,835128.9375,1188244.75,2
+"Autopista Norte | SN | 835453,375",Autopista Norte,SN,continuo,835453.375,1188752.875,2
+"Autopista Norte | SN | 835735,9375",Autopista Norte,SN,continuo,835735.9375,1189025.375,4
+"Autopista Norte | SN | 835934,875",Autopista Norte,SN,continuo,835934.875,1189695.875,2
+"Autopista Sur | NS | 833683,8125",Autopista Sur,NS,continuo,833683.8125,1177698.375,4
+"Autopista Sur | NS | 833714,9375",Autopista Sur,NS,,833714.9375,1177943.625,1
+"Autopista Sur | NS | 833820,375",Autopista Sur,NS,continuo,833820.375,1178689.75,4
+"Autopista Sur | NS | 833853,75",Autopista Sur,NS,continuo,833853.75,1183422.375,3
+"Autopista Sur | NS | 833923,125",Autopista Sur,NS,continuo,833923.125,1179418.0,3
+"Autopista Sur | NS | 834089,8125",Autopista Sur,NS,continuo,834089.8125,1180549.375,4
+"Autopista Sur | NS | 834157,665",Autopista Sur,NS,continuo,834157.665,1181356.763,4
+"Autopista Sur | NS | 834208,375",Autopista Sur,NS,continuo,834208.375,1184085.75,3
+"Avenida 33 | EW | 834121,435",Avenida 33,EW,interrumpido,834121.435,1181984.95,2
+"Avenida 33 | NS | 832576,0625",Avenida 33,NS,interrumpido,832576.0625,1181944.75,3
+"Avenida 33 | WE | 830604,875",Avenida 33,WE,interrumpido,830604.875,1181859.5,4
+"Avenida 33 | WE | 834121,435",Avenida 33,WE,interrumpido,834121.435,1181984.95,2
+Avenida 80 | NS | 831177,Avenida 80,NS,,831177.0,1182401.5,1
+"Avenida 80 | NS | 831181,9375",Avenida 80,NS,seminterrumpido,831181.9375,1182364.25,3
+"Avenida 80 | NS | 831252,0625",Avenida 80,NS,seminterrumpido,831252.0625,1181124.875,3
+"Avenida 80 | SN | 831181,9375",Avenida 80,SN,seminterrumpido,831181.9375,1182364.25,2
+"Avenida 80 | SN | 831252,0625",Avenida 80,SN,seminterrumpido,831252.0625,1181124.875,2
+"Avenida 80 | SN | 832258,3125",Avenida 80,SN,seminterrumpido,832258.3125,1185704.875,3
+"Avenida 80 | SN | 832684,9375",Avenida 80,SN,,832684.9375,1178407.25,1
+"Avenida 80 | SN | 833208,375",Avenida 80,SN,seminterrumpido,833208.375,1177673.125,2
+"Avenida Bolivariana | EW | 833291,8125",Avenida Bolivariana,EW,interrumpido,833291.8125,1182614.75,4
+"Avenida Bolivariana | SN | 833482,625",Avenida Bolivariana,SN,interrumpido,833482.625,1182803.25,2
+"Avenida Bolivariana | WE | 833291,8125",Avenida Bolivariana,WE,interrumpido,833291.8125,1182614.75,5
+"Avenida El Poblado | NS | 834224,375",Avenida El Poblado,NS,interrumpido,834224.375,1177738.25,2
+"Avenida El Poblado | NS | 834760,3125",Avenida El Poblado,NS,interrumpido,834760.3125,1178761.375,6
+"Avenida El Poblado | NS | 834815,25",Avenida El Poblado,NS,,834815.25,1181052.25,1
+"Avenida El Poblado | NS | 834818,125",Avenida El Poblado,NS,interrumpido,834818.125,1181040.875,6
+"Avenida El Poblado | NS | 834885,6875",Avenida El Poblado,NS,interrumpido,834885.6875,1180397.75,2
+"Avenida El Poblado | SN | 834114,25",Avenida El Poblado,SN,interrumpido,834114.25,1176783.5,4
+"Avenida El Poblado | SN | 834524,5",Avenida El Poblado,SN,interrumpido,834524.5,1177702.75,2
+"Avenida El Poblado | SN | 834760,3125",Avenida El Poblado,SN,interrumpido,834760.3125,1178761.375,6
+"Avenida El Poblado | SN | 834813,625",Avenida El Poblado,SN,interrumpido,834813.625,1179175.75,3
+"Avenida El Poblado | SN | 834818,125",Avenida El Poblado,SN,interrumpido,834818.125,1181040.875,6
+"Avenida El Poblado | SN | 834885,6875",Avenida El Poblado,SN,interrumpido,834885.6875,1180397.75,2
+"Avenida Ferrocarril | NS | 834249,1875",Avenida Ferrocarril,NS,interrumpido,834249.1875,1183513.125,4
+"Avenida Ferrocarril | SN | 834263,1555",Avenida Ferrocarril,SN,interrumpido,834263.1555,1183040.172,4
+"Avenida Guayabal | NS | 832602,5309",Avenida Guayabal,NS,,832602.5309,1177348.4,3
+"Avenida Guayabal | NS | 832962,875",Avenida Guayabal,NS,seminterrumpido,832962.875,1178179.75,3
+"Avenida Guayabal | NS | 833031,375",Avenida Guayabal,NS,,833031.375,1178322.375,1
+"Avenida Guayabal | NS | 833708,8125",Avenida Guayabal,NS,seminterrumpido,833708.8125,1179993.125,3
+"Avenida Guayabal | SN | 832615,75",Avenida Guayabal,SN,,832615.75,1177314.25,1
+"Avenida Guayabal | SN | 832814,0625",Avenida Guayabal,SN,seminterrumpido,832814.0625,1177817.625,3
+"Avenida Guayabal | SN | 833018,875",Avenida Guayabal,SN,,833018.875,1178342.125,1
+"Avenida Guayabal | SN | 833650,5625",Avenida Guayabal,SN,seminterrumpido,833650.5625,1179691.125,3
+"Avenida Guayabal | SN | 833680,9375",Avenida Guayabal,SN,,833680.9375,1179818.125,1
+Avenida Las Palmas | NS | 835164,Avenida Las Palmas,NS,continuo,835164.0,1181241.5,2
+"Avenida Las Palmas | NS | 835177,8125",Avenida Las Palmas,NS,continuo,835177.8125,1180693.375,2
+"Avenida Las Palmas | NS | 835627,9375",Avenida Las Palmas,NS,continuo,835627.9375,1179274.125,2
+"Avenida Las Palmas | NS | 836597,0625",Avenida Las Palmas,NS,continuo,836597.0625,1179473.0,2
+Avenida Las Palmas | SN | 835164,Avenida Las Palmas,SN,continuo,835164.0,1181241.5,2
+"Avenida Las Palmas | SN | 835177,8125",Avenida Las Palmas,SN,continuo,835177.8125,1180693.375,2
+"Avenida Las Palmas | SN | 836597,0625",Avenida Las Palmas,SN,continuo,836597.0625,1179473.0,2
+"Avenida Las Palmas | WE-EW | 836737,875",Avenida Las Palmas,WE-EW,,836737.875,1179343.25,1
+"Avenida Las Vegas | NS | 833669,625",Avenida Las Vegas,NS,interrumpido,833669.625,1176556.5,1
+"Avenida Las Vegas | NS | 834123,6875",Avenida Las Vegas,NS,interrumpido,834123.6875,1179054.5,7
+"Avenida Las Vegas | NS | 834230,6875",Avenida Las Vegas,NS,interrumpido,834230.6875,1180119.375,2
+"Avenida Las Vegas | NS | 834244,8125",Avenida Las Vegas,NS,interrumpido,834244.8125,1180404.25,2
+"Avenida Las Vegas | SN | 833669,625",Avenida Las Vegas,SN,interrumpido,833669.625,1176556.5,3
+"Avenida Las Vegas | SN | 834073,9375",Avenida Las Vegas,SN,interrumpido,834073.9375,1178558.875,2
+"Avenida Las Vegas | SN | 834123,6875",Avenida Las Vegas,SN,interrumpido,834123.6875,1179054.5,9
+"Avenida Las Vegas | SN | 834230,6875",Avenida Las Vegas,SN,interrumpido,834230.6875,1180119.375,2
+"Avenida Las Vegas | SN | 834244,8125",Avenida Las Vegas,SN,interrumpido,834244.8125,1180404.25,2
+"Avenida Oriental | NS | 834857,0625",Avenida Oriental,NS,interrumpido,834857.0625,1182134.5,3
+"Avenida Oriental | NS | 835393,375",Avenida Oriental,NS,interrumpido,835393.375,1183022.125,2
+"Avenida Oriental | SN | 834857,0625",Avenida Oriental,SN,interrumpido,834857.0625,1182134.5,3
+"Avenida Oriental | SN | 835657,8125",Avenida Oriental,SN,interrumpido,835657.8125,1183649.875,4
+"Avenida Regional | SN | 833375,8125",Avenida Regional,SN,continuo,833375.8125,1176348.875,3
+Avenida Regional | SN | 833665,Avenida Regional,SN,continuo,833665.0,1177282.625,4
+"Avenida Regional | SN | 833892,1875",Avenida Regional,SN,continuo,833892.1875,1178578.375,3
+"Avenida Regional | SN | 833976,25",Avenida Regional,SN,continuo,833976.25,1183417.625,3
+"Avenida Regional | SN | 834003,875",Avenida Regional,SN,continuo,834003.875,1179508.25,4
+"Avenida Regional | SN | 834217,0625",Avenida Regional,SN,continuo,834217.0625,1180965.875,3
+"Avenida Regional | SN | 834275,1875",Avenida Regional,SN,continuo,834275.1875,1183954.125,4
+"Avenida Regional | SN | 834430,3125",Avenida Regional,SN,continuo,834430.3125,1184211.875,3
+"Calle 10 | EW | 833795,4375",Calle 10,EW,interrumpido,833795.4375,1179094.75,2
+"Calle 10 | EW | 834123,6875",Calle 10,EW,interrumpido,834123.6875,1179054.5,2
+"Calle 10 | EW | 835390,0613",Calle 10,EW,interrumpido,835390.0613,1178550.436,3
+"Calle 10 | WE | 833795,4375",Calle 10,WE,interrumpido,833795.4375,1179094.75,2
+"Calle 10 | WE | 834760,3125",Calle 10,WE,interrumpido,834760.3125,1178761.375,7
+"Calle 10 | WE | 835020,75",Calle 10,WE,,835020.75,1178658.25,1
+"Calle 12 Sur | EW | 833658,5625",Calle 12 Sur,EW,,833658.5625,1177029.5,2
+"Calle 12 Sur | WE | 833658,5625",Calle 12 Sur,WE,,833658.5625,1177029.5,2
+"Calle 3 Sur | EW | 834524,5",Calle 3 Sur,EW,,834524.5,1177702.75,2
+"Calle 30 | EW | 832909,8125",Calle 30,EW,,832909.8125,1181107.875,1
+"Calle 30 | EW | 834660,8125",Calle 30,EW,,834660.8125,1180801.875,1
+"Calle 30 | WE | 831261,125",Calle 30,WE,interrumpido,831261.125,1181015.5,2
+"Calle 30A | EW | 831252,0625",Calle 30A,EW,interrumpido,831252.0625,1181124.875,2
+"Calle 31 | EW | 834818,125",Calle 31,EW,interrumpido,834818.125,1181040.875,4
+"Calle 34 | EW | 832881,625",Calle 34,EW,interrumpido,832881.625,1181999.375,4
+"Calle 35 | EW | 831181,9375",Calle 35,EW,interrumpido,831181.9375,1182364.25,2
+"Calle 35 | WE | 831181,9375",Calle 35,WE,interrumpido,831181.9375,1182364.25,2
+"Calle 4 Sur | WE | 834256,625",Calle 4 Sur,WE,interrumpido,834256.625,1177728.875,2
+"Calle 41 - Los Huesos | EW | 834857,0625",Calle 41 - Los Huesos,EW,interrumpido,834857.0625,1182134.5,3
+"Calle 41 - Los Huesos | WE | 834857,0625",Calle 41 - Los Huesos,WE,interrumpido,834857.0625,1182134.5,2
+"Calle 55 - La Iguana | WE | 833181,625",Calle 55 - La Iguana,WE,seminterrumpido,833181.625,1184341.0,3
+"Calle 55 - La Iguana | WE | 833397,25",Calle 55 - La Iguana,WE,,833397.25,1184195.875,1
+"Calle 66 | WE | 836309,5",Calle 66,WE,,836309.5,1184387.0,1
+"Calle 71 | EW | 833956,8125",Calle 71,EW,interrumpido,833956.8125,1185410.625,2
+"Calle 71 | WE | 833956,8125",Calle 71,WE,interrumpido,833956.8125,1185410.625,2
+"Calle 73 | EW | 833321,25",Calle 73,EW,interrumpido,833321.25,1185708.75,1
+"Calle 73 | WE | 833321,25",Calle 73,WE,interrumpido,833321.25,1185708.75,1
+"Calle 80 | EW | 833263,75",Calle 80,EW,interrumpido,833263.75,1186903.5,4
+Calle 80 | SN | 834860,Calle 80,SN,interrumpido,834860.0,1187688.0,3
+"Calle 80 | WE | 834429,0625",Calle 80,WE,interrumpido,834429.0625,1186034.5,2
+"Calle 9 Sur - Los Balsos | EW | 834509,3125",Calle 9 Sur - Los Balsos,EW,interrumpido,834509.3125,1176964.375,2
+"Calle 9 Sur - Los Balsos | WE | 834509,3125",Calle 9 Sur - Los Balsos,WE,interrumpido,834509.3125,1176964.375,2
+"Carrera 37 | EW | 835882,6875",Carrera 37,EW,,835882.6875,1182240.0,2
+"Carrera 43C | SN | 834224,375",Carrera 43C,SN,interrumpido,834224.375,1177738.25,4
+"Carrera 45 | SN | 835194,625",Carrera 45,SN,,835194.625,1182526.875,1
+"Carrera 57 - Avenida Ferrocarril | NS | 834574,75",Carrera 57 - Avenida Ferrocarril,NS,,834574.75,1184000.5,1
+"Carrera 57 - Avenida Ferrocarril | SN | 834737,875",Carrera 57 - Avenida Ferrocarril,SN,interrumpido,834737.875,1184006.625,4
+"Carrera 65 | NS | 833590,6875",Carrera 65,NS,interrumpido,833590.6875,1183791.5,2
+"Carrera 65 | NS | 834766,25",Carrera 65,NS,,834766.25,1187455.375,1
+"Carrera 65 | SN | 833291,8125",Carrera 65,SN,interrumpido,833291.8125,1182614.75,8
+"Carrera 65 | SN | 833303,625",Carrera 65,SN,,833303.625,1180538.125,1
+"Carrera 65 | SN | 833342,125",Carrera 65,SN,interrumpido,833342.125,1182961.0,6
+"Carrera 65 | SN | 833590,6875",Carrera 65,SN,interrumpido,833590.6875,1183791.5,5
+"Carrera 70 | SN | 832378,25",Carrera 70,SN,,832378.25,1180101.125,1
+"Carrera 70 | SN | 832379,8125",Carrera 70,SN,interrumpido,832379.8125,1180105.875,4
+"Carrera 76 | SN | 831916,1875",Carrera 76,SN,,831916.1875,1181041.75,1
+"Colombia | EW | 833590,6875",Colombia,EW,interrumpido,833590.6875,1183791.5,6
+"Colombia | WE | 833579,625",Colombia,WE,,833579.625,1183785.875,1
+"Colombia | WE | 833590,6875",Colombia,WE,interrumpido,833590.6875,1183791.5,6
+"Loma El Tesoro | EW | 835859,8125",Loma El Tesoro,EW,seminterrumpido,835859.8125,1178087.75,4
+"Regional Paralela | NS | 834790,75",Regional Paralela,NS,continuo,834790.75,1186002.5,2
+"Regional Paralela | NS | 835207,287",Regional Paralela,NS,continuo,835207.287,1187224.24,2
+"Regional Paralela | NS | 835668,4375",Regional Paralela,NS,continuo,835668.4375,1188139.625,2
+"Regional Paralela | SN | 835207,287",Regional Paralela,SN,continuo,835207.287,1187224.24,2
+"Regional Paralela | SN | 835668,4375",Regional Paralela,SN,continuo,835668.4375,1188139.625,2
+"San Juan | EW | 833342,125",San Juan,EW,interrumpido,833342.125,1182961.0,8
+"San Juan | EW | 834472,6875",San Juan,EW,,834472.6875,1182649.375,1
+"San Juan | WE | 832724,8125",San Juan,WE,,832724.8125,1183028.25,1
+"San Juan | WE | 833342,125",San Juan,WE,interrumpido,833342.125,1182961.0,8
+"San Juan | WE | 833970,6875",San Juan,WE,interrumpido,833970.6875,1182790.0,4
+"Transversal 78 | EW | 834426,1875",Transversal 78,EW,interrumpido,834426.1875,1185956.0,3
+"Transversal Inferior | NS | 834817,0625",Transversal Inferior,NS,,834817.0625,1176013.75,1
+"V���a al Mar | EW | 829333,0625",V���a al Mar,EW,continuo,829333.0625,1186061.0,1
+"V���a al Mar | WE | 829333,0625",V���a al Mar,WE,continuo,829333.0625,1186061.0,1
+"V���a al T���nel de Occidente  | WE | 826956,5625",V���a al T���nel de Occidente ,WE,continuo,826956.5625,1186004.0,2
+"V���a al T���nel de Occidente  | WE-EW | 826542,625",V���a al T���nel de Occidente ,WE-EW,,826542.625,1186316.75,2

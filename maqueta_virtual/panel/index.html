@@ -178,7 +178,9 @@
     <option value="salida">↗ Sentido salida (hacia el Centro)</option>
     <option value="entrada">↙ Sentido entrada (hacia Bocagrande)</option>
   </select>
+  <select class="btn" id="hora" title="Hora del día simulada: la cantidad de carros sigue el perfil horario real (SIMM)"></select>
   <button class="btn rojo" data-evento="accidente">Accidente</button>
+  <button class="btn rojo" id="btnReal" title="Reproduce un accidente REAL de Bocagrande (datos abiertos DATT Cartagena)">Accidente real</button>
   <button class="btn amarillo" data-evento="congestion">Congestión</button>
   <button class="btn magenta" data-evento="aglomeracion">Aglomeración</button>
   <button class="btn" disabled title="Caso 2: pendiente">Persona solicitada</button>
@@ -223,6 +225,31 @@ sim.estado.alSeleccionar = id => {
 };
 sim.seleccionar(sim.estado.cruces[0].id, false);
 $("btnGeneral").onclick = () => sim.vistaGeneral();
+
+// ---------------- Datos reales: demanda por hora (SIMM) y accidentes reales (DATT) ----------------
+let datosReales = {};
+try { datosReales = await (await fetch("/api/datos_reales")).json(); } catch { datosReales = {}; }
+const horaAhora = new Date().getHours();
+$("hora").innerHTML = Array.from({ length: 24 }, (_, h) => {
+  const f = datosReales.perfil ? datosReales.perfil.habil[h] : 1;
+  return `<option value="${h}" ${h === horaAhora ? "selected" : ""}>${String(h).padStart(2, "0")}:00 · demanda ${Math.round(f * 100)} %</option>`;
+}).join("");
+function aplicarHora() {
+  const n = sim.fijarHora(+$("hora").value, datosReales.perfil);
+  linea({ hora: hora(), agente: "Panel", texto: `hora simulada ${$("hora").value}:00 → ${n} carros (perfil horario real SIMM)` });
+}
+$("hora").onchange = aplicarHora;
+aplicarHora();
+$("btnReal").onclick = async () => {
+  try {
+    const r = await fetch("/api/accidente_real", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hora: +$("hora").value }) });
+    const d = await r.json();
+    if (!r.ok) return linea({ hora: hora(), agente: "Panel", texto: "error: " + d.detail });
+    linea({ hora: hora(), agente: "Panel", texto: `accidente REAL (DATT, IPAT ${d.ipat}): ${d.momento}, ${d.via}, ${d.clase} ${d.gravedad} → ${d.cruce}` });
+    sim.seleccionar(d.cruce);
+  } catch { linea({ hora: hora(), agente: "Panel", texto: "error de red" }); }
+};
 
 // ---------------- Botones de eventos ----------------
 for (const b of document.querySelectorAll("[data-evento]")) {
@@ -284,7 +311,7 @@ $("planes").addEventListener("click", async ev => {
     return;
   }
   const d = ev.target.closest(".plan"); if (!d) return;
-  if (sim.estado.centroPlan && sim.estado.contraflujo) sim.vistaPlan(); else sim.seleccionar(d.dataset.cruce);
+  if (sim.estado.centroPlan) sim.vistaPlan(); else sim.seleccionar(d.dataset.cruce);
 });
 
 function grafica() {
@@ -349,7 +376,8 @@ function recibir(p) {
     pendientes.push(id);
     linea({ hora: p.hora, agente: "MQTT", texto: `evento ${ev} en ${id}`, mqtt: true });
     if (vivo) {
-      if (ev === "accidente") sim.eventoAccidente(id, typeof p.datos === "object" ? p.datos.sentido : null);
+      if (ev === "accidente") sim.eventoAccidente(id, typeof p.datos === "object" ? p.datos.sentido : null,
+        typeof p.datos === "object" && p.datos.real ? { arista: p.datos.arista, x: p.datos.real.x, z: p.datos.real.z } : null);
       else if (ev === "congestion") sim.congestion();
       else if (ev === "aglomeracion") sim.aglomerar(id);
     }
@@ -373,7 +401,7 @@ function recibir(p) {
       planes.set(d.alerta, { ...d, finMs: Date.now() + dur * 1000 });
       linea({ hora: p.hora, agente: "MQTT", texto: `plan activo en ${id}: ${d.nombre}`, mqtt: true });
       if (vivo && d.evento === "accidente") sim.enviarEmergencia(d.cruce, "ambulancia");
-      if (vivo && sim.estado.contraflujo && d.plan === sim.estado.contraflujo) sim.vistaPlan();
+      if (vivo && sim.estado.centroPlan) sim.vistaPlan();   // contraflujo o rutas sugeridas por el modelo
     } else {
       linea({ hora: p.hora, agente: "MQTT", texto: `plan terminado en ${id}: ${d.nombre}`, mqtt: true });
       terminarPlanLocal(d);
