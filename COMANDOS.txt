@@ -101,6 +101,11 @@ python agentes\sma_agentes.py
 # Probar SIN ESP32 (dispara un accidente de prueba solo):
 python agentes\sma_agentes.py --simular
 
+# Prueba automatizada de la tarea 2.7 (no requiere ESP32 ni panel):
+# levanta un Mosquitto temporal, inicia los 7 agentes y verifica que el
+# accidente llegue hasta el Semafórico, active prioridad_a y vuelva a normal.
+python pruebas\prueba_punta_a_punta.py
+
 
 ----------------------------------------------------------------------
  6. PROBAR EL CASO 1 (ACCIDENTE -> CORREDOR DE EMERGENCIA)
