@@ -11,6 +11,8 @@ SMA Movilidad y Seguridad CTG - APRENDIZAJE DE LOS AGENTES
 
 2) ExperienciaPlanes: el Agente Coordinador corrige el "impacto" de cada plan con lo que mide
    en TODO el sector (suma de colas de los 5 cruces): ¿Bocagrande fluyó mejor o peor con el plan?
+   Se guarda por SITUACIÓN ("accidente@cruce5/salida", "congestion@cruce3"...) para comparar planes
+   en las mismas condiciones; con probabilidad epsilon el Coordinador prueba el plan menos usado.
      efecto  = (cola antes - cola durante) / max(cola antes, 3)          (-1..1)
      si efecto > 0:  impacto <- impacto + ALFA_PLANES * efecto * (1 - impacto)     (sube hacia 1)
      si efecto < 0:  impacto <- impacto + ALFA_PLANES * efecto * impacto           (baja hacia 0)
@@ -120,25 +122,58 @@ class QSemaforo:
 
 
 class ExperienciaPlanes:
+    """Impacto aprendido de cada plan por situación. Claves: "<situación>|<plan>"."""
+
     def __init__(self, olvidar=False):
         self.ruta = CARPETA_MEMORIA / "experiencia_planes.json"
-        self.datos = {} if olvidar else _leer(self.ruta)    # clave -> {"impacto", "n", "historial": [...]}
+        datos = {} if olvidar else _leer(self.ruta)
+        eps = datos.get("_epsilon")
+        self.epsilon = eps if isinstance(eps, (int, float)) else K.EPSILON_PLANES
+        self.datos = {}
+        for k, v in datos.items():
+            if k.startswith("_"):
+                continue
+            if "|" not in k:      # formato anterior (sin situación): el contraflujo solo existe en el accidente del cruce5
+                sentido = "entrada" if k == "contraflujo_entrada" else "salida"
+                k = (f"accidente@{K.SALIDA_BOCAGRANDE}/{sentido}" if k.startswith("contraflujo") else "*") + "|" + k
+            self.datos[k] = v
 
-    def impacto(self, clave):
-        e = self.datos.get(clave)
+    @staticmethod
+    def situacion(evento, cruce, sentido=None):
+        return f"{evento}@{cruce}" + (f"/{sentido}" if sentido else "")
+
+    def impacto(self, clave, situacion):
+        e = self.datos.get(f"{situacion}|{clave}")
         return e["impacto"] if e else K.CATALOGO_PLANES[clave]["impacto"]
 
-    def veces(self, clave):
-        return self.datos.get(clave, {}).get("n", 0)
+    def veces(self, clave, situacion):
+        return self.datos.get(f"{situacion}|{clave}", {}).get("n", 0)
 
-    def actualizar(self, clave, cola_antes, cola_durante):
+    def actualizar(self, clave, situacion, cola_antes, cola_durante):
         efecto = max(-1.0, min(1.0, (cola_antes - cola_durante) / max(cola_antes, 3.0)))
-        antes = self.impacto(clave)
+        antes = self.impacto(clave, situacion)
         margen = (1 - antes) if efecto > 0 else antes
         nuevo = round(min(0.99, max(0.05, antes + K.ALFA_PLANES * efecto * margen)), 3)
-        e = self.datos.setdefault(clave, {"impacto": antes, "n": 0, "historial": []})
+        e = self.datos.setdefault(f"{situacion}|{clave}", {"impacto": antes, "n": 0, "historial": []})
         e["impacto"], e["n"] = nuevo, e["n"] + 1
         e["historial"] = (e["historial"] + [{"antes": round(cola_antes, 1), "durante": round(cola_durante, 1),
                                               "efecto": round(efecto, 2), "impacto": nuevo}])[-20:]
-        _escribir(self.ruta, self.datos)
+        self.guardar()
         return antes, nuevo, efecto
+
+    def decaer(self):
+        """Cada alerta atendida explora un poco menos."""
+        self.epsilon = round(max(K.EPSILON_PLANES_MINIMO, self.epsilon * K.EPSILON_PLANES_DECAIMIENTO), 4)
+        self.guardar()
+
+    def entradas(self):
+        filas = []
+        for k, v in sorted(self.datos.items()):
+            situacion, clave = k.split("|", 1)
+            if clave in K.CATALOGO_PLANES:
+                filas.append({"situacion": situacion, "clave": clave, "nombre": K.CATALOGO_PLANES[clave]["nombre"],
+                              "inicial": K.CATALOGO_PLANES[clave]["impacto"], "impacto": v["impacto"], "veces": v["n"]})
+        return filas
+
+    def guardar(self):
+        _escribir(self.ruta, {"_epsilon": self.epsilon, **self.datos})

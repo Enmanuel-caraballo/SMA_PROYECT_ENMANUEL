@@ -229,6 +229,10 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
   Semafórico (17-nov): histéresis `MARGEN_CAMBIO`=0.3 (solo cambia si la mejor opción supera a la actual por ese
   margen); con el cruce vacío (a0-b0) queda en `normal` o en el modo del plan y no explora; la bitácora muestra la
   cola con un decimal.
+  Coordinador (17-nov): lo aprendido se guarda por **situación** (`evento@cruce[/sentido]|plan`, p. ej.
+  `accidente@cruce5/salida|contraflujo_salida`) y con probabilidad `EPSILON_PLANES` (0.25, baja ×0.9 por alerta hasta
+  0.05) prueba el plan **menos usado** en esa situación para medirlo con datos reales; nunca explora en alertas de
+  Seguridad ni prueba "Solo avisar" con prioridad Alta/Crítica. La memoria (`agentes/memoria/`) se sube a Git.
 - Terminar contingencia: botón "Terminar" del aviso → `POST /api/terminar` → `sma/eventos/<cruce>`
   `{"tipo":"fin_contingencia","alerta"}` → Vigilancia → Coordinador (`TerminarAlerta`). Si el SMA no avisa el cierre
   20 s después de la hora, el panel retira el plan de la vista por su cuenta.

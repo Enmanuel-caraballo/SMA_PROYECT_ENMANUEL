@@ -108,6 +108,8 @@ sus parámetros, la decisión que tomó y por qué, y lo que lleva aprendido.
 - **Agente Coordinador: decide por utilidad y aprende el impacto real de cada plan.** Cada plan tiene un impacto
   esperado y un costo; utilidad = impacto × factor de tráfico − 0,5 × costo. Al cerrar un plan mide las colas de todo
   el sector antes y durante el plan y corrige el impacto (sube si Bocagrande fluyó mejor, baja si fluyó peor).
+  Lo aprendido se guarda **por situación** (p. ej. `accidente@cruce5/salida`) y, a veces, el Coordinador **explora**:
+  prueba el plan menos usado en esa situación para compararlo con datos reales y no con su valor inicial.
 - **Agente Consultor: modelo del tráfico.** Calcula el nivel (bajo/medio/alto) con las colas reales de los sensores y
   guarda 15 min de historia para que el Coordinador mida el efecto de sus planes.
 - **Terminar una contingencia antes de tiempo:** botón **Terminar** en el aviso del plan (o

@@ -115,8 +115,10 @@
     <div class="tenue" data-campo="rol"></div>
     <div class="grid2">
       <div>
-        <h3>Catálogo de planes y lo aprendido</h3>
+        <h3>Catálogo de planes (conocimiento inicial)</h3>
         <table id="cCatalogo"></table>
+        <h3>Lo aprendido por situación</h3>
+        <div id="cExperiencia" class="vacio">Aún no ha medido ningún plan.</div>
         <h3>Última decisión</h3>
         <div id="cUltima" class="vacio">Aún no hay alertas.</div>
       </div>
@@ -229,21 +231,26 @@ function graficaRecompensas(v) {
 function pintarCoordinador(m) {
   pintarComun($("coordinador"), m);
   const s = m.estado || {};
-  $("cCatalogo").innerHTML = `<tr><th>Plan</th><th>Costo</th><th>Impacto inicial</th><th>Impacto aprendido</th><th>Usos</th></tr>` +
-    (s.catalogo || []).map(p => `<tr><td>${esc(p.nombre)}</td><td>${p.costo}</td><td>${p.impacto_inicial}</td>
-      <td>${barra(p.impacto_aprendido, 1, p.impacto_aprendido >= p.impacto_inicial ? "var(--verde)" : "var(--ambar)")}<span class="mono">${p.impacto_aprendido}</span></td>
-      <td>${p.veces}</td></tr>`).join("");
+  $("cCatalogo").innerHTML = `<tr><th>Plan</th><th>Costo</th><th>Impacto inicial</th></tr>` +
+    (s.catalogo || []).map(p => `<tr><td>${esc(p.nombre)}</td><td>${p.costo}</td><td>${p.impacto_inicial}</td></tr>`).join("");
+  const ex = s.experiencia || [];
+  $("cExperiencia").className = ex.length ? "" : "vacio";
+  $("cExperiencia").innerHTML = ex.length ? `<table><tr><th>Situación</th><th>Plan</th><th>Inicial</th><th>Aprendido</th><th>Usos</th></tr>` +
+    ex.map(e => `<tr><td class="mono">${esc(e.situacion)}</td><td>${esc(e.nombre)}</td><td>${e.inicial}</td>
+      <td>${barra(e.impacto, 1, e.impacto >= e.inicial ? "var(--verde)" : "var(--ambar)")}<span class="mono">${e.impacto}</span></td>
+      <td>${e.veces}</td></tr>`).join("") + "</table>" : "Aún no ha medido ningún plan.";
   const u = s.ultima_decision;
-  if (u) $("cUltima").outerHTML = `<div id="cUltima"><div class="tenue">${esc(u.alerta)} en ${esc(u.cruce)} · tráfico ${esc(u.nivel)} (factor ${u.factor})</div>
-      <table><tr><th>Plan</th><th>Impacto</th><th>Costo</th><th>Utilidad</th></tr>${u.planes.map(p => `<tr class="${p.clave === u.elegido ? "elegido" : ""}">
-      <td>${p.clave === u.elegido ? "▶ " : ""}${esc(p.nombre)}</td><td>${p.impacto}</td><td>${p.costo}</td><td>${p.utilidad}</td></tr>`).join("")}</table></div>`;
+  if (u) $("cUltima").outerHTML = `<div id="cUltima"><div class="tenue">${esc(u.alerta)} · situación <span class="mono">${esc(u.situacion || u.cruce)}</span> · tráfico ${esc(u.nivel)} (factor ${u.factor})</div>
+      ${u.explorado ? `<div style="color:var(--ambar)">Exploró: probó un plan menos usado en vez del de mayor utilidad, para medirlo con datos.</div>` : ""}
+      <table><tr><th>Plan</th><th>Impacto</th><th>Costo</th><th>Utilidad</th><th>Usos</th></tr>${u.planes.map(p => `<tr class="${p.clave === u.elegido ? "elegido" : ""}">
+      <td>${p.clave === u.elegido ? "▶ " : ""}${esc(p.nombre)}${p.clave === u.optimo && u.explorado ? " (mayor utilidad)" : ""}</td><td>${p.impacto}</td><td>${p.costo}</td><td>${p.utilidad}</td><td>${p.veces}</td></tr>`).join("")}</table></div>`;
   const act = s.activas || [];
   $("cActivas").className = act.length ? "" : "vacio";
   $("cActivas").innerHTML = act.length ? act.map(a => `<div>${esc(a.alerta)} · ${esc(a.plan)} en ${esc(a.cruce)} desde ${esc(a.desde)}</div>`).join("") : "Ninguna.";
   const ap = s.aprendido || [];
   $("cAprendido").className = ap.length ? "" : "vacio";
   $("cAprendido").innerHTML = ap.length ? `<table><tr><th>Alerta</th><th>Plan</th><th>Cola antes → durante</th><th>Efecto</th><th>Impacto</th></tr>` +
-    ap.slice().reverse().map(x => `<tr><td>${esc(x.alerta)}</td><td>${esc(x.plan)}</td><td>${x.antes} → ${x.durante}</td>
+    ap.slice().reverse().map(x => `<tr><td>${esc(x.alerta)}</td><td>${esc(x.plan)}<div class="tenue mono">${esc(x.situacion || "")}</div></td><td>${x.antes} → ${x.durante}</td>
       <td style="color:${x.efecto >= 0 ? "var(--verde)" : "var(--rojo)"}">${x.efecto >= 0 ? "+" : ""}${x.efecto}</td><td>${x.impacto[0]} → ${x.impacto[1]}</td></tr>`).join("") + "</table>"
     : "Aún no ha cerrado ningún plan.";
 }

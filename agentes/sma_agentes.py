@@ -30,6 +30,7 @@ Desde la carpeta de Mosquitto:
 
 import asyncio
 import json
+import random
 import sys
 import time
 from collections import deque
@@ -268,14 +269,18 @@ def generar_planes(alerta, cruce, experiencia):
     seguridad = alerta.get("tipo") == "Seguridad"
     claves = list(K.PLANES_POR_EVENTO["Seguridad" if seguridad else evento] if (seguridad or evento in K.PLANES_POR_EVENTO)
                   else ["solo_avisar"])
+    sentido = None
     if evento == "accidente" and cruce == K.SALIDA_BOCAGRANDE:
         # el accidente bloquea la única salida (o entrada) de Bocagrande: se considera el contraflujo
-        claves.append("contraflujo_entrada" if alerta.get("sentido") == "entrada" else "contraflujo_salida")
+        sentido = "entrada" if alerta.get("sentido") == "entrada" else "salida"
+        claves.append(f"contraflujo_{sentido}")
+    situacion = experiencia.situacion(evento if not seguridad else "seguridad", cruce, sentido)
     planes = []
     for clave in claves:
         c = K.CATALOGO_PLANES[clave]
-        p = {"clave": clave, "nombre": c["nombre"], "impacto": experiencia.impacto(clave), "costo": c["costo"],
-             "veces": experiencia.veces(clave), "receptor": "Policia" if seguridad else "Ciudadania"}
+        p = {"clave": clave, "nombre": c["nombre"], "impacto": experiencia.impacto(clave, situacion), "costo": c["costo"],
+             "veces": experiencia.veces(clave, situacion), "situacion": situacion,
+             "receptor": "Policia" if seguridad else "Ciudadania"}
         if clave == "solo_avisar":
             p.update(semaforos={}, aviso=(f"posible coincidencia ({evento}) en {lugar}." if seguridad
                                           else f"{evento} en {lugar}; transite con precaución."))
@@ -307,8 +312,7 @@ class AgenteCoordinador(Agent):
         self.add_behaviour(self.Terminar(), plantilla("inform", "TerminarAlerta"))
 
     def mente(self):
-        catalogo = [{"clave": k, "nombre": c["nombre"], "costo": c["costo"], "impacto_inicial": c["impacto"],
-                     "impacto_aprendido": self.experiencia.impacto(k), "veces": self.experiencia.veces(k)}
+        catalogo = [{"clave": k, "nombre": c["nombre"], "costo": c["costo"], "impacto_inicial": c["impacto"]}
                     for k, c in K.CATALOGO_PLANES.items()]
         publicar_mente("Coordinador", {
             "tipo": "Basado en utilidad (aprende el impacto real de cada plan)",
@@ -322,10 +326,16 @@ class AgenteCoordinador(Agent):
                        "SI alerta de Seguridad ENTONCES cerco y aviso SOLO a la Policía",
                        "Al cerrar un plan mide las colas de TODO el sector: efecto = (cola antes − cola durante) / máx(cola antes, 3)",
                        f"SI efecto > 0 ENTONCES impacto sube: + {K.ALFA_PLANES}·efecto·(1 − impacto); "
-                       f"SI efecto < 0 ENTONCES baja: + {K.ALFA_PLANES}·efecto·impacto"],
+                       f"SI efecto < 0 ENTONCES baja: + {K.ALFA_PLANES}·efecto·impacto",
+                       "Lo aprendido se guarda por situación (evento @ cruce / sentido): se comparan planes en las mismas condiciones",
+                       "Con probabilidad ε prueba el plan MENOS USADO en esa situación para medirlo con datos reales "
+                       f"(ε baja ×{K.EPSILON_PLANES_DECAIMIENTO} por alerta hasta {K.EPSILON_PLANES_MINIMO}); nunca en alertas de "
+                       f"Seguridad, y no prueba 'Solo avisar' con prioridad {' o '.join(K.NO_EXPLORAR_SOLO_AVISAR_EN)}"],
             "parametros": {"duracion_plan_s": SEGUNDOS_PLAN, "factor_trafico": K.FACTOR_TRAFICO, "peso_costo": K.PESO_COSTO,
-                           "alfa_aprendizaje": K.ALFA_PLANES, "linea_base_s": K.SEGUNDOS_LINEA_BASE},
-            "estado": {"catalogo": catalogo, "ultima_decision": self.ultima, "activas": list(self.activas.values()),
+                           "alfa_aprendizaje": K.ALFA_PLANES, "linea_base_s": K.SEGUNDOS_LINEA_BASE,
+                           "epsilon_planes": self.experiencia.epsilon},
+            "estado": {"catalogo": catalogo, "experiencia": self.experiencia.entradas(),
+                       "ultima_decision": self.ultima, "activas": list(self.activas.values()),
                        "aprendido": self.aprendido[-10:]},
         })
 
@@ -387,12 +397,27 @@ class AgenteCoordinador(Agent):
             planes = generar_planes(a, cruce, ag.experiencia)
             for p in planes:
                 p["utilidad"] = round(p["impacto"] * factor - K.PESO_COSTO * p["costo"], 2)
-            mejor = max(planes, key=lambda p: p["utilidad"])
-            log("Coordinador", "utilidades: " + ", ".join(
-                f"{p['nombre']}={p['utilidad']}" + (f" (aprendido en {p['veces']} usos)" if p["veces"] else "")
+            optimo = max(planes, key=lambda p: p["utilidad"])
+            situacion = optimo["situacion"]
+            log("Coordinador", f"situación {situacion} · utilidades: " + ", ".join(
+                f"{p['nombre']}={p['utilidad']}" + (f" (medido en {p['veces']} usos)" if p["veces"] else " (sin medir)")
                 for p in planes))
+            # exploración: a veces prueba el plan menos usado en esta situación para medirlo con datos reales
+            mejor, explorado, eps = optimo, False, ag.experiencia.epsilon
+            if a.get("tipo") != "Seguridad" and random.random() < eps:
+                candidatos = [p for p in planes if p is not optimo and not
+                              (p["clave"] == "solo_avisar" and a.get("prioridad") in K.NO_EXPLORAR_SOLO_AVISAR_EN)]
+                if candidatos:
+                    menos = min(p["veces"] for p in candidatos)
+                    mejor = random.choice([p for p in candidatos if p["veces"] == menos])
+                    explorado = True
+            ag.experiencia.decaer()
+            if explorado:
+                log("Coordinador", f"exploro (ε={eps:.2f}): pruebo '{mejor['nombre']}' (usado {mejor['veces']} veces en "
+                                   f"esta situación) en vez de '{optimo['nombre']}', para medirlo con datos reales")
             log("Coordinador", f"plan elegido: {mejor['nombre']}")
-            ag.ultima = {"alerta": hilo, "cruce": cruce, "nivel": estado["nivel"], "factor": factor, "elegido": mejor["clave"],
+            ag.ultima = {"alerta": hilo, "cruce": cruce, "situacion": situacion, "nivel": estado["nivel"], "factor": factor,
+                         "elegido": mejor["clave"], "optimo": optimo["clave"], "explorado": explorado,
                          "planes": [{k: p[k] for k in ("clave", "nombre", "impacto", "costo", "utilidad", "veces")} for p in planes]}
 
             # línea base para aprender: cola media de todo el sector justo antes de actuar
@@ -428,10 +453,11 @@ class AgenteCoordinador(Agent):
             # 6) Aprender: ¿cuánto sirvió el plan? (cola media durante el plan vs antes)
             durante = await self.cola_media([], max(10, time.monotonic() - inicio), hilo)
             if antes and durante:
-                viejo, nuevo, efecto = ag.experiencia.actualizar(mejor["clave"], antes["media"], durante["media"])
-                log("Coordinador", f"{hilo}: aprendí del plan '{mejor['nombre']}': cola {antes['media']:.1f} -> "
+                viejo, nuevo, efecto = ag.experiencia.actualizar(mejor["clave"], situacion, antes["media"], durante["media"])
+                log("Coordinador", f"{hilo}: aprendí del plan '{mejor['nombre']}' en {situacion}: cola {antes['media']:.1f} -> "
                                    f"{durante['media']:.1f} (efecto {efecto:+.2f}); impacto {viejo:.2f} -> {nuevo:.2f}")
-                ag.aprendido.append({"alerta": hilo, "plan": mejor["nombre"], "antes": round(antes["media"], 1),
+                ag.aprendido.append({"alerta": hilo, "plan": mejor["nombre"], "situacion": situacion,
+                                     "antes": round(antes["media"], 1),
                                      "durante": round(durante["media"], 1), "efecto": round(efecto, 2),
                                      "impacto": [viejo, nuevo]})
             else:

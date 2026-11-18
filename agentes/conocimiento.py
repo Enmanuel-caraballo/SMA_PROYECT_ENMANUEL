@@ -41,6 +41,14 @@ FACTOR_TRAFICO_DESCONOCIDO = 0.85
 PESO_COSTO = 0.5
 ALFA_PLANES = 0.3                          # cuánto pesa cada nueva experiencia al corregir el impacto
 SEGUNDOS_LINEA_BASE = 60                   # colas medidas antes del evento para comparar
+# Exploración de planes: a veces el Coordinador prueba el plan MENOS USADO en esa situación para medirlo con datos
+# reales (si no, un plan nunca probado conserva para siempre su impacto inicial y la comparación es injusta).
+# Lo aprendido se guarda por situación: evento @ cruce (/ sentido en el cruce5).
+EPSILON_PLANES = 0.25                      # probabilidad de explorar en una alerta
+EPSILON_PLANES_MINIMO = 0.05
+EPSILON_PLANES_DECAIMIENTO = 0.9           # por cada alerta atendida
+NO_EXPLORAR_SOLO_AVISAR_EN = ["Alta", "Critica"]   # con alertas graves no se "prueba" no hacer nada
+# Las alertas de Seguridad nunca exploran: siempre el plan de mayor utilidad (cerco + aviso solo a la Policía).
 
 SALIDA_BOCAGRANDE = "cruce5"               # única salida/entrada de Bocagrande hacia el Centro
 
