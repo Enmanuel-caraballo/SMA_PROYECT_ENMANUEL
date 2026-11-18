@@ -1,0 +1,38 @@
+{
+ "escenarios": 12,
+ "duracion_s": 1800,
+ "resumen": [
+  {
+   "controlador": "DQN + T-GCN (neuronal)",
+   "demora_veh_h": 65.13,
+   "viaje_medio_s": 335.3,
+   "llegados": 1358.83,
+   "cola_media": 8.8,
+   "mejora_demora_vs_fijo_%": 4.1
+  },
+  {
+   "controlador": "Max-pressure (matemático)",
+   "demora_veh_h": 65.34,
+   "viaje_medio_s": 337.62,
+   "llegados": 1370.75,
+   "cola_media": 10.5,
+   "mejora_demora_vs_fijo_%": 3.8
+  },
+  {
+   "controlador": "Semáforo fijo",
+   "demora_veh_h": 67.94,
+   "viaje_medio_s": 350.25,
+   "llegados": 1333.83,
+   "cola_media": 13.35,
+   "mejora_demora_vs_fijo_%": 0.0
+  },
+  {
+   "controlador": "Tabla Q (actual)",
+   "demora_veh_h": 65.73,
+   "viaje_medio_s": 338.1,
+   "llegados": 1355.5,
+   "cola_media": 10.45,
+   "mejora_demora_vs_fijo_%": 3.3
+  }
+ ]
+}

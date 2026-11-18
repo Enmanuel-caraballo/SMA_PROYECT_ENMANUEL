@@ -1,0 +1,52 @@
+{
+ "datos": "bocagrande",
+ "paso": "12 s",
+ "unidad": "veh en cola",
+ "ventana": 15,
+ "horizonte": 3,
+ "nodos": 10,
+ "aristas_grafo": 24,
+ "muestras": {
+  "entrenamiento": 5693,
+  "validacion": 1217,
+  "prueba": 1233
+ },
+ "resultados": {
+  "Persistencia (ingenuo)": {
+   "MAE": 0.9573900699615479,
+   "RMSE": 1.5780378580093384,
+   "MAPE_%": 61.81866455078125
+  },
+  "Promedio histórico (misma hora y día)": {
+   "MAE": 1.0923000574111938,
+   "RMSE": 1.7216919660568237,
+   "MAPE_%": 56.27158737182617
+  },
+  "GRU sin grafo (ablación)": {
+   "MAE": 0.8438034653663635,
+   "RMSE": 1.3138712644577026,
+   "MAPE_%": 45.69713592529297,
+   "epocas": 39,
+   "segundos": 388.2,
+   "por_horizonte_MAE": [
+    0.7675038576126099,
+    0.8314990401268005,
+    0.932407557964325
+   ]
+  },
+  "T-GCN (GCN + GRU)": {
+   "MAE": 0.8239139318466187,
+   "RMSE": 1.2857621908187866,
+   "MAPE_%": 44.667564392089844,
+   "epocas": 39,
+   "segundos": 461.8,
+   "por_horizonte_MAE": [
+    0.7398318648338318,
+    0.8264094591140747,
+    0.905500590801239
+   ]
+  }
+ },
+ "mejora_vs_persistencia_%": 13.9,
+ "fecha": "2026-11-17 23:53"
+}

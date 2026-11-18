@@ -146,6 +146,23 @@ sus parámetros, la decisión que tomó y por qué, y lo que lleva aprendido.
   vecinos. La tabla Q sigue aprendiendo en paralelo y toma el control si falta la red. Sin PyTorch o sin modelos
   entrenados todo sigue funcionando con las reglas y la tabla Q.
 
+**Resultados (prueba con datos que los modelos no vieron; `modelos/entrenados/`):**
+
+| Predicción de colas / flujo | Persistencia | Promedio histórico | GRU sin grafo | **T-GCN** |
+|---|---|---|---|---|
+| Bocagrande (SUMO, cola en veh, 36 s) | MAE 0,96 | 1,09 | 0,84 | **0,82** |
+| Medellín, flujo REAL SIMM (veh/h, 1-3 h) | MAE 306 | 196 | 157 | 163 |
+
+En Bocagrande la T-GCN es la mejor; con el flujo real de Medellín baja el error 47 % frente a la persistencia, pero el
+grafo no aporta sobre la GRU sola (estaciones lejanas y datos horarios): se reporta tal cual.
+
+| Semáforos en SUMO (12 escenarios iguales) | Demora (veh·h) | Viaje medio (s) | Cola media (veh) |
+|---|---|---|---|
+| Semáforo fijo | 67,9 | 350 | 13,4 |
+| Tabla Q (anterior) | 65,7 | 338 | 10,5 |
+| Max-pressure (matemático) | 65,3 | 338 | 10,5 |
+| **DQN + T-GCN** | **65,1** | **335** | **8,8** |
+
 ## Gemelo digital 3D
 
 - **Vehículos**: siguen la red real (sentidos únicos incluidos), mantienen distancia y frenan en la línea de pare

@@ -1,0 +1,52 @@
+{
+ "datos": "simm",
+ "paso": "1 h",
+ "unidad": "veh/h",
+ "ventana": 12,
+ "horizonte": 3,
+ "nodos": 156,
+ "aristas_grafo": 676,
+ "muestras": {
+  "entrenamiento": 506,
+  "validacion": 112,
+  "prueba": 110
+ },
+ "resultados": {
+  "Persistencia (ingenuo)": {
+   "MAE": 306.13861083984375,
+   "RMSE": 504.3323669433594,
+   "MAPE_%": 56.46234893798828
+  },
+  "Promedio histórico (misma hora y día)": {
+   "MAE": 196.34092712402344,
+   "RMSE": 356.0482177734375,
+   "MAPE_%": 28.87060546875
+  },
+  "GRU sin grafo (ablación)": {
+   "MAE": 157.2652130126953,
+   "RMSE": 285.996826171875,
+   "MAPE_%": 26.415971755981445,
+   "epocas": 166,
+   "segundos": 1771.1,
+   "por_horizonte_MAE": [
+    130.73974609375,
+    163.39572143554688,
+    177.66018676757812
+   ]
+  },
+  "T-GCN (GCN + GRU)": {
+   "MAE": 163.31614685058594,
+   "RMSE": 295.1402893066406,
+   "MAPE_%": 27.36170196533203,
+   "epocas": 76,
+   "segundos": 403.4,
+   "por_horizonte_MAE": [
+    137.61105346679688,
+    168.9340057373047,
+    183.40335083007812
+   ]
+  }
+ },
+ "mejora_vs_persistencia_%": 46.7,
+ "fecha": "2026-11-18 00:29"
+}

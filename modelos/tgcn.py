@@ -5,8 +5,8 @@ T-GCN: Zhao, L. et al. (2019) "T-GCN: A Temporal Graph Convolutional Network for
 IEEE Transactions on Intelligent Transportation Systems 21(9). Código de referencia: github.com/lehaifeng/T-GCN
 
 Idea: el tráfico de un punto depende de sus VECINOS (espacio) y de su HISTORIA (tiempo).
-  - Convolución de grafo (GCN, Kipf & Welling 2017): cada nodo mezcla su estado con el de sus vecinos
-        GC(X) = Â · X · W,     Â = D^(-1/2) (A + I) D^(-1/2)   (matriz de adyacencia normalizada)
+  - Convolución de grafo (GCN, Kipf & Welling 2017) con peso propio (GraphSAGE): mezcla su estado con el de sus vecinos
+        GC(X) = Â · X · W_v + X · W_p,     Â = D^(-1/2) (A + I) D^(-1/2)   (matriz de adyacencia normalizada)
   - Celda GRU con convoluciones de grafo en lugar de capas densas:
         u, r = σ(GC([X_t, H_{t-1}]))          (compuertas de actualización y de reinicio)
         c    = tanh(GC([X_t, r ⊙ H_{t-1}]))   (estado candidato)
@@ -22,13 +22,20 @@ import torch
 from torch import nn
 
 
-def adyacencia_gaussiana(coords, umbral=0.1, sigma=None):
-    """Grafo por cercanía (DCRNN, Li et al. 2018): W_ij = exp(-d_ij² / σ²) si >= umbral."""
+def adyacencia_gaussiana(coords, k=4, sigma=None):
+    """Grafo por cercanía (núcleo gaussiano de DCRNN, Li et al. 2018) DISPERSO: cada nodo se une a sus k vecinos
+    más cercanos, W_ij = exp(-d_ij² / σ²) con σ = mediana de esas distancias. Un grafo denso (todos con todos) hace que
+    cada nodo promedie estaciones muy distintas y se pierde la señal propia (sobre-suavizado)."""
     coords = np.asarray(coords, dtype=float)
     d = np.sqrt(((coords[:, None, :] - coords[None, :, :]) ** 2).sum(-1))
-    sigma = sigma or d[d > 0].std()
-    w = np.exp(-(d / sigma) ** 2)
-    w[w < umbral] = 0.0
+    n = len(d)
+    k = min(k, n - 1)
+    vecinos = np.argsort(d, axis=1)[:, 1:k + 1]
+    sigma = sigma or float(np.median(d[np.arange(n)[:, None], vecinos])) or 1.0
+    w = np.zeros_like(d)
+    for i in range(n):
+        for j in vecinos[i]:
+            w[i, j] = w[j, i] = np.exp(-(d[i, j] / sigma) ** 2)
     return w
 
 
@@ -41,13 +48,17 @@ def normalizar_adyacencia(a):
 
 
 class ConvGrafo(nn.Module):
+    """GC(X) = Â·X·W_vecinos + X·W_propio: el nodo conserva su propia señal además de la de sus vecinos
+    (como GraphSAGE, Hamilton et al. 2017); evita el sobre-suavizado de la GCN pura."""
+
     def __init__(self, entrada, salida, a_norm):
         super().__init__()
         self.register_buffer("a", torch.as_tensor(a_norm, dtype=torch.float32))
-        self.lineal = nn.Linear(entrada, salida)
+        self.vecinos = nn.Linear(entrada, salida)
+        self.propio = nn.Linear(entrada, salida, bias=False)
 
     def forward(self, x):                      # x: (lote, nodos, rasgos)
-        return self.lineal(torch.einsum("ij,bjf->bif", self.a, x))
+        return self.vecinos(torch.einsum("ij,bjf->bif", self.a, x)) + self.propio(x)
 
 
 class CeldaTGCN(nn.Module):
@@ -82,11 +93,11 @@ class TGCN(nn.Module):
 
 
 class GRUSinGrafo(nn.Module):
-    """Ablación: la misma GRU pero cada nodo solo ve su propia historia (Â = I). Mide cuánto aporta el grafo."""
+    """Ablación: la misma GRU pero cada nodo solo ve su propia historia (Â = 0, sin vecinos). Mide cuánto aporta el grafo."""
 
     def __init__(self, n, rasgos, oculto=32, horizonte=3):
         super().__init__()
-        self.red = TGCN(np.eye(n), rasgos, oculto, horizonte)
+        self.red = TGCN(np.zeros((n, n)), rasgos, oculto, horizonte)
 
     def forward(self, x):
         return self.red(x)

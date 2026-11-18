@@ -1,0 +1,49 @@
+escenario,hora,accidente,controlador,demora_veh_h,viaje_medio_s,llegados,cola_media
+0,8,ninguno,Semáforo fijo,65.1,346.3,1284,13.07
+0,8,ninguno,Max-pressure (matemático),62.0,334.8,1318,8.48
+0,8,ninguno,Tabla Q (actual),62.5,332.5,1309,9.02
+0,8,ninguno,DQN + T-GCN (neuronal),62.2,333.3,1296,6.99
+1,8,cruce5 salida,Semáforo fijo,66.2,350.9,1292,12.8
+1,8,cruce5 salida,Max-pressure (matemático),63.4,336.5,1321,8.92
+1,8,cruce5 salida,Tabla Q (actual),63.5,336.6,1326,9.27
+1,8,cruce5 salida,DQN + T-GCN (neuronal),62.8,332.4,1343,7.36
+2,8,real DATT,Semáforo fijo,66.6,350.5,1266,12.47
+2,8,real DATT,Max-pressure (matemático),62.9,335.1,1292,8.06
+2,8,real DATT,Tabla Q (actual),63.9,340.2,1296,9.7
+2,8,real DATT,DQN + T-GCN (neuronal),65.4,343.7,1276,9.42
+3,13,ninguno,Semáforo fijo,72.1,354.2,1382,15.16
+3,13,ninguno,Max-pressure (matemático),69.0,344.2,1473,13.11
+3,13,ninguno,Tabla Q (actual),67.7,338.7,1421,12.09
+3,13,ninguno,DQN + T-GCN (neuronal),66.6,333.1,1444,9.89
+4,13,cruce5 salida,Semáforo fijo,70.8,356.6,1349,14.24
+4,13,cruce5 salida,Max-pressure (matemático),68.3,338.7,1418,11.92
+4,13,cruce5 salida,Tabla Q (actual),70.8,343.3,1414,12.16
+4,13,cruce5 salida,DQN + T-GCN (neuronal),65.6,329.5,1442,8.85
+5,13,real DATT,Semáforo fijo,70.6,352.5,1392,14.63
+5,13,real DATT,Max-pressure (matemático),66.6,333.5,1561,14.3
+5,13,real DATT,Tabla Q (actual),68.9,340.8,1479,12.85
+5,13,real DATT,DQN + T-GCN (neuronal),69.2,339.0,1392,10.61
+6,17,ninguno,Semáforo fijo,73.9,362.0,1475,17.52
+6,17,ninguno,Max-pressure (matemático),70.9,344.0,1437,13.45
+6,17,ninguno,Tabla Q (actual),70.7,343.2,1438,12.56
+6,17,ninguno,DQN + T-GCN (neuronal),70.4,343.4,1495,11.41
+7,17,cruce5 salida,Semáforo fijo,72.3,349.0,1431,15.49
+7,17,cruce5 salida,Max-pressure (matemático),69.9,341.3,1447,13.74
+7,17,cruce5 salida,Tabla Q (actual),69.1,336.7,1452,12.65
+7,17,cruce5 salida,DQN + T-GCN (neuronal),67.2,328.1,1471,9.66
+8,17,real DATT,Semáforo fijo,72.7,354.5,1450,14.79
+8,17,real DATT,Max-pressure (matemático),68.6,335.9,1477,12.31
+8,17,real DATT,Tabla Q (actual),69.1,335.8,1439,12.04
+8,17,real DATT,DQN + T-GCN (neuronal),70.2,335.7,1465,11.75
+9,19,ninguno,Semáforo fijo,61.2,341.6,1224,9.83
+9,19,ninguno,Max-pressure (matemático),60.4,333.9,1228,6.83
+9,19,ninguno,Tabla Q (actual),60.6,336.0,1233,7.3
+9,19,ninguno,DQN + T-GCN (neuronal),60.4,333.2,1223,6.22
+10,19,cruce5 salida,Semáforo fijo,61.8,344.8,1236,10.61
+10,19,cruce5 salida,Max-pressure (matemático),60.8,337.2,1226,7.03
+10,19,cruce5 salida,Tabla Q (actual),61.1,338.5,1225,8.01
+10,19,cruce5 salida,DQN + T-GCN (neuronal),60.7,337.1,1231,6.42
+11,19,real DATT,Semáforo fijo,62.0,340.1,1225,9.58
+11,19,real DATT,Max-pressure (matemático),61.3,336.4,1251,7.91
+11,19,real DATT,Tabla Q (actual),60.9,334.9,1234,7.73
+11,19,real DATT,DQN + T-GCN (neuronal),60.9,335.1,1228,7.08

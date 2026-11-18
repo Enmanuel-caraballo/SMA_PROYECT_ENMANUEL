@@ -34,7 +34,7 @@ DATOS = RAIZ / "modelos" / "datos"
 SALIDA = RAIZ / "modelos" / "entrenados"
 
 CONFIG = {
-    "simm": {"ventana": 12, "horizonte": 3, "paso": "1 h", "unidad": "veh/h", "oculto": 32, "epocas": 120},
+    "simm": {"ventana": 12, "horizonte": 3, "paso": "1 h", "unidad": "veh/h", "oculto": 32, "epocas": 200},
     "bocagrande": {"ventana": 15, "horizonte": 3, "paso": "12 s", "unidad": "veh en cola", "oculto": 32, "epocas": 200},
 }
 
@@ -150,7 +150,7 @@ def main():
     print(f"datos {args.datos}: {n_t} pasos x {n_nodos} nodos; muestras entrenamiento={tr.sum()}, "
           f"validación={va.sum()}, prueba={te.sum()}")
 
-    a = adyacencia_gaussiana(coords)
+    a = adyacencia_gaussiana(coords, k=4 if args.datos == "simm" else 3)
     a_norm = normalizar_adyacencia(a)
     rasgos = X.shape[-1]
     epocas = args.epocas or cfg["epocas"]
