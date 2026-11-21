@@ -222,7 +222,7 @@
   <edge id="e220" from="n106" to="n54" numLanes="2" speed="12.0" shape="-618.50,-1037.10 -603.20,-1038.20 -585.50,-1038.90" name="Carrera 1"/>
   <edge id="e221" from="n6" to="n119" numLanes="1" speed="10.0" shape="283.00,-65.40 305.10,-9.80 312.80,9.40 329.20,50.40" name="Avenida Chile"/>
   <edge id="e222" from="n119" to="n6" numLanes="1" speed="10.0" shape="329.20,50.40 312.80,9.40 305.10,-9.80 283.00,-65.40" name="Avenida Chile"/>
-  <edge id="e223" from="n93" to="n118" numLanes="2" speed="12.0" shape="316.00,366.60 322.90,366.60 330.50,373.70 370.90,418.50 393.90,446.30 401.50,455.20" name="Avenida San Martín"/>
+  <edge id="e223" from="n118" to="n93" numLanes="2" speed="12.0" shape="401.50,455.20 393.90,446.30 370.90,418.50 330.50,373.70 322.90,366.60 316.00,366.60" name="Avenida San Martín"/>
   <edge id="e224" from="n118" to="n88" numLanes="2" speed="12.0" shape="401.50,455.20 415.40,471.70 434.80,499.50 445.20,512.80 455.80,523.70" name="Avenida San Martín"/>
   <edge id="e225" from="n88" to="n130" numLanes="2" speed="12.0" shape="455.80,523.70 472.40,569.50 476.90,587.20 480.50,604.00 530.30,1152.50 530.80,1166.60 530.60,1173.60 529.70,1180.70" name="Avenida San Martín"/>
   <edge id="e226" from="n131" to="n132" numLanes="2" speed="10.0" shape="-508.10,-617.40 -504.70,-622.40 -501.50,-626.70 -467.90,-672.40" name="Calle 4"/>

@@ -244,6 +244,25 @@ def escribir_cruces(cruces):
     SALIDA_CRUCES.write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def corregir_sentidos(nodos, aristas, cruces):
+    """Correcciones verificadas en campo (Google Street View, 21-nov-2026) donde OSM tiene el sentido equivocado.
+
+    Av. San Martín entre la Calle 10 (cruce3) y la Calle 10A: es SOLO de entrada (hacia el cruce3). OSM trae ese
+    tramo como el comienzo de la calzada de salida (oneway hacia el norte desde el cruce3), lo que dejaba salir de
+    Bocagrande desde el cruce3 por la San Martín. En realidad la calzada de salida (Carrera 2, junto a la Base Naval)
+    empieza en la Calle 10A, alimentada por la Carrera 3; en esa Y se puede volver a entrar por la San Martín hacia el
+    cruce3 (señal "Av. San Martín - Laguito - Hospital") o salir hacia el Centro. Se invierte el tramo."""
+    c3 = next((c for c in cruces if c["id"] == "cruce3"), None)
+    if not c3:
+        return
+    for a in aristas:
+        if (a["a"] in c3["nodos"] and a["nombre"] == "Avenida San Martín" and a["unico"]
+                and nodos[a["b"]][1] < nodos[a["a"]][1]):          # sale del cruce3 hacia el norte (-z)
+            a["a"], a["b"] = a["b"], a["a"]
+            a["p"] = a["p"][::-1]
+            print(f"  corrección: San Martín Calle 10A -> cruce3 solo de entrada ({a['largo']} m)")
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--osm", help="archivo JSON de Overpass ya descargado")
@@ -257,7 +276,8 @@ def main():
     for i, c in enumerate(cruces, 1):
         c["id"] = f"cruce{i}"
     escribir_cruces(cruces)
-    mapa = {"_fuente": "© colaboradores de OpenStreetMap (ODbL). Generado por preparar_bocagrande.py",
+    corregir_sentidos(nodos, aristas, cruces)
+    mapa ={"_fuente": "© colaboradores de OpenStreetMap (ODbL). Generado por preparar_bocagrande.py",
             "origen": {"lat": ORIGEN[0], "lon": ORIGEN[1]},
             "nodos": nodos, "aristas": aristas, "senderos": senderos, "pasos": pasos, "edificios": edificios,
             "cruces": [{"id": c["id"], "x": c["x"], "z": c["z"], "nodos": c["nodos"],
