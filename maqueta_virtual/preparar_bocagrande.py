@@ -251,16 +251,33 @@ def corregir_sentidos(nodos, aristas, cruces):
     tramo como el comienzo de la calzada de salida (oneway hacia el norte desde el cruce3), lo que dejaba salir de
     Bocagrande desde el cruce3 por la San Martín. En realidad la calzada de salida (Carrera 2, junto a la Base Naval)
     empieza en la Calle 10A, alimentada por la Carrera 3; en esa Y se puede volver a entrar por la San Martín hacia el
-    cruce3 (señal "Av. San Martín - Laguito - Hospital") o salir hacia el Centro. Se invierte el tramo."""
+    cruce3 (señal "Av. San Martín - Laguito - Hospital") o salir hacia el Centro.
+
+    Corrección: entre la Calle 10A (nodo J) y el cruce3 queda UNA sola calzada de entrada. La calzada de entrada de
+    OSM pasa a pocos metros de J: se parte allí (norte -> J) y el tramo paralelo de OSM se reemplaza por la mitad sur
+    (J -> cruce3, con la geometría y los carriles de la calzada de entrada). Se conservan los índices de los tramos."""
     c3 = next((c for c in cruces if c["id"] == "cruce3"), None)
     if not c3:
         return
-    for a in aristas:
-        if (a["a"] in c3["nodos"] and a["nombre"] == "Avenida San Martín" and a["unico"]
-                and nodos[a["b"]][1] < nodos[a["a"]][1]):          # sale del cruce3 hacia el norte (-z)
-            a["a"], a["b"] = a["b"], a["a"]
-            a["p"] = a["p"][::-1]
-            print(f"  corrección: San Martín Calle 10A -> cruce3 solo de entrada ({a['largo']} m)")
+    zc3 = c3["z"]
+    sm = [i for i, a in enumerate(aristas) if a["nombre"] == "Avenida San Martín" and a["unico"]
+          and (a["a"] in c3["nodos"]) != (a["b"] in c3["nodos"])
+          and nodos[a["b"] if a["a"] in c3["nodos"] else a["a"]][1] < zc3]      # tocan el cruce3 por el lado norte
+    if len(sm) != 2:
+        return                                                                 # ya corregido (o la red cambió)
+    for iy, ix in (sm, sm[::-1]):
+        y, x = aristas[iy], aristas[ix]
+        j = x["b"] if x["a"] in c3["nodos"] else x["a"]                        # extremo norte del tramo paralelo
+        d = [dist(q, nodos[j]) for q in y["p"][1:-1]]
+        if y["b"] in c3["nodos"] and d and min(d) < 12:
+            k = 1 + d.index(min(d))
+            sur, fin = [nodos[j]] + y["p"][k + 1:], y["b"]
+            y["p"], y["b"] = y["p"][:k] + [nodos[j]], j
+            x.update({"a": j, "b": fin, "p": sur, "carriles": y["carriles"], "tipo": y["tipo"]})
+            for e in (x, y):
+                e["largo"] = round(sum(dist(e["p"][i], e["p"][i + 1]) for i in range(len(e["p"]) - 1)), 1)
+            print(f"  corrección: San Martín Calle 10A -> cruce3 una sola calzada de entrada ({x['largo']} m)")
+            return
 
 
 def main():
