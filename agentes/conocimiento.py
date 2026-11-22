@@ -63,7 +63,8 @@ AKCELIK_J = 0.4                            # parámetro de demora: 0.4 = vía ur
 BPR_ALFA = 0.15                            # valores estándar del Bureau of Public Roads (1964)
 BPR_BETA = 4.0
 FLUJO_SATURACION = 1800                    # veh/h por carril con verde (HCM; Medellín SIMM: máx. limpio ~2200)
-CAPACIDAD_RESIDUAL_ACCIDENTE = 0.25        # el carril del accidente deja pasar ~1/4 (se pasa despacio, a 3 m/s)
+CAPACIDAD_RESIDUAL_ACCIDENTE = 0.0         # 0 = el accidente CIERRA el tramo (como en la realidad: tránsito lo cierra);
+                                           # > 0: fracción de un carril que sigue pasando (modelo anterior: 0.25)
 DEMANDA_PICO_VEH_H = 3000                  # viajes/h en la hora pico (se recalibra: ver VC_PICO_OBJETIVO)
 VC_PICO_OBJETIVO = 0.90                    # en hora pico normal la vía más cargada queda al 90 % de su capacidad
 REPARTO_DEMANDA = {"salir": 0.30, "entrar_centro": 0.22, "entrar_norte": 0.08, "interna": 0.40}
@@ -71,6 +72,8 @@ PENALIZACION_SIN_RUTA_S = 600              # viaje que el plan deja sin ruta int
 FW_TOLERANCIA = 1e-3                       # brecha relativa de equilibrio
 FW_MAX_ITER = 120
 K_RUTAS = 3                                # rutas alternativas que propone el Coordinador (Yen)
+DISPERSION_RUTAS_MIN = 0.5                 # reparto logit de los conductores entre las k rutas (Dial 1971): a menor valor,
+                                           # más se concentran en la más rápida (minutos de diferencia que "notan")
 PESO_MODELO = 0.6                          # peso del modelo matemático vs. lo aprendido midiendo en la utilidad
 MEJORA_MINIMA = 0.005                      # si ningún plan baja el TSTT más de 0.5 %, el modelo no distingue (beneficio 0)
 # demanda que se le pone al modelo según lo que MIDEN los sensores (nivel del Consultor) y el tipo de evento

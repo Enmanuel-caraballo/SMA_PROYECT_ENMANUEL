@@ -382,7 +382,8 @@ def rutas_sugeridas(resultado):
     R = rutas.red()
     salida = {}
     for tipo, lista in R.rutas_plan(resultado).items():
-        salida[tipo] = [{"calles": x["calles"], "minutos": x["minutos"], "km": x["km"],
+        salida[tipo] = [{"calles": x["calles"], "minutos": x["minutos"], "km": x["km"], "nodos": x["nodos"],
+                         "reparto": x.get("reparto", 1.0),
                          "p": [[round(v, 1) for v in q] for i in x["aristas"] for q in R.E[i]["p"]]} for x in lista]
     return salida
 

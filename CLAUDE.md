@@ -250,6 +250,12 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
 - Datos reales y redes (decisión 17-nov, ver sección 10): selector de **hora** (densidad según el perfil SIMM) y botón
   **Accidente real** (`POST /api/accidente_real`: un accidente del DATT en su tramo real; el evento lleva `arista` y `real`).
   Planes que no son contraflujo dibujan las **rutas sugeridas** (`d.rutas` del plan, `dibujarRutasModelo`).
+- **Rutas y accidentes (21-nov):** con un plan activo, los carros que salen y los que entran por el norte o desde el
+  Centro **siguen las rutas del Coordinador** (`rutaModelo`: sortean una con el reparto logit `reparto` de cada ruta,
+  `DISPERSION_RUTAS_MIN`, llegan al punto más cercano de la ruta y la siguen; cada ruta trae sus `nodos`). Un accidente
+  **cierra el tramo** en los tres modelos: en el 3D (`e.bloqueada`, chocados en todos los carriles, los que ya venían
+  quedan en cola y nadie más entra), en `rutas.py` (`CAPACIDAD_RESIDUAL_ACCIDENTE = 0` -> tramo deshabilitado) y en SUMO
+  (un vehículo detenido por carril + reruteo). Al retirarse el accidente el tramo se reabre y todos recalculan.
 - Depuración desde la consola: `window.__bocagrande` (cámara, controles, escena, geo, aristasDir, `avanzar(s)`) e
   `import('/static/bocagrande3d.js')` para leer `estado` (carros, peatones, métricas, planes, fps, ms).
   Ojo: `avanzar(s)` es síncrono y los semáforos no cambian mientras corre; para medir colas usar pasos cortos

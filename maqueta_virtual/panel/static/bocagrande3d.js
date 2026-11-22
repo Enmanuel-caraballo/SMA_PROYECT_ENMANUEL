@@ -43,6 +43,8 @@ export const estado = {
   planes: {},             // alerta -> plan activo (lo decide el Coordinador)
   contraflujo: null,      // "contraflujo_salida" | "contraflujo_entrada" | null
   salidas: new Set(),     // nodos a donde van los carros que salen de Bocagrande
+  rutasModelo: null,      // rutas del plan activo ({salir, entrar_centro, entrar_norte}: nodos + reparto)
+  rutasDe: null,          // alerta dueña de esas rutas
   centroPlan: null,
 };
 const geo = {};           // tramos clave de la salida/entrada de Bocagrande (ver prepararGeografia)
@@ -335,7 +337,44 @@ function prepararGeografia() {
   estado.salidas = new Set([geo.nodoSalida]);
 }
 
-function usable(e) { return !e.cerrada && (!e.reserva || e.habil); }
+// bloqueada = hay un accidente en el tramo: queda cerrado (nadie entra) hasta que se retira el accidente
+function usable(e) { return !e.cerrada && !e.bloqueada && (!e.reserva || e.habil); }
+function usableSinAccidente(e) { return !e.cerrada && (!e.reserva || e.habil); }
+
+// ---- Rutas que propone el Coordinador (Yen sobre el equilibrio de Frank-Wolfe) ----
+// Cada ruta trae sus nodos y el reparto logit de los conductores; el carro sortea una según ese reparto,
+// llega por el camino más corto al punto más cercano de la ruta y desde ahí la sigue.
+function tramosDeNodos(nodos) {
+  const tramos = [];
+  for (let i = 0; i < nodos.length - 1; i++) {
+    const e = (salientes[nodos[i]] || []).find(x => x.hasta === nodos[i + 1] && usable(x));
+    if (!e) return null;                 // la ruta pasa por un tramo cerrado: no sirve en este momento
+    tramos.push(e);
+  }
+  return tramos;
+}
+
+function rutaModelo(c, tipo) {
+  const lista = (estado.rutasModelo?.[tipo] || []).filter(r => r.nodos && r.nodos.length > 1);
+  if (!lista.length) return null;
+  let u = Math.random() * lista.reduce((s, r) => s + (r.reparto ?? 1), 0), r = lista[lista.length - 1];
+  for (const x of lista) { u -= x.reparto ?? 1; if (u <= 0) { r = x; break; } }
+  const tramos = tramosDeNodos(r.nodos);
+  if (!tramos) return null;
+  const indice = new Map(r.nodos.map((n, i) => [n, i]));
+  const llegar = indice.has(c.e.hasta) ? [] : rutaHacia(c.e.hasta, new Set(indice.keys()), c.e);
+  if (!llegar) return null;
+  const union = llegar.length ? llegar[llegar.length - 1].hasta : c.e.hasta;
+  const resto = tramos.slice(indice.get(union));
+  if (!llegar.length && resto.length && resto[0].base === c.e.base && resto[0] !== c.e) return null;   // sin vuelta en U
+  return [...llegar, ...resto];
+}
+
+// tipo de ruta del modelo que corresponde a un carro que entra por el tramo e (o null)
+function tipoEntrada(e) {
+  return ["entrar_norte", "entrar_centro"].find(t =>
+    (estado.rutasModelo?.[t] || []).some(r => r.nodos && (r.nodos[0] === e.desde || r.nodos[0] === e.hasta))) || null;
+}
 
 // Un tramo en contraflujo solo se usa cuando el sentido contrario ya se vació
 // (así lo haría la policía de tránsito): mientras tanto los carros esperan en la esquina.
@@ -472,12 +511,22 @@ function rutaHacia(origen, nodosDestino, previa = null) {
 }
 
 function siguienteArista(carro) {
-  if (carro.ruta && carro.ruta.length) return carro.ruta.shift();
-  // sin vueltas en U y solo por tramos habilitados (respeta cierres y contraflujos del plan)
-  const op = (salientes[carro.e.hasta] || []).filter(x => usable(x) && (x.base !== carro.e.base || x === carro.e));
-  if (!op.length) return null;
-  const libres = op.filter(x => !estado.accidentes.some(a => a.e === x));
-  const lista = libres.length ? libres : op;
+  if (carro.ruta && carro.ruta.length) {
+    if (usable(carro.ruta[0])) return carro.ruta.shift();
+    // la ruta pasa por un tramo que se acaba de cerrar: se recalcula hacia el mismo destino
+    carro.ruta = carro.destino ? rutaHacia(carro.e.hasta, carro.destino, carro.e) : null;
+    if (carro.ruta && carro.ruta.length) return carro.ruta.shift();
+  }
+  // sin vueltas en U y solo por tramos habilitados (respeta cierres, contraflujos y tramos con accidente)
+  const sinU = x => x.base !== carro.e.base || x === carro.e;
+  let lista = (salientes[carro.e.hasta] || []).filter(x => usable(x) && sinU(x));
+  // si la única salida de la esquina es el tramo del accidente, el carro entra y queda en la cola (no desaparece)
+  if (!lista.length) lista = (salientes[carro.e.hasta] || []).filter(x => x.bloqueada && usableSinAccidente(x) && sinU(x));
+  if (!lista.length) return null;
+  // el conductor ve el cierre: evita una vía cuya única continuación es el tramo cerrado (si tiene otra opción)
+  const conSalida = lista.filter(x => !(salientes[x.hasta] || []).length ||
+    (salientes[x.hasta] || []).some(y => usable(y) && y.base !== x.base));
+  if (conSalida.length) lista = conSalida;
   // preferencia por seguir por la misma vía
   const misma = lista.filter(x => x.nombre && x.nombre === carro.e.nombre);
   if (misma.length && Math.random() < 0.65) return misma[Math.floor(Math.random() * misma.length)];
@@ -524,8 +573,8 @@ function pasoCarros(dt) {
       const sig = carro.sig, cs = Math.min(carro.carrilSig ?? carro.carril, sig.carriles - 1);
       for (const o of sig.ocup) if (o.carril === cs) libre = Math.min(libre, e.largo - carro.s + o.s - LARGO_CARRO);
     }
-    // 2) accidente en este carril
-    for (const a of estado.accidentes) if (a.e === e && a.carril === carro.carril && a.s > carro.s) libre = Math.min(libre, a.s - carro.s - LARGO_CARRO - 1.5);
+    // 2) accidente adelante: cierra TODOS los carriles del tramo (los que ya venían quedan en cola)
+    for (const a of estado.accidentes) if (a.e === e && a.s > carro.s) libre = Math.min(libre, a.s - carro.s - LARGO_CARRO - 1.5);
     // 3) semáforo al final de la arista
     const luz = luzPara(e);
     const hastaFin = e.largo - carro.s;
@@ -541,11 +590,6 @@ function pasoCarros(dt) {
     carro.v += Math.max(-9 * dt, Math.min(2.6 * dt, objetivo - carro.v));
     carro.v = Math.max(0, carro.v);
     carro.s += carro.v * dt;
-    // cambio de carril si hay accidente adelante: solo si hay hueco en el carril de al lado (cremallera)
-    if (e.carriles > 1 && estado.accidentes.some(a => a.e === e && a.carril === carro.carril && a.s - carro.s < 45 && a.s > carro.s)) {
-      const otro = carro.carril === 0 ? 1 : carro.carril - 1;
-      if (!e.ocup.some(o => o !== carro && o.carril === otro && Math.abs(o.s - carro.s) < LARGO_CARRO + 1.5)) carro.carril = otro;
-    }
     // 5) paso a la siguiente arista
     if (carro.s >= e.largo) {
       const sig = carro.sig === "fin" || !carro.sig ? null : carro.sig;
@@ -572,26 +616,38 @@ function pasoCarros(dt) {
       const norte = geo.entradaNorte && Math.random() < 0.25;
       const e = norte ? (usable(geo.entradaNorte) ? geo.entradaNorte : geo.ramal) : entradas[Math.floor(Math.random() * entradas.length)];
       if (e && usable(e)) c = nuevoCarro(e);
+      // con un plan activo, lo que entra a Bocagrande sigue las rutas que propone el Coordinador
+      const tipo = c && tipoEntrada(e);
+      if (tipo) { const ruta = rutaModelo(c, tipo); if (ruta) { c.ruta = ruta; c.tipoRuta = tipo; } }
       if (norte) continue;     // los que entran por el norte no van a salir de una vez
     } else {
       const e = aristasDir[Math.floor(Math.random() * aristasDir.length)];
       if (e.largo > 20 && usable(e) && !e.reserva) c = nuevoCarro(e, "normal", null, Math.random() * (e.largo - 10));
     }
     // parte de los carros quiere salir de Bocagrande hacia el Centro
-    if (c && estado.salidas.size && Math.random() < FRAC_SALIDA) {
-      const ruta = rutaHacia(c.e.hasta, estado.salidas, c.e);
-      if (ruta) { c.meta = "salida"; c.destino = estado.salidas; c.ruta = ruta; }
+    if (c && !c.tipoRuta && estado.salidas.size && Math.random() < FRAC_SALIDA) {
+      c.meta = "salida"; c.destino = estado.salidas;
+      c.ruta = rutaSalida(c);
+      if (!c.ruta) { c.meta = null; c.destino = null; c.tipoRuta = null; }
     }
   }
 }
 
+// ruta de un carro que sale: la del modelo (si hay plan con rutas) o, si no, la más corta hasta la salida vigente
+function rutaSalida(c) {
+  const modelo = rutaModelo(c, "salir");
+  c.tipoRuta = modelo ? "salir" : null;
+  return modelo || rutaHacia(c.e.hasta, estado.salidas, c.e);
+}
+
 function reencaminar() {
-  // al cambiar el plan todos recalculan su ruta (los que salen, ahora por la nueva salida)
+  // al cambiar el plan o al cerrarse/abrirse un tramo por accidente todos recalculan su ruta
   for (const c of estado.carros) {
     if (c.tipo === "chocado") continue;
     c.sig = null; c.carrilSig = null;
-    if (c.meta === "salida") c.destino = estado.salidas;
-    if (c.destino) c.ruta = rutaHacia(c.e.hasta, c.destino, c.e);
+    if (c.meta === "salida") { c.destino = estado.salidas; c.ruta = rutaSalida(c); }
+    else if (c.tipoRuta && c.ruta && c.ruta.length) c.ruta = rutaModelo(c, c.tipoRuta);   // entrando con la ruta del modelo
+    else if (c.destino) c.ruta = rutaHacia(c.e.hasta, c.destino, c.e);
   }
 }
 
@@ -673,16 +729,21 @@ export function eventoAccidente(id, sentido = null, real = null) {
     if (!acc) return;
     s = Math.max(8, acc.e.largo - 22);
   }
-  // los carros que ocupan ese punto del carril se quitan (ahí quedan los chocados)
-  for (const o of acc.e.ocup.filter(o => o.carril === 0 && Math.abs(o.s - s) < LARGO_CARRO * 2)) {
+  // los carros que ocupan ese punto (en cualquier carril) se quitan: ahí quedan los chocados
+  for (const o of acc.e.ocup.filter(o => Math.abs(o.s - s) < LARGO_CARRO * 2)) {
     acc.e.ocup.splice(acc.e.ocup.indexOf(o), 1); estado.carros.splice(estado.carros.indexOf(o), 1);
   }
   const accidente = { cruce: id, sentido, e: acc.e, carril: 0, s, creado: tiempo, hasta: tiempo + DURACION_EVENTO + 60, carros: [] };   // respaldo: lo retira el SMA al cerrar el plan
-  for (const d of [0, LARGO_CARRO - 1]) {
-    const choc = { e: acc.e, carril: 0, s: s + d, v: 0, tipo: "chocado", color: 0xff6d00 };
+  // como en la realidad, el accidente cierra la vía: los carros chocados ocupan todos los carriles del tramo
+  const chocados = [[0, 0], [0, LARGO_CARRO - 1]];
+  for (let k = 1; k < acc.e.carrilesPropios; k++) chocados.push([k, 1.5]);
+  for (const [carril, d] of chocados) {
+    const choc = { e: acc.e, carril, s: s + d, v: 0, tipo: "chocado", color: 0xff6d00 };
     acc.e.ocup.push(choc); estado.carros.push(choc); accidente.carros.push(choc);
   }
   estado.accidentes.push(accidente);
+  acc.e.bloqueada = true;      // nadie más entra al tramo; los que van hacia allá buscan otro camino
+  reencaminar();
   // curiosos alrededor
   aglomerar(id, 18, DURACION_EVENTO);
 }
@@ -694,6 +755,8 @@ export function terminarAccidente(id, creadosAntes = Infinity) {
     for (const ch of a.carros) { a.e.ocup.splice(a.e.ocup.indexOf(ch), 1); estado.carros.splice(estado.carros.indexOf(ch), 1); }
   }
   estado.accidentes = estado.accidentes.filter(a => !fin.includes(a));
+  for (const a of fin) a.e.bloqueada = estado.accidentes.some(x => x.e === a.e);   // se reabre si no queda otro
+  if (fin.length) reencaminar();
 }
 
 export function tiempoSimulado() { return tiempo; }
@@ -737,8 +800,10 @@ export function terminarAglomeracion(id) {
 // =====================================================================
 export function activarPlan(d) {
   estado.planes[d.alerta] = d;
-  // rutas que propone el Coordinador con el modelo matemático (Yen sobre el equilibrio de Frank-Wolfe)
-  if (!d.plan?.startsWith("contraflujo")) { dibujarRutasModelo(d.rutas); return; }
+  // rutas que propone el Coordinador con el modelo matemático (Yen sobre el equilibrio de Frank-Wolfe):
+  // mientras el plan está activo, los carros que entran o salen de Bocagrande las siguen
+  if (d.rutas) { estado.rutasModelo = d.rutas; estado.rutasDe = d.alerta; }
+  if (!d.plan?.startsWith("contraflujo")) { dibujarRutasModelo(d.rutas); reencaminar(); return; }
   if (!geo.c1Norte) return;
   if (estado.contraflujo && estado.contraflujo !== d.plan) aplicarContraflujo(estado.contraflujo, false);
   estado.contraflujo = d.plan;
@@ -747,6 +812,7 @@ export function activarPlan(d) {
 
 export function desactivarPlan(d) {
   delete estado.planes[d.alerta];
+  if (estado.rutasDe === d.alerta) { estado.rutasModelo = null; estado.rutasDe = null; reencaminar(); }
   if (!d.plan?.startsWith("contraflujo")) dibujarRutasModelo(null);
   if (d.plan === estado.contraflujo) { aplicarContraflujo(d.plan, false); estado.contraflujo = null; }
 }

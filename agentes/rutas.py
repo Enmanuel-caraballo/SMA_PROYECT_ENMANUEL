@@ -183,7 +183,7 @@ class RedVial:
             habil[e["id"]] = True
         for e in prestar:                      # carril prestado: el otro sentido está cerrado/vacío
             carriles[e["id"]] += 1
-        # accidente: el carril bloqueado deja pasar muy poco (se pasa despacio, a 3 m/s, por el carril libre)
+        # accidente: el tramo queda CERRADO (CAPACIDAD_RESIDUAL_ACCIDENTE = 0) o con una capacidad residual
         bloqueados = []
         if accidente:
             if accidente.get("arista_base") is not None:
@@ -196,7 +196,9 @@ class RedVial:
                     or next((e for e in acc if e["largo"] > 30), None) or (acc[0] if acc else None)
                 bloqueados = [elegido] if elegido else []
         for e in bloqueados:
-            if e:
+            if e and K.CAPACIDAD_RESIDUAL_ACCIDENTE <= 0:
+                habil[e["id"]] = False
+            elif e:
                 carriles[e["id"]] = max(K.CAPACIDAD_RESIDUAL_ACCIDENTE, carriles[e["id"]] - 1 + K.CAPACIDAD_RESIDUAL_ACCIDENTE)
         modos = {c: "normal" for c in self.cruces}
         modos.update(semaforos or {})
@@ -390,12 +392,19 @@ class RedVial:
                     if not calles or calles[-1] != nombre:
                         calles.append(nombre)
                 salida.append({"calles": calles, "aristas": ids, "bases": sorted({self.E[i]["base"] for i in ids}),
+                               "nodos": [int(self.E[ids[0]]["desde"])] + [int(self.E[i]["hasta"]) for i in ids] if ids else [],
                                "minutos": round(sum(float(resultado["tiempo"][i]) for i in ids) / 60, 1),
                                "km": round(sum(self.E[i]["largo"] for i in ids) / 1000, 2)})
                 if len(salida) >= k:
                     break
         except (nx.NetworkXNoPath, nx.NodeNotFound):
             pass
+        # reparto de los conductores entre las rutas: logit sobre el tiempo de viaje (Dial 1971)
+        if salida:
+            t0 = min(x["minutos"] for x in salida)
+            w = [np.exp(-(x["minutos"] - t0) / K.DISPERSION_RUTAS_MIN) for x in salida]
+            for x, wi in zip(salida, w):
+                x["reparto"] = round(float(wi / sum(w)), 3)
         return salida
 
     def rutas_plan(self, resultado):

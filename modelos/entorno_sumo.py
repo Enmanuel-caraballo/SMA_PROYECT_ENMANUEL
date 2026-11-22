@@ -5,7 +5,8 @@ Bocagrande en SUMO (modelos/sumo/bocagrande.net.xml) con:
   - Demanda REAL en su forma horaria: perfil del SIMM (modelos/datos/perfil_demanda.json) aplicado a los mismos
     orígenes-destinos del modelo de rutas (zonas, entrada desde el Centro, entrada norte, salida por el cruce5).
   - Accidentes REALES: tramo sorteado con la frecuencia observada en el dataset DATT de Bocagrande
-    (modelos/datos/accidentes_resumen.json); un vehículo detenido bloquea un carril durante el episodio.
+    (modelos/datos/accidentes_resumen.json); vehículos detenidos CIERRAN todos los carriles del tramo durante el episodio
+    (como el gemelo 3D y el modelo de rutas) y los demás recalculan su ruta para evitarlo.
   - Los 5 semáforos con los MISMOS modos que el ESP32 y el simulador (normal A8/B6, prioridad_a A20/B5,
     prioridad_b A5/B20; 2 s de amarillo y 1 s de todo rojo), conservando la fase al cambiar de modo.
   - Sensores iguales a los del gemelo 3D: cola por acceso = vehículos a < 2 m/s a menos de 100 m de la línea de pare.
@@ -191,10 +192,16 @@ class EntornoBocagrande:
         tr = self.traci
         try:
             tr.route.add("r_acc", [a["arista"]])
-            tr.vehicle.add("accidente", "r_acc", typeID="carro", departPos=str(a["pos"]), departLane="0", departSpeed="0")
-            tr.vehicle.setStop("accidente", a["arista"], pos=min(a["pos"] + 1, self.arista[a["arista"]]["largo"] - 1),
-                               laneIndex=0, duration=self.duracion)
-            tr.vehicle.setColor("accidente", (255, 80, 0, 255))
+            for k in range(tr.edge.getLaneNumber(a["arista"])):      # el accidente cierra TODOS los carriles
+                v = f"accidente_{k}"
+                tr.vehicle.add(v, "r_acc", typeID="carro", departPos=str(a["pos"]), departLane=str(k), departSpeed="0")
+                tr.vehicle.setStop(v, a["arista"], pos=min(a["pos"] + 1, self.arista[a["arista"]]["largo"] - 1),
+                                   laneIndex=k, duration=self.duracion)
+                tr.vehicle.setColor(v, (255, 80, 0, 255))
+            tr.edge.adaptTraveltime(a["arista"], 1e6)               # el ruteo (device.rerouting) lo evita
+            for v in tr.vehicle.getIDList():                         # los que ya iban hacia allá recalculan su ruta
+                if not v.startswith("accidente") and a["arista"] in tr.vehicle.getRoute(v)[tr.vehicle.getRouteIndex(v) + 1:]:
+                    tr.vehicle.rerouteTraveltime(v, currentTravelTimes=False)
             a["activo"] = True
         except Exception as error:
             a["error"] = str(error)
@@ -246,7 +253,7 @@ class EntornoBocagrande:
                 for e in self.accesos[c][g]:
                     largo = self.arista[e]["largo"]
                     for v in tr.edge.getLastStepVehicleIDs(e):
-                        if v != "accidente" and tr.vehicle.getSpeed(v) < VEL_COLA and largo - tr.vehicle.getLanePosition(v) < DIST_SENSOR:
+                        if not v.startswith("accidente") and tr.vehicle.getSpeed(v) < VEL_COLA and largo - tr.vehicle.getLanePosition(v) < DIST_SENSOR:
                             n += 1
                 q[g] = n
             salida[c] = (q["A"], q["B"])
