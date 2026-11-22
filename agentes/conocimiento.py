@@ -162,3 +162,8 @@ UMBRAL_SIMILITUD_ROSTRO = 0.363            # coseno SFace: umbral recomendado po
 SEGUNDOS_ENTRE_ALERTAS_PERSONA = 300       # no repetir la alerta de la misma persona mientras dura el cerco
 PROB_MINIMA_RUTA_HUIDA = 0.15              # rutas alternas de huida con esta probabilidad o más también se
                                            # vigilan: el acceso del solicitado queda en rojo largo
+
+# Agente Comunicador (Telegram + LLM; token, grupos y proveedor en .env)
+LLM_MAX_PALABRAS = 60                      # el LLM redacta avisos cortos; si se pasa del doble, se usa la plantilla
+LLM_TIMEOUT_S = 25                         # si el LLM tarda más, el aviso sale con la plantilla (no se retrasa)
+TELEGRAM_TIMEOUT_S = 15

@@ -30,7 +30,7 @@ RAIZ = Path(__file__).resolve().parents[1]
 
 # En Windows: grupo de procesos propio (para poder enviarle CTRL_BREAK sin afectar a la prueba)
 GRUPO = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
-ENTORNO = {**os.environ, "PYTHONIOENCODING": "utf-8"}   # tildes iguales en Windows y Linux
+ENTORNO = {**os.environ, "PYTHONIOENCODING": "utf-8", "SMA_SIN_TELEGRAM": "1"}   # no escribir a los grupos reales   # tildes iguales en Windows y Linux
 _salidas: dict[int, queue.Queue] = {}
 
 
@@ -148,6 +148,8 @@ def main() -> int:
 
         salida = esperar_linea(agentes, "plan activo", args.timeout)
         salida += "\n" + esperar_linea(agentes, "cerrado", max(args.timeout, args.duracion + 15))
+        if "Telegram desactivado" not in salida:      # el Comunicador redacta con el LLM: puede tardar
+            salida += "\n" + esperar_linea(agentes, "Telegram desactivado", 90)
         esperados = (
             "Vigilancia",
             "Clasificador",

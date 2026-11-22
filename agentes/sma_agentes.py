@@ -45,6 +45,7 @@ from spade.message import Message
 from spade.template import Template
 
 import conocimiento as K
+import comunicador
 import rutas
 from aprendizaje import ExperienciaPlanes, QSemaforo
 
@@ -1172,12 +1173,16 @@ class AgenteComunicador(Agent):
 
     def mente(self, ultimo):
         publicar_mente("Comunicador", {
-            "tipo": "Basado en objetivos", "rol": "Redacta y envía los avisos (luego Telegram + LLM).",
-            "percibe": "request comunicar (del Coordinador)", "actua": "aviso a la Ciudadanía o a la Policía",
-            "codigo": ["agentes/sma_agentes.py · AgenteComunicador"],
+            "tipo": "Basado en objetivos", "rol": "Redacta los avisos con un LLM y los envía por Telegram.",
+            "percibe": "request comunicar (del Coordinador)",
+            "actua": "mensaje de Telegram al grupo de la Ciudadanía o al de la Policía",
+            "codigo": ["agentes/sma_agentes.py · AgenteComunicador", "agentes/comunicador.py (LLM + Telegram)"],
             "reglas": ["SI la alerta es de Seguridad ENTONCES avisar SOLO a la Policía y decir 'posible coincidencia'",
-                       "SI no ENTONCES avisar a la Ciudadanía con el plan y su duración"],
-            "parametros": {}, "estado": {"avisos_enviados": self.enviados, "ultimo": ultimo},
+                       "SI no ENTONCES avisar a la Ciudadanía con el plan y su duración",
+                       "SI el LLM falla, tarda o cambia los datos ENTONCES usar la plantilla"],
+            "parametros": {"llm": comunicador.cargar_env().get("LLM", "ollama"), "max_palabras": K.LLM_MAX_PALABRAS,
+                           "timeout_llm_s": K.LLM_TIMEOUT_S},
+            "estado": {"avisos_enviados": self.enviados, "ultimo": ultimo},
         })
 
     class Comunicar(CyclicBehaviour):
@@ -1186,13 +1191,15 @@ class AgenteComunicador(Agent):
             if not msg:
                 return
             datos = json.loads(msg.body)
-            a = datos["alerta"]
-            minutos = round(datos.get("duracion", SEGUNDOS_PLAN) / 60, 1)
-            texto = (f"Alerta de {a.get('tipo', '').lower()}: {datos.get('aviso', '')} "
-                     f"Plan: {datos.get('plan', '-')} (~{minutos:g} min).")
-            log("Comunicador", f"[para {datos['receptor']}] {texto}   (luego: Telegram + LLM)")
+            datos.setdefault("duracion", SEGUNDOS_PLAN)
+            if datos["alerta"].get("tipo") == "Seguridad":
+                datos["receptor"] = "Policia"            # regla dura: Seguridad nunca va a la ciudadanía
+            texto, origen = await asyncio.to_thread(comunicador.redactar, datos)
+            log("Comunicador", f"[para {datos['receptor']}] {texto}   ({origen})")
+            envio = await asyncio.to_thread(comunicador.enviar, datos["receptor"], texto)
+            log("Comunicador", envio)
             self.agent.enviados += 1
-            self.agent.mente({"receptor": datos["receptor"], "texto": texto})
+            self.agent.mente({"receptor": datos["receptor"], "texto": texto, "redaccion": origen, "envio": envio})
 
 
 # =====================================================================

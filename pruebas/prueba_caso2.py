@@ -83,7 +83,9 @@ def main() -> int:
         publicar(cliente, "sma/camaras/cam2", json.dumps({"camara": "cam2", "embedding": otra_toma.tolist()}))
         salida = esperar_linea(agentes, "plan activo", 60)
         salida += "\n" + esperar_linea(agentes, "cerrado", 40)
-        esperados = ["posible coincidencia", "Seguridad, prioridad Critica", "ruta probable de huida",
+        if "Telegram desactivado" not in salida:      # el Comunicador redacta con el LLM: puede tardar
+            salida += "\n" + esperar_linea(agentes, "Telegram desactivado", 90)
+        esperados = ["posible coincidencia", "Seguridad, prioridad Critica", "rutas probables de huida",
                      "cerco en", "[para Policia]"]
         faltan = [e for e in esperados if e not in salida]
         if faltan:

@@ -220,4 +220,10 @@ Más detalles (instalación, ESP32, Git, problemas comunes) en [`COMANDOS.txt`](
      llegaría a cada cruce y en cuántos segundos; el **Semafórico** lo **retrasa**: todo rojo en la ruta más probable
      y rojo largo para su acceso en las alternas, sin que la DQN cambie esos modos.
    - El **Comunicador** avisa **solo a la Policía** ("posible coincidencia"), con la ruta y el punto de intercepción.
+
+**Comunicador (Telegram + LLM local):** un LLM que corre en el portátil (**Ollama**, modelo `llama3.2:3b`, gratis y sin
+enviar datos fuera) redacta cada aviso en lenguaje natural y el bot de **Telegram** lo envía al grupo de la Ciudadanía
+(Caso 1) o al de la Policía (Caso 2). El código verifica que el LLM no cambie datos (cruces, calles, cifras) ni omita
+"posible coincidencia"; si falla, tarda o se equivoca, el aviso sale con la plantilla. El token y los grupos van en
+`.env` (no se sube a Git; ver `.env.ejemplo`).
    - Sin webcam: botón **Persona solicitada** del panel. Prueba automática: `python pruebas/prueba_caso2.py`.

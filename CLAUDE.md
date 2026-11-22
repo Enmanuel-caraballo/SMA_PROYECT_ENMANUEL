@@ -43,7 +43,7 @@ la tarea actual (ver sección 8).
 | AgenteConsultor | reactivo basado en modelos | Modelo del tráfico con los sensores `sma/sensores/<cruce>`: responde `consultarEstadoVial` (nivel por umbrales) y `consultarColaMedia` (historia 15 min), con caché de 5 s |
 | AgentePredictor | híbrido: basado en modelos + utilidad | Responde `predecirRutaHuida` (por ahora reglas simples) |
 | AgenteSemaforico | objetivos + **Q-learning** | Control adaptativo cada 12 s: con las colas A/B decide `normal`/`prioridad_a`/`prioridad_b` y aprende (tabla Q en `agentes/memoria/`); los modos del plan son sugerencias (`cerco`/`peatonal` se respetan). `activarPlan` trae un modo por cruce y lo publica en `sma/semaforo/<cruce>`, además publica el plan en `sma/plan/<cruce>`; `restaurarPlanNormal`→`normal` (se conservan `abrirCorredorEmergencia`→`corredor` y `activarCerco`→`cerco`) |
-| AgenteComunicador | basado en objetivos | Redacta el aviso (por ahora lo imprime; luego Telegram + LLM) |
+| AgenteComunicador | basado en objetivos | Un LLM local (Ollama `llama3.2:3b`) redacta el aviso y lo envía por **Telegram** al grupo de la Ciudadanía o al de la Policía (`agentes/comunicador.py`). Si el LLM falla o cambia datos (cruces, calles, cifras) se usa la plantilla; Seguridad va SIEMPRE solo a la Policía |
 
 Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
 `NivelPrioridad {Baja, Media, Alta, Critica}`, `ObjetivoSemaforico {Fluidez, CorredorEmergencia, CercoPersecucion}`.
@@ -130,6 +130,7 @@ SMA_IA/
 │   ├── conocimiento.py        (TODAS las reglas y parámetros)
 │   ├── aprendizaje.py         (Q-learning del Semafórico, experiencia del Coordinador)
 │   ├── rutas.py               (modelo matemático: Akçelik/BPR, Frank-Wolfe, Yen, semáforos optimizados)
+│   ├── comunicador.py         (LLM Ollama/Gemini + Telegram; token y grupos en .env, plantilla en .env.ejemplo)
 │   └── memoria/               (lo aprendido, *.json; se versiona en Git desde el 17-nov; --olvidar lo reinicia)
 ├── modelos/                   (datos reales + redes neuronales; ver sección 10)
 │   ├── datos_reales.py, tgcn.py, dqn.py, predictor_colas.py, sumo_red.py, entorno_sumo.py
@@ -161,8 +162,9 @@ corregido, Mosquitto + ESP32 conectados, 7 agentes SPADE funcionando con el Caso
 (Three.js) con datos reales de OSM: 5 cruces semaforizados, carros y peatones simulados en el navegador que obedecen
 los semáforos y reaccionan a eventos (accidente, congestión, aglomeración, cerco). Ver sección 9.
 
-Pendiente (en orden): bot de Telegram para el Comunicador (+ LLM local con Ollama o Gemini gratis) → mediciones y
-resultados → informe. (Caso 2 hecho el 21-nov: ver sección 5.)
+Pendiente (en orden): mediciones y resultados → informe. (Caso 2 hecho el 21-nov: ver sección 5. Comunicador con
+Telegram + LLM hecho el 22-nov: bot @comunic4dor_bot, grupos "Ciudadanía" y "Policía"; Ollama instalado con winget.
+Las pruebas automáticas ponen `SMA_SIN_TELEGRAM=1` para no escribir a los grupos reales.)
 
 ## 8. Maqueta virtual v1 (HECHA — especificación original de 8 cruces de la ciudad; reemplazada por la sección 9)
 
