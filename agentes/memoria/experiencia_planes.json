@@ -1,25 +1,38 @@
 {
- "contraflujo_salida": {
-  "impacto": 0.498,
-  "n": 3,
+ "_epsilon": 0.1823,
+ "accidente@cruce4|semaforos_optimos": {
+  "impacto": 0.455,
+  "n": 1,
   "historial": [
    {
-    "antes": 5.8,
-    "durante": 6.0,
-    "efecto": -0.04,
-    "impacto": 0.938
-   },
-   {
-    "antes": 2.7,
-    "durante": 5.1,
-    "efecto": -0.81,
-    "impacto": 0.711
-   },
-   {
-    "antes": 2.2,
-    "durante": 7.1,
+    "antes": 3.0,
+    "durante": 6.8,
     "efecto": -1.0,
-    "impacto": 0.498
+    "impacto": 0.455
+   }
+  ]
+ },
+ "accidente@cruce5/salida|contraflujo_salida": {
+  "impacto": 0.665,
+  "n": 1,
+  "historial": [
+   {
+    "antes": 3.9,
+    "durante": 10.1,
+    "efecto": -1.0,
+    "impacto": 0.665
+   }
+  ]
+ },
+ "seguridad@cruce3|cerco": {
+  "impacto": 0.63,
+  "n": 1,
+  "historial": [
+   {
+    "antes": 0.0,
+    "durante": 14.3,
+    "efecto": -1.0,
+    "impacto": 0.63
    }
   ]
  }

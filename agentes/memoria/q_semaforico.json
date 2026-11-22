@@ -2,310 +2,443 @@
  "q": {
   "cruce1": {
    "a0-b0": {
-    "normal": -0.0165,
-    "prioridad_a": -0.9786,
-    "prioridad_b": -0.8341
-   },
-   "a1-b0": {
-    "normal": 0.148,
-    "prioridad_a": -0.22,
-    "prioridad_b": -1.2733
-   },
-   "a1-b1": {
-    "normal": 0.019,
-    "prioridad_a": -0.3,
-    "prioridad_b": -0.3
+    "normal": -0.0768,
+    "prioridad_a": -0.2843,
+    "prioridad_b": -1.2
    },
    "a0-b1": {
-    "normal": 0.0923,
-    "prioridad_a": -2.2,
-    "prioridad_b": -0.3173
-   }
-  },
-  "cruce2": {
-   "a0-b0": {
-    "normal": -0.0696,
-    "prioridad_a": -0.799,
-    "prioridad_b": -0.7522
+    "normal": -0.0097,
+    "prioridad_a": -0.0073,
+    "prioridad_b": -0.2
    },
    "a1-b0": {
-    "normal": 0.1474,
-    "prioridad_a": -2.0941,
-    "prioridad_b": -1.1538
-   },
-   "a0-b1": {
-    "normal": -0.4188,
-    "prioridad_a": -1.3,
-    "prioridad_b": -0.4622
+    "normal": -0.3233,
+    "prioridad_a": 0.0504,
+    "prioridad_b": -2.2
    },
    "a1-b1": {
-    "normal": -0.3004,
-    "prioridad_a": -0.4792,
-    "prioridad_b": -0.2942
+    "normal": -0.6,
+    "prioridad_a": -0.2332,
+    "prioridad_b": -1.2
    },
-   "a1-b4": {
-    "normal": 0.0,
-    "prioridad_a": -3.3,
-    "prioridad_b": 2.2452
+   "a0-b2": {
+    "normal": 0.7764,
+    "prioridad_a": -3.2,
+    "prioridad_b": 0.8
    },
-   "a1-b3": {
+   "a3-b1": {
     "normal": 0.0,
-    "prioridad_a": -2.3,
-    "prioridad_b": 3.9335
+    "prioridad_a": 1.7979,
+    "prioridad_b": -3.2
    },
    "a2-b0": {
     "normal": 0.0,
-    "prioridad_a": 0.7817,
+    "prioridad_a": 1.2502,
     "prioridad_b": -3.2
    },
    "a2-b1": {
-    "normal": 1.2527,
-    "prioridad_a": -0.2,
+    "normal": 0.0,
+    "prioridad_a": 0.5731,
     "prioridad_b": -2.2
    }
   },
-  "cruce3": {
+  "cruce2": {
+   "a1-b0": {
+    "normal": 0.301,
+    "prioridad_a": -0.131,
+    "prioridad_b": -0.4774
+   },
    "a0-b0": {
-    "normal": -0.2396,
-    "prioridad_a": -0.4632,
-    "prioridad_b": -0.5111
+    "normal": -0.0499,
+    "prioridad_a": -0.2947,
+    "prioridad_b": -0.913
    },
    "a0-b1": {
-    "normal": -0.0016,
-    "prioridad_a": -1.0673,
-    "prioridad_b": -0.2126
-   },
-   "a1-b0": {
-    "normal": -0.0112,
-    "prioridad_a": -0.6155,
-    "prioridad_b": -0.1723
+    "normal": 0.4074,
+    "prioridad_a": -0.0414,
+    "prioridad_b": -0.2
    },
    "a1-b1": {
-    "normal": -0.3037,
-    "prioridad_a": -1.2,
-    "prioridad_b": -0.2885
+    "normal": 0.3661,
+    "prioridad_a": -0.6943,
+    "prioridad_b": -1.2
+   },
+   "a4-b0": {
+    "normal": 0.0,
+    "prioridad_a": 3.1512,
+    "prioridad_b": -5.2
+   },
+   "a3-b0": {
+    "normal": 0.0,
+    "prioridad_a": 3.238,
+    "prioridad_b": -4.2
+   }
+  },
+  "cruce3": {
+   "a0-b1": {
+    "normal": -0.4253,
+    "prioridad_a": -1.1419,
+    "prioridad_b": -0.2
+   },
+   "a1-b1": {
+    "normal": -0.1394,
+    "prioridad_a": -0.1982,
+    "prioridad_b": -1.2
+   },
+   "a1-b0": {
+    "normal": 0.2095,
+    "prioridad_a": 0.1089,
+    "prioridad_b": -2.2
+   },
+   "a0-b0": {
+    "normal": -1.8824,
+    "prioridad_a": -0.9291,
+    "prioridad_b": -1.2
+   },
+   "a0-b2": {
+    "normal": 0.0,
+    "prioridad_a": -0.846,
+    "prioridad_b": 0.8
    },
    "a2-b0": {
     "normal": 0.0,
-    "prioridad_a": 0.8505,
+    "prioridad_a": -2.3573,
     "prioridad_b": -3.2
+   },
+   "a4-b0": {
+    "normal": 0.0,
+    "prioridad_a": 6.3294,
+    "prioridad_b": -5.2
+   },
+   "a4-b1": {
+    "normal": 0.0,
+    "prioridad_a": 5.0742,
+    "prioridad_b": -4.2
+   },
+   "a1-b2": {
+    "normal": 0.0,
+    "prioridad_a": -0.7293,
+    "prioridad_b": -0.2
+   },
+   "a0-b3": {
+    "normal": 0.0,
+    "prioridad_a": -1.4279,
+    "prioridad_b": 1.8
+   },
+   "a1-b3": {
+    "normal": 0.0,
+    "prioridad_a": -0.1207,
+    "prioridad_b": 0.8
+   },
+   "a0-b4": {
+    "normal": 0.0,
+    "prioridad_a": 0.5344,
+    "prioridad_b": 2.8
+   },
+   "a1-b4": {
+    "normal": 0.0,
+    "prioridad_a": -2.3973,
+    "prioridad_b": 1.8
+   },
+   "a2-b2": {
+    "normal": 0.0,
+    "prioridad_a": -0.0728,
+    "prioridad_b": -1.2
    }
   },
   "cruce4": {
    "a0-b0": {
-    "normal": -0.3161,
-    "prioridad_a": -0.8219,
-    "prioridad_b": -0.6645
+    "normal": -0.0065,
+    "prioridad_a": -1.2966,
+    "prioridad_b": -1.2
    },
    "a0-b1": {
-    "normal": -0.2191,
-    "prioridad_a": -0.6832,
-    "prioridad_b": -0.409
-   },
-   "a1-b1": {
-    "normal": -0.074,
-    "prioridad_a": -0.3517,
-    "prioridad_b": -0.719
+    "normal": 0.1803,
+    "prioridad_a": 0.1383,
+    "prioridad_b": -0.2
    },
    "a1-b0": {
-    "normal": 0.0175,
-    "prioridad_a": 0.0065,
-    "prioridad_b": -1.3
+    "normal": -0.356,
+    "prioridad_a": -0.3526,
+    "prioridad_b": -2.2
    },
-   "a2-b0": {
-    "normal": 0.0,
-    "prioridad_a": 0.5257,
-    "prioridad_b": -3.2
-   },
-   "a1-b2": {
-    "normal": 0.6007,
-    "prioridad_a": -2.2,
-    "prioridad_b": -0.2
+   "a1-b1": {
+    "normal": 0.2882,
+    "prioridad_a": -1.1321,
+    "prioridad_b": -1.2
    },
    "a0-b2": {
     "normal": 0.0,
-    "prioridad_a": -3.2,
-    "prioridad_b": 0.9051
+    "prioridad_a": 0.5271,
+    "prioridad_b": 0.8
    },
-   "a1-b4": {
+   "a1-b2": {
     "normal": 0.0,
-    "prioridad_a": -4.2,
-    "prioridad_b": 1.2116
+    "prioridad_a": -0.4424,
+    "prioridad_b": -0.2
+   },
+   "a2-b1": {
+    "normal": 0.9148,
+    "prioridad_a": -0.2,
+    "prioridad_b": -2.2
    }
   },
   "cruce5": {
-   "a0-b0": {
-    "normal": -0.2862,
-    "prioridad_a": -0.5164,
-    "prioridad_b": -0.4974
-   },
    "a0-b1": {
-    "normal": -0.3094,
-    "prioridad_a": -0.8071,
-    "prioridad_b": -0.0932
+    "normal": -0.0019,
+    "prioridad_a": -0.4035,
+    "prioridad_b": -0.0709
    },
-   "a1-b1": {
-    "normal": -0.0427,
-    "prioridad_a": -1.072,
-    "prioridad_b": -0.3326
+   "a0-b0": {
+    "normal": -0.6509,
+    "prioridad_a": -1.0677,
+    "prioridad_b": -0.3507
    },
    "a1-b0": {
-    "normal": -0.4907,
-    "prioridad_a": -1.009,
-    "prioridad_b": -0.9773
+    "normal": -0.5994,
+    "prioridad_a": -0.0912,
+    "prioridad_b": -1.8017
    },
-   "a2-b0": {
+   "a1-b1": {
+    "normal": 0.2332,
+    "prioridad_a": -0.7672,
+    "prioridad_b": -1.2
+   },
+   "a0-b2": {
+    "normal": 1.0756,
+    "prioridad_a": -1.6667,
+    "prioridad_b": 0.6471
+   },
+   "a1-b2": {
     "normal": 0.0,
-    "prioridad_a": 0.1367,
-    "prioridad_b": -3.2
+    "prioridad_a": -0.0917,
+    "prioridad_b": -0.2
+   },
+   "a0-b3": {
+    "normal": 0.0,
+    "prioridad_a": -4.2,
+    "prioridad_b": 3.3296
    }
   }
  },
  "visitas": {
   "cruce1": {
    "a0-b0": {
-    "normal": 111,
-    "prioridad_b": 11,
-    "prioridad_a": 12
-   },
-   "a1-b0": {
-    "prioridad_a": 8,
-    "prioridad_b": 1,
-    "normal": 22
-   },
-   "a1-b1": {
-    "normal": 6
+    "normal": 59,
+    "prioridad_a": 16
    },
    "a0-b1": {
-    "normal": 17,
-    "prioridad_b": 1
-   }
-  },
-  "cruce2": {
-   "a0-b0": {
-    "normal": 55,
-    "prioridad_a": 5,
-    "prioridad_b": 2
+    "normal": 35,
+    "prioridad_a": 58
    },
    "a1-b0": {
-    "prioridad_a": 2,
-    "normal": 75,
-    "prioridad_b": 2
-   },
-   "a0-b1": {
-    "prioridad_b": 8,
-    "normal": 10
+    "normal": 8,
+    "prioridad_a": 11
    },
    "a1-b1": {
-    "normal": 16,
-    "prioridad_a": 2,
-    "prioridad_b": 5
+    "prioridad_a": 3,
+    "normal": 1
    },
-   "a1-b4": {
-    "prioridad_b": 2
+   "a0-b2": {
+    "normal": 1
    },
-   "a1-b3": {
-    "prioridad_b": 1
-   },
-   "a2-b0": {
-    "prioridad_a": 2
-   },
-   "a2-b1": {
-    "normal": 2
-   }
-  },
-  "cruce3": {
-   "a0-b0": {
-    "prioridad_b": 12,
-    "normal": 27,
-    "prioridad_a": 2
-   },
-   "a0-b1": {
-    "prioridad_b": 22,
-    "prioridad_a": 1,
-    "normal": 31
-   },
-   "a1-b0": {
-    "prioridad_a": 6,
-    "normal": 36,
-    "prioridad_b": 16
-   },
-   "a1-b1": {
-    "normal": 10,
-    "prioridad_b": 14
+   "a3-b1": {
+    "prioridad_a": 1
    },
    "a2-b0": {
     "prioridad_a": 1
+   },
+   "a2-b1": {
+    "prioridad_a": 1
+   }
+  },
+  "cruce2": {
+   "a1-b0": {
+    "normal": 35,
+    "prioridad_a": 2,
+    "prioridad_b": 12
+   },
+   "a0-b0": {
+    "normal": 100,
+    "prioridad_a": 8,
+    "prioridad_b": 6
+   },
+   "a0-b1": {
+    "normal": 10,
+    "prioridad_a": 11
+   },
+   "a1-b1": {
+    "normal": 6,
+    "prioridad_a": 3
+   },
+   "a4-b0": {
+    "prioridad_a": 1
+   },
+   "a3-b0": {
+    "prioridad_a": 1
+   }
+  },
+  "cruce3": {
+   "a0-b1": {
+    "normal": 12,
+    "prioridad_a": 43
+   },
+   "a1-b1": {
+    "normal": 5,
+    "prioridad_a": 17
+   },
+   "a1-b0": {
+    "normal": 2,
+    "prioridad_a": 49
+   },
+   "a0-b0": {
+    "normal": 8,
+    "prioridad_a": 2
+   },
+   "a0-b2": {
+    "prioridad_a": 8
+   },
+   "a2-b0": {
+    "prioridad_a": 1
+   },
+   "a4-b0": {
+    "prioridad_a": 1
+   },
+   "a4-b1": {
+    "prioridad_a": 2
+   },
+   "a1-b2": {
+    "prioridad_a": 5
+   },
+   "a0-b3": {
+    "prioridad_a": 7
+   },
+   "a1-b3": {
+    "prioridad_a": 2
+   },
+   "a0-b4": {
+    "prioridad_a": 3
+   },
+   "a1-b4": {
+    "prioridad_a": 1
+   },
+   "a2-b2": {
+    "prioridad_a": 13
    }
   },
   "cruce4": {
    "a0-b0": {
-    "prioridad_b": 12,
-    "prioridad_a": 10,
-    "normal": 19
-   },
-   "a1-b1": {
-    "normal": 15,
-    "prioridad_b": 3,
-    "prioridad_a": 5
-   },
-   "a1-b0": {
-    "prioridad_a": 14,
-    "normal": 20
+    "normal": 79,
+    "prioridad_a": 3
    },
    "a0-b1": {
-    "prioridad_b": 21,
-    "normal": 24,
-    "prioridad_a": 30
+    "normal": 37,
+    "prioridad_a": 19
    },
-   "a2-b0": {
-    "prioridad_a": 2
+   "a1-b0": {
+    "normal": 4,
+    "prioridad_a": 8
    },
-   "a1-b2": {
-    "normal": 1
+   "a1-b1": {
+    "normal": 10,
+    "prioridad_a": 11
    },
    "a0-b2": {
-    "prioridad_b": 2
+    "prioridad_a": 6
    },
-   "a1-b4": {
-    "prioridad_b": 4
+   "a1-b2": {
+    "prioridad_a": 3
+   },
+   "a2-b1": {
+    "normal": 1
    }
   },
   "cruce5": {
-   "a0-b0": {
-    "prioridad_b": 10,
-    "normal": 16,
-    "prioridad_a": 6
-   },
    "a0-b1": {
-    "prioridad_b": 22,
-    "prioridad_a": 1,
-    "normal": 18
+    "normal": 93,
+    "prioridad_a": 10,
+    "prioridad_b": 3
    },
-   "a1-b1": {
-    "normal": 42,
-    "prioridad_b": 9,
-    "prioridad_a": 1
+   "a0-b0": {
+    "normal": 15,
+    "prioridad_a": 2,
+    "prioridad_b": 19
    },
    "a1-b0": {
-    "normal": 18,
-    "prioridad_b": 6,
-    "prioridad_a": 1
+    "normal": 4,
+    "prioridad_a": 3,
+    "prioridad_b": 1
    },
-   "a2-b0": {
-    "prioridad_a": 28
+   "a1-b1": {
+    "normal": 6,
+    "prioridad_a": 5
+   },
+   "a0-b2": {
+    "prioridad_a": 2,
+    "normal": 2,
+    "prioridad_b": 13
+   },
+   "a1-b2": {
+    "prioridad_a": 2
+   },
+   "a0-b3": {
+    "prioridad_b": 1
    }
   }
  },
  "epsilon": 0.02,
- "pasos": 916,
+ "pasos": 933,
  "recompensas": [
-  1.83,
-  0.5,
-  0.33,
   0.0,
-  -0.83,
-  0.67,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
   0.0,
   0.0,
   0.0,
@@ -337,69 +470,43 @@
   0.0,
   0.0,
   0.0,
-  -0.1,
-  -0.6,
-  -0.3,
-  -0.2,
   0.0,
-  0.27,
-  0.6,
-  -0.03,
-  -0.3,
-  -0.5,
-  -0.67,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
   -0.17,
-  0.5,
-  -0.17,
-  0.0,
-  -0.33,
-  0.67,
-  -0.33,
-  -0.83,
   0.0,
   -0.33,
   0.0,
-  -0.17,
-  1.17,
-  -2.17,
-  0.83,
   0.0,
-  0.5,
-  0.33,
-  0.67,
-  -2.33,
-  0.0,
-  0.0,
-  -2.67,
-  -0.33,
+  -1.67,
   -1.17,
+  1.5,
   0.0,
-  0.0,
-  -0.17,
-  -0.17,
-  -0.5,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
+  0.17,
+  -0.33,
   0.0,
   0.0,
   0.0,
@@ -421,25 +528,7 @@
   0.0,
   -0.5,
   0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
-  0.0,
+  -0.5,
   0.0,
   0.0,
   0.0,

@@ -4,6 +4,8 @@ No usa la webcam ni fotos: registra una persona de PRUEBA con un vector sintéti
 en sma/camaras/cam2 (cruce3) primero un rostro que NO coincide y luego "otra toma" de la persona registrada, y
 verifica toda la cadena: Vigilancia -> Consultor (similitud) -> Clasificador (Seguridad, Crítica) -> Coordinador
 -> Predictor (ruta de huida) -> Semafórico (cerco en todos los cruces de la ruta) -> Comunicador (solo Policía).
+Hace de gemelo 3D: publica sensores de cola de los 5 cruces cada 2 s (sma/sensores/<cruce>), así el Consultor
+tiene estado vial y el Coordinador puede medir el efecto del plan.
 
 Uso:
     python pruebas/prueba_caso2.py            (con los agentes del SMA detenidos: la prueba levanta los suyos)
@@ -12,6 +14,7 @@ from __future__ import annotations
 
 import json
 import sys
+import threading
 import time
 
 import numpy as np
@@ -38,6 +41,15 @@ def main() -> int:
     REGISTRO.write_text(json.dumps({"personas": [{"alias": "PRUEBA", "vector": persona.tolist(), "muestras": 1,
                                                   "consistencia": 1.0, "consentimiento": "prueba"}]}), encoding="utf-8")
     vistos = {"cerco": set(), "resultados": []}
+    parar = threading.Event()
+
+    def sensores():          # lo que mide el gemelo 3D: colas por acceso de cada cruce cada 2 s
+        g = np.random.default_rng(3)
+        while not parar.is_set():
+            for i in range(1, 6):
+                a, b = (int(x) for x in g.poisson((6, 3) if i in (3, 5) else (3, 2)))
+                cliente.publish(f"sma/sensores/cruce{i}", json.dumps({"A": a, "B": b}))
+            parar.wait(2)
 
     def al_llegar(_c, _u, msg):
         texto = msg.payload.decode(errors="ignore")
@@ -53,6 +65,7 @@ def main() -> int:
         cliente.connect("127.0.0.1", 1883, keepalive=10)
         cliente.subscribe([("sma/semaforo/#", 0), ("sma/camaras/cam2/resultado", 0)])
         cliente.loop_start()
+        threading.Thread(target=sensores, daemon=True).start()
         agentes = subprocess.Popen([sys.executable, "agentes/sma_agentes.py", "--duracion", "4", "--olvidar"], cwd=RAIZ,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8",
                                    errors="replace", bufsize=1, env=ENTORNO, **GRUPO)
@@ -75,6 +88,8 @@ def main() -> int:
         faltan = [e for e in esperados if e not in salida]
         if faltan:
             raise AssertionError("faltan en la bitácora: " + ", ".join(faltan))
+        if "sin sensores" in salida or "sin datos de sensores" in salida:
+            raise AssertionError("el Consultor no recibió los sensores de cola")
         if "[para Ciudadania]" in salida:
             raise AssertionError("una alerta de Seguridad no debe avisar a la ciudadanía")
         if len(vistos["cerco"]) < 2:
@@ -86,6 +101,7 @@ def main() -> int:
         print(f"\nPRUEBA CASO 2 FALLÓ: {error}", file=sys.stderr)
         return 1
     finally:
+        parar.set()
         cliente.loop_stop(); cliente.disconnect()
         terminar(agentes)
         for ruta, datos in respaldos.items():
