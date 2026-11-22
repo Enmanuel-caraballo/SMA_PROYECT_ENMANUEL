@@ -208,6 +208,11 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
 ## 9. Gemelo digital 3D de Bocagrande (versión actual)
 
 - **Sector único: Bocagrande.** Todo lo nuevo (Caso 2, mediciones, informe) debe ubicarse en este sector.
+- **Corrección de OSM (21-nov, verificada por el usuario con Street View):** entre la Calle 10 (cruce3) y la Calle 10A la
+  Av. San Martín es UNA sola calzada de ENTRADA; en la Y de la Calle 10A solo se cruza hacia Bocagrande (no hay
+  incorporación hacia el Centro). Salidas reales: Carrera 3 -> Calle 10A -> calzada de salida junto a la Base Naval
+  (en Google "Carrera 2") y Carrera 1 -> Calle 15. Lo aplica `corregir_sentidos` en `preparar_bocagrande.py`;
+  no confiar ciegamente en los sentidos de OSM: preguntar al usuario, que conoce el sector.
 - Cruces (de `highway=traffic_signals` en OSM, 7 semáforos → 5 intersecciones). `cruce1` = Av. San Martín (en OSM
   "Carrera 2") × Calle 6 = cruce físico ESP32 (punto crítico citado por la DATT). cruce2 = Cra. 3 × Calle 6,
   cruce3 = San Martín × Calle 10, cruce4 = Cra. 3 × Calle 10, cruce5 = San Martín × Calle 15 (Base Naval).
