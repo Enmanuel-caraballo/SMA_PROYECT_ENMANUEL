@@ -42,7 +42,7 @@ DIST_SENSOR, VEL_COLA = 100.0, 2.0
 
 
 def fases(modo):
-    ga, gb = TIEMPOS[modo]
+    ga, gb = TIEMPOS.get(modo, TIEMPOS["normal"])        # cerco: lleva el ciclo normal pero todo en rojo
     return [("A", "verde", ga), ("A", "amarillo", AMARILLO), ("-", "rojo", TODO_ROJO),
             ("B", "verde", gb), ("B", "amarillo", AMARILLO), ("-", "rojo", TODO_ROJO)]
 
@@ -210,7 +210,7 @@ class EntornoBocagrande:
     def _luces(self, c):
         i, _ = self.fase[c]
         grupo_fase, color, _ = fases(self.modo[c])[i]
-        letra = {"verde": "g", "amarillo": "y", "rojo": "r"}[color]
+        letra = "r" if self.modo[c] == "cerco" else {"verde": "g", "amarillo": "y", "rojo": "r"}[color]
         estado = "".join("g" if g == "*" else (letra if g == grupo_fase else "r") if g in "AB" else "r"
                          for g in self.grupos[c])
         self.traci.trafficlight.setRedYellowGreenState(c, estado)
@@ -269,7 +269,7 @@ class EntornoBocagrande:
         """acciones: {cruce: modo}. Avanza INTERVALO s. Devuelve (obs, recompensas, terminado, info)."""
         cambios = {}
         for c, m in acciones.items():
-            if m in TIEMPOS:
+            if m in TIEMPOS or m == "cerco":
                 cambios[c] = m != self.modo[c]
                 self.modo[c] = m                    # conserva la fase: solo cambian los tiempos
                 f = self.fase[c]

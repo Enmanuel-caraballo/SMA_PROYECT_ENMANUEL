@@ -1,0 +1,106 @@
+[
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 18.71,
+  "palabras": 42,
+  "texto": "🚨 En Av. San Martín y Calle 10, se ha producido un accidente. Los semáforos del sistema ajustaron el flujo durante 5 minutos para evitar congestionamiento. Es recomendable tomar la ruta alternativa a través de Calle 15 para evitar el sector afectado."
+ },
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 10.27,
+  "palabras": 45,
+  "texto": "🚨 En el sector de Cra. 3 × Calle 6, se ha producido un accidente. Por lo tanto, se han ajustado los semáforos del sector para repartir el flujo de tráfico. Durante aproximadamente 5 minutos, los semáforos optimizados (4 cruces) se aplicarán para evitar congestionamientos."
+ },
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 10.86,
+  "palabras": 50,
+  "texto": "🚨 Se ha producido un accidente en Av. San Martín (Cra. 2) × Calle 6, por lo que se han ajustado los semáforos del sector para repartir el flujo de tráfico de manera más eficiente. Durante aproximadamente 5 minutos, los semáforos optimizados (4 cruces) han sido activados para evitar congestionamientos."
+ },
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 10.23,
+  "palabras": 45,
+  "texto": "🚨 En el sector de Cra. 3 × Calle 6, se ha producido un accidente. Por lo tanto, se han ajustado los semáforos del sector para repartir el flujo de tráfico. Durante aproximadamente 5 minutos, los semáforos optimizados (4 cruces) se aplicarán para evitar congestionamientos."
+ },
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 9.61,
+  "palabras": 53,
+  "texto": "🚨 En el sector de Cra. 3 × Calle 6, se ha producido un accidente. Por lo tanto, se han ajustado los semáforos del sector para repartir el flujo de tráfico de manera más eficiente. Durante aproximadamente 5 minutos, los semáforos optimizados (4 cruces) se aplicarán para minimizar el impacto en el tráfico."
+ },
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 10.95,
+  "palabras": 50,
+  "texto": "🚨 Se ha producido un accidente en Av. San Martín (Cra. 2) × Calle 6, por lo que se han ajustado los semáforos del sector para repartir el flujo de tráfico de manera más eficiente. Durante aproximadamente 5 minutos, los semáforos optimizados (4 cruces) han sido activados para evitar congestionamientos."
+ },
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 8.79,
+  "palabras": 42,
+  "texto": "🚨 En Av. San Martín y Calle 10, se ha producido un accidente. Los semáforos del sistema ajustaron el flujo durante 5 minutos para evitar congestionamiento. Es recomendable tomar la ruta alternativa a través de Calle 15 para evitar el sector afectado."
+ },
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 9.97,
+  "palabras": 46,
+  "texto": "🚨 En el sector de Cra. 3 × Calle 10, se ha producido un accidente. Por lo tanto, se han ajustado los semáforos del sector para repartir el flujo de tráfico. Durante aproximadamente 5 minutos, los semáforos optimizados (3 cruces) han sido activados para evitar congestionamientos."
+ },
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 10.37,
+  "palabras": 49,
+  "texto": "🚨 En Av. San Martín y Calle 15, frente a la Base Naval, se produjo un accidente. Los semáforos del sistema ajustaron el flujo durante 5 minutos para optimizar el tráfico. Es recomendable tomar la ruta alternativa por Av. San Martín y Calle 10 para evitar el sector afectado."
+ },
+ {
+  "receptor": "Ciudadania",
+  "origen": "LLM",
+  "motivo": "LLM ollama",
+  "segundos": 11.2,
+  "palabras": 45,
+  "texto": "🚨 En el sector de Cra. 3 × Calle 6, se ha producido un accidente. Por lo tanto, se han ajustado los semáforos del sector para repartir el flujo de tráfico. Durante aproximadamente 5 minutos, los semáforos optimizados (4 cruces) se aplicarán para evitar congestionamientos."
+ },
+ {
+  "receptor": "Policia",
+  "origen": "plantilla",
+  "motivo": "plantilla (el LLM omitió 175)",
+  "segundos": 22.21,
+  "palabras": 74,
+  "texto": "🚨 POLICÍA – Alerta M-10: posible coincidencia con «Alias» (similitud 0.88) en cruce1 (Av. San Martín (Cra. 2) × Calle 6) (cámara cam1); ruta probable de huida por Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín (probabilidad 0.6); cerco en cruce1, cruce2, cruce4, cruce5. Intercepción sugerida en cruce5 (Av. San Martín × Calle 15 (frente a la Base Naval)) (llegaría en ~175 s sin retención; los semáforos anteriores lo retrasan)."
+ },
+ {
+  "receptor": "Policia",
+  "origen": "plantilla",
+  "motivo": "plantilla (el LLM omitió 155, 4, cruce4)",
+  "segundos": 16.51,
+  "palabras": 81,
+  "texto": "🚨 POLICÍA – Alerta M-11: posible coincidencia con «Alias» (similitud 0.88) en cruce3 (Av. San Martín × Calle 10) (cámara cam2); ruta probable de huida por Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15 (probabilidad 0.58); cerco en cruce3, cruce5; acceso del solicitado en rojo largo en cruce4. Intercepción sugerida en cruce5 (Av. San Martín × Calle 15 (frente a la Base Naval)) (llegaría en ~155 s sin retención; los semáforos anteriores lo retrasan)."
+ },
+ {
+  "receptor": "Policia",
+  "origen": "plantilla",
+  "motivo": "plantilla (el LLM omitió 3, Alias)",
+  "segundos": 12.74,
+  "palabras": 61,
+  "texto": "🚨 POLICÍA – Alerta M-12: posible coincidencia con «Alias» (similitud 0.88) en cruce5 (Av. San Martín × Calle 15 (frente a la Base Naval)) (cámara cam3); ruta probable de huida por Calle 15 (probabilidad 1.0); cerco en cruce5. Está junto a la salida de Bocagrande: interceptar de inmediato en cruce5 (Av. San Martín × Calle 15 (frente a la Base Naval))."
+ }
+]

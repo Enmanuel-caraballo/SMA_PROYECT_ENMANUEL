@@ -18,3 +18,6 @@ modelos/datos/crudos/
 # Caso 2: modelos ONNX (se descargan solos) y registro de rostros (solo vectores, con consentimiento; nunca al repo)
 vision/modelos/
 vision/registro/
+
+# mediciones: respaldo temporal de la memoria y del registro mientras corre la latencia
+mediciones/.respaldo/

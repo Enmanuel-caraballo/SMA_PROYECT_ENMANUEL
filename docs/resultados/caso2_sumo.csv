@@ -1,0 +1,31 @@
+camara;cruce;semilla;politica;tiempo_huida_s;escapo_antes_del_limite;demora_resto_veh_h;viaje_medio_resto_s;ventana_s;modos;ruta_predicha;prob_ruta;intercepcion
+cam1;cruce1;700;sin;574;True;24.73;360.5;574;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam1;cruce1;700;retencion;819;True;52.76;427.4;819;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam1;cruce1;701;sin;404;True;17.54;359.4;404;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam1;cruce1;701;retencion;964;True;57.91;428.8;964;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam1;cruce1;702;sin;376;True;16.55;348.9;376;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam1;cruce1;702;retencion;736;True;47.32;423.5;736;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam1;cruce1;703;sin;325;True;13.84;348.8;325;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam1;cruce1;703;retencion;None;False;73.04;439.5;1200;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam1;cruce1;704;sin;725;True;33.15;371.5;725;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam1;cruce1;704;retencion;888;True;55.83;426.1;888;cruce1:cerco, cruce2:cerco, cruce4:cerco, cruce5:cerco;Calle 6 → Carrera 3 → Calle 10A → Avenida San Martín;0.6;cruce5
+cam2;cruce3;700;sin;379;True;16.35;353.0;379;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam2;cruce3;700;retencion;1136;True;66.33;449.2;1136;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam2;cruce3;701;sin;424;True;18.52;364.5;424;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam2;cruce3;701;retencion;824;True;45.85;427.7;824;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam2;cruce3;702;sin;458;True;20.47;366.4;458;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam2;cruce3;702;retencion;1139;True;64.05;444.0;1139;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam2;cruce3;703;sin;365;True;15.46;348.4;365;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam2;cruce3;703;retencion;905;True;52.15;430.2;905;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam2;cruce3;704;sin;447;True;19.86;358.9;447;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam2;cruce3;704;retencion;1010;True;58.41;443.8;1010;cruce3:cerco, cruce5:cerco, cruce4:prioridad_b;Avenida San Martín → Carrera 2 → Calle 9 → Carrera 1 → Calle 15;0.58;cruce5
+cam3;cruce5;700;sin;34;True;1.22;327.9;34;cruce5:cerco;Calle 15;1.0;cruce5
+cam3;cruce5;700;retencion;319;True;17.96;313.7;319;cruce5:cerco;Calle 15;1.0;cruce5
+cam3;cruce5;701;sin;24;True;0.81;323.4;24;cruce5:cerco;Calle 15;1.0;cruce5
+cam3;cruce5;701;retencion;308;True;17.73;322.3;308;cruce5:cerco;Calle 15;1.0;cruce5
+cam3;cruce5;702;sin;14;True;0.34;210.8;14;cruce5:cerco;Calle 15;1.0;cruce5
+cam3;cruce5;702;retencion;250;True;14.38;318.8;250;cruce5:cerco;Calle 15;1.0;cruce5
+cam3;cruce5;703;sin;9;True;0.16;317.5;9;cruce5:cerco;Calle 15;1.0;cruce5
+cam3;cruce5;703;retencion;305;True;17.48;310.7;305;cruce5:cerco;Calle 15;1.0;cruce5
+cam3;cruce5;704;sin;25;True;0.96;318.1;25;cruce5:cerco;Calle 15;1.0;cruce5
+cam3;cruce5;704;retencion;310;True;17.79;317.2;310;cruce5:cerco;Calle 15;1.0;cruce5

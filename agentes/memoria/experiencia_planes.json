@@ -1,5 +1,5 @@
 {
- "_epsilon": 0.1823,
+ "_epsilon": 0.1477,
  "accidente@cruce4|semaforos_optimos": {
   "impacto": 0.455,
   "n": 1,
@@ -33,6 +33,18 @@
     "durante": 14.3,
     "efecto": -1.0,
     "impacto": 0.63
+   }
+  ]
+ },
+ "seguridad@cruce3|solo_avisar": {
+  "impacto": 0.278,
+  "n": 1,
+  "historial": [
+   {
+    "antes": 2.0,
+    "durante": 2.7,
+    "efecto": -0.24,
+    "impacto": 0.278
    }
   ]
  }

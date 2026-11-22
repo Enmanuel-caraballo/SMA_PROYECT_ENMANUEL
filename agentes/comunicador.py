@@ -175,7 +175,7 @@ def _llm(prompt: str, env: dict) -> str:
 def _claves(texto: str) -> set:
     """Datos que el LLM debe conservar: cruces, números de calles/carreras y cifras enteras (155 s).
     Los decimales (~2.8 min, probabilidad 0.58) puede redondearlos."""
-    return (set(re.findall(r"cruce\d", texto))
+    return (set(re.findall(r"cruce\d", texto)) | set(re.findall(r"«([^»]+)»", texto))     # «alias» del solicitado
             | set(re.findall(r"(?<![\d.,])\d+(?![\d]|[.,]\d)", texto)))
 
 

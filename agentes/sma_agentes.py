@@ -394,6 +394,8 @@ def retencion_semaforos(alerta, cruce, lugar, evento):
       (prioridad al otro grupo), así el resto del tráfico sigue pasando.
     - Aviso a la Policía: ruta probable, punto de intercepción sugerido y tiempo estimado de llegada."""
     huida = alerta.get("ruta_huida") or {}
+    quien = (f" con «{alerta['persona']}»" + (f" (similitud {alerta['similitud']:.2f})" if alerta.get("similitud") else "")
+             if alerta.get("persona") else f" ({evento})")      # alias del solicitado: SOLO va en el aviso a la Policía
     rutas_h = huida.get("rutas") or [{"cruces": huida.get("cruces") or [], "accesos": {}, "probabilidad": 1.0}]
     semaforos = {c: "cerco" for c in dict.fromkeys([cruce] + list(rutas_h[0]["cruces"]))}
     alternas = []
@@ -415,7 +417,7 @@ def retencion_semaforos(alerta, cruce, lugar, evento):
                  f"retención; los semáforos anteriores lo retrasan).")
     detalle = f"cerco en {', '.join(c for c, m in semaforos.items() if m == 'cerco')}" +         (f"; acceso del solicitado en rojo largo en {', '.join(alternas)}" if alternas else "")
     return {"semaforos": semaforos, "detalle": detalle,
-            "aviso": f"posible coincidencia ({evento}) en {lugar} (cámara {alerta.get('camara', '-')}); ruta probable de "
+            "aviso": f"posible coincidencia{quien} en {lugar} (cámara {alerta.get('camara', '-')}); ruta probable de "
                      f"huida{por} (probabilidad {huida.get('confianza', '-')}); {detalle}.{punto}"}
 
 

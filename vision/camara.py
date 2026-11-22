@@ -12,6 +12,7 @@ Uso:
   python vision/camara.py --camara cam1                            vigila: envía los vectores a sma/camaras/cam1
   python vision/camara.py --listar | --borrar "Alias"              registro (derecho de supresión, Ley 1581 de 2012)
   python vision/camara.py --camaras                                lista las cámaras del equipo (integrada, USB, virtuales)
+  python vision/camara.py --medir                                  mide aciertos/falsos positivos (solo guarda similitudes)
   ... --indice 1  |  --indice HP  |  --indice USB                  elige la cámara por número o por parte de su nombre
                                                                    (sin --indice: la primera cámara física, no virtual)
 
@@ -81,7 +82,19 @@ def leer_registro():
         return {"personas": []}
 
 
+MEDICION_EN_CURSO = CARPETA.parent / "mediciones" / ".respaldo" / "indice.json"
+
+
+def medicion_en_curso():
+    """mediciones/medir.py latencia cambia el registro por personas sintéticas mientras corre."""
+    return MEDICION_EN_CURSO.exists()
+
+
 def guardar_registro(datos):
+    if medicion_en_curso():
+        sys.exit("Hay una medición de latencia corriendo (mediciones/medir.py) que usa un registro temporal: "
+                 "espere a que termine y vuelva a intentarlo (si no hay ninguna corriendo, ejecute "
+                 "python mediciones/medir.py restaurar).")
     REGISTRO.parent.mkdir(exist_ok=True)
     REGISTRO.write_text(json.dumps(datos, ensure_ascii=False, indent=1), encoding="utf-8")
 
@@ -205,6 +218,74 @@ def registrar(alias, indice, muestras):
     print(f"'{alias}' registrado ({muestras} muestras, consistencia {consistencia:.2f}). Solo se guardó el vector.")
 
 
+MEDICION = CARPETA / "registro" / "medicion_rostros.json"     # ignorado por Git (alias reales)
+
+
+def acierto(similitudes, real, umbral=None):
+    """Decisión del Consultor (el registrado más parecido, si supera el umbral) comparada con la verdad."""
+    umbral = K.UMBRAL_SIMILITUD_ROSTRO if umbral is None else umbral
+    alias, s = max(similitudes.items(), key=lambda x: x[1])
+    return s < umbral if real == "otro" else (alias == real and s >= umbral)
+
+
+def medir(indice, muestras):
+    """Mide el reconocimiento: por turnos, una persona frente a la cámara; el operador dice quién es (su alias registrado
+    u 'otro' si NO está registrado). Se guardan SOLO las similitudes contra cada registrado (nunca imágenes ni vectores).
+    Con eso `python mediciones/medir.py informe` calcula aciertos y falsos positivos con el umbral del Consultor."""
+    if medicion_en_curso():
+        sys.exit("Hay una medición de latencia corriendo con un registro temporal: espere a que termine.")
+    personas = leer_registro()["personas"]
+    if not personas:
+        sys.exit("No hay nadie registrado: registre primero a los compañeros (--registrar ALIAS --consentimiento).")
+    vectores = {p["alias"]: np.asarray(p["vector"], dtype=np.float32) for p in personas}
+    datos = json.loads(MEDICION.read_text(encoding="utf-8")) if MEDICION.exists() else {"tomas": []}
+    R, cam = Rostros(), abrir_camara(indice)
+    print(f"Registrados: {', '.join(vectores)}. Umbral del Consultor: {K.UMBRAL_SIMILITUD_ROSTRO}.")
+    print("Solo participan personas que aceptaron; de los 'otro' tampoco se guarda nada salvo las similitudes.")
+    try:
+        while True:
+            real = input("\n¿Quién está frente a la cámara? (alias registrado / 'otro' / Enter = terminar): ").strip()
+            if not real:
+                break
+            if real != "otro" and real not in vectores:
+                print(f"'{real}' no está registrado; escriba su alias exacto u 'otro'.")
+                continue
+            condicion = input("Condición (ej.: frente, lejos, poca luz, gafas, de lado) [frente]: ").strip()
+            condicion = condicion if any(ch.isalpha() for ch in condicion) else "frente"   # p. ej. '}' por error
+            fin = time.monotonic() + 3          # cuenta regresiva: que el anterior salga y el nuevo se ubique
+            while time.monotonic() < fin:
+                ok, imagen = cam.read()
+                if ok:
+                    dibujar(imagen, R.detectar(imagen), f"{real}: ubiquese... {fin - time.monotonic():.0f}")
+                    cv2.imshow("Medicion (no se guardan imagenes)", imagen)
+                    cv2.waitKey(1)
+            sims, ultimo = [], 0.0
+            while len(sims) < muestras:
+                ok, imagen = cam.read()
+                if not ok:
+                    continue
+                caras = R.detectar(imagen)
+                if len(caras) == 1 and time.monotonic() - ultimo > 0.3:
+                    v = R.vector(imagen, caras[0])
+                    v = v / np.linalg.norm(v)
+                    sims.append({a: round(float(v @ (w / np.linalg.norm(w))), 4) for a, w in vectores.items()})
+                    ultimo = time.monotonic()
+                mejor = max(sims[-1].items(), key=lambda x: x[1]) if sims else ("-", 0)
+                dibujar(imagen, caras, f"{real}: {len(sims)}/{muestras}  mejor {mejor[0]} {mejor[1]:.2f}")
+                cv2.imshow("Medicion (no se guardan imagenes)", imagen)
+                if cv2.waitKey(1) == 27:
+                    break
+            cv2.destroyAllWindows(); cv2.waitKey(1)      # sin ventana mientras la consola espera al siguiente
+            datos["tomas"].append({"real": real, "condicion": condicion, "similitudes": sims,
+                                   "fecha": datetime.now().isoformat(timespec="seconds")})
+            MEDICION.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
+            aciertos = sum(1 for s in sims if acierto(s, real))
+            print(f"  {len(sims)} muestras guardadas (solo números): {aciertos}/{len(sims)} decisiones correctas.")
+    finally:
+        cam.release(); cv2.destroyAllWindows()
+    print(f"Listo. Resultados en {MEDICION} (no se sube a Git). Informe: python mediciones/medir.py informe")
+
+
 def vigilar(camara, indice, ventana, intervalo):
     """Detecta rostros y publica su vector en sma/camaras/<camara>; el Consultor decide si coincide."""
     import paho.mqtt.client as mqtt
@@ -267,6 +348,8 @@ def main():
     p.add_argument("--intervalo", type=float, default=1.0, help="segundos entre envíos")
     p.add_argument("--listar", action="store_true")
     p.add_argument("--borrar", metavar="ALIAS")
+    p.add_argument("--medir", action="store_true", help="mide aciertos y falsos positivos (solo guarda similitudes)")
+    p.add_argument("--muestras-medir", type=int, default=20)
     a = p.parse_args()
     if a.camaras:
         print("Cámaras del equipo (el número es el de --indice):")
@@ -280,7 +363,11 @@ def main():
         datos["personas"] = [x for x in datos["personas"] if x["alias"] != a.borrar]
         guardar_registro(datos)
         print("borrado" if len(datos["personas"]) < antes else "no estaba registrado")
+    elif a.medir:
+        medir(a.indice, a.muestras_medir)
     elif a.registrar:
+        if medicion_en_curso():
+            sys.exit("Hay una medición de latencia corriendo con un registro temporal: espere a que termine.")
         if not a.consentimiento:
             sys.exit("Falta --consentimiento: solo se registran personas que aceptaron participar (Ley 1581 de 2012).")
         registrar(a.registrar, a.indice, a.muestras)

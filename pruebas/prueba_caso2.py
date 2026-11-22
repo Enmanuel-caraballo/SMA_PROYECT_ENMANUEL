@@ -85,7 +85,7 @@ def main() -> int:
         salida += "\n" + esperar_linea(agentes, "cerrado", 40)
         if "Telegram desactivado" not in salida:      # el Comunicador redacta con el LLM: puede tardar
             salida += "\n" + esperar_linea(agentes, "Telegram desactivado", 90)
-        esperados = ["posible coincidencia", "Seguridad, prioridad Critica", "rutas probables de huida",
+        esperados = ["coincidencia con «PRUEBA»", "Seguridad, prioridad Critica", "rutas probables de huida",
                      "cerco en", "[para Policia]"]
         faltan = [e for e in esperados if e not in salida]
         if faltan:

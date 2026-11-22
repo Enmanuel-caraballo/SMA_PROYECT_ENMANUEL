@@ -1,0 +1,17 @@
+caso;cruce;evento_a_semaforos_s;evento_a_aviso_s
+caso1;cruce1;0.83;16.33
+caso2;cruce1;0.02;18.82
+caso1;cruce2;0.22;19.83
+caso2;cruce3;0.02;16.86
+caso1;cruce3;0.77;21.23
+caso2;cruce5;0.02;15.65
+caso1;cruce4;0.32;18.16
+caso2;cruce1;0.02;23.03
+caso1;cruce5;0.26;25.56
+caso2;cruce3;0.02;19.96
+caso1;cruce1;0.51;21.35
+caso2;cruce5;0.02;18.37
+caso1;cruce2;0.32;24.5
+caso2;cruce1;0.03;24.73
+caso1;cruce3;0.7;23.14
+caso2;cruce3;0.02;18.75
