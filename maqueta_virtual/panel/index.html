@@ -183,7 +183,7 @@
   <button class="btn rojo" id="btnReal" title="Reproduce un accidente REAL de Bocagrande (datos abiertos DATT Cartagena)">Accidente real</button>
   <button class="btn amarillo" data-evento="congestion">Congestión</button>
   <button class="btn magenta" data-evento="aglomeracion">Aglomeración</button>
-  <button class="btn" disabled title="Caso 2: pendiente">Persona solicitada</button>
+  <button class="btn" id="btnPersona" title="Caso 2: la cámara del cruce ve a una persona registrada (simulado sin webcam). Con webcam: python vision/camara.py --camara cam1">Persona solicitada</button>
   <button class="btn" id="btnGeneral">Vista general</button>
 </div>
 
@@ -240,6 +240,19 @@ function aplicarHora() {
 }
 $("hora").onchange = aplicarHora;
 aplicarHora();
+$("btnPersona").onclick = async () => {
+  if (!seleccionado) return;
+  try {
+    const r = await fetch("/api/persona", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cruce: seleccionado }) });
+    const d = await r.json();
+    if (!r.ok) linea({ hora: hora(), agente: "Panel", texto: "error: " + d.detail });
+    else linea({ hora: hora(), agente: "Panel", texto: d.modo === "camara"
+      ? `persona solicitada simulada: la cámara ${d.camara} ve a una persona registrada`
+      : `persona solicitada simulada sin cámara (${d.motivo})` });
+  } catch { linea({ hora: hora(), agente: "Panel", texto: "error de red" }); }
+};
+
 $("btnReal").onclick = async () => {
   try {
     const r = await fetch("/api/accidente_real", { method: "POST", headers: { "Content-Type": "application/json" },

@@ -853,7 +853,7 @@ function dibujarRutasModelo(rutas) {
   }
   if (!rutas) return;
   const estilos = { salir: [0x00ff7a, "SALIR"], entrar_centro: [0x2979ff, "ENTRAR DESDE EL CENTRO"],
-    entrar_norte: [0xb04dff, "ENTRAR POR LA CRA. 1"] };
+    entrar_norte: [0xb04dff, "ENTRAR POR LA CRA. 1"], huida: [0xff1744, "RUTA PROBABLE DE HUIDA"] };
   capaRutas = new THREE.Group();
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
   for (const [tipo, lista] of Object.entries(rutas)) {

@@ -14,3 +14,7 @@ CP210x_Universal_Windows_Driver.zip
 
 # datos reales descargados (se regeneran con python modelos/datos_reales.py)
 modelos/datos/crudos/
+
+# Caso 2: modelos ONNX (se descargan solos) y registro de rostros (solo vectores, con consentimiento; nunca al repo)
+vision/modelos/
+vision/registro/

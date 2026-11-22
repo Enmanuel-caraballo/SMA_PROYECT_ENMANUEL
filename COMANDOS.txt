@@ -271,6 +271,21 @@ pip install -r requirements.txt
 
 
 ----------------------------------------------------------------------
+ 10b. CASO 2: CÁMARA CON RECONOCIMIENTO FACIAL
+----------------------------------------------------------------------
+# Registrar a un compañero QUE DIO SU CONSENTIMIENTO (solo se guarda su vector, nunca fotos):
+python vision/camara.py --registrar "Alias" --consentimiento
+python vision/camara.py --listar
+python vision/camara.py --borrar "Alias"        # derecho de supresión (Ley 1581 de 2012)
+
+# Vigilar con la webcam como cámara de un cruce (cam1=cruce1, cam2=cruce3, cam3=cruce5); ESC para salir:
+python vision/camara.py --camara cam2
+
+# Probar la cadena completa sin webcam (con los agentes detenidos):
+python pruebas/prueba_caso2.py
+
+
+----------------------------------------------------------------------
  11. PROBLEMAS COMUNES
 ----------------------------------------------------------------------
 # "No module named 'greenlet'" (o cualquier otro módulo)

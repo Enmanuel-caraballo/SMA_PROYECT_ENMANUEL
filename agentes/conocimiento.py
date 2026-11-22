@@ -147,6 +147,18 @@ AVISO_CRECIMIENTO_COLA = 4                 # el Predictor anuncia cuando anticip
 SUMO_FRACCION_DEMANDA = 1.0                # SUMO usa la misma demanda calibrada del modelo de rutas (con el perfil horario real)
 
 # =====================================================================
-# Agente Predictor (Caso 2): por ahora regla simple
+# Agente Predictor (Caso 2): respaldo si el modelo de rutas falla
 # =====================================================================
 RUTA_HUIDA_POR_DEFECTO = {"cruces": ["cruce2", "cruce1"], "confianza": 0.7}
+
+# =====================================================================
+# Caso 2 - Persona solicitada: cámaras con reconocimiento facial (vision/camara.py) -> Consultor -> cerco
+# =====================================================================
+CAMARAS = {"cam1": "cruce1", "cam2": "cruce3", "cam3": "cruce5"}      # cámara -> cruce que vigila
+CAMARAS_NOMBRE = {"cam1": "Av. San Martín × Calle 6", "cam2": "Av. San Martín × Calle 10",
+                  "cam3": "Av. San Martín × Calle 15 (Base Naval)"}
+UMBRAL_SIMILITUD_ROSTRO = 0.363            # coseno SFace: umbral recomendado por OpenCV (LFW, 99,4 % de acierto);
+                                           # por encima = "posible coincidencia" (nunca "es la persona")
+SEGUNDOS_ENTRE_ALERTAS_PERSONA = 300       # no repetir la alerta de la misma persona mientras dura el cerco
+PROB_MINIMA_RUTA_HUIDA = 0.15              # rutas alternas de huida con esta probabilidad o más también se
+                                           # vigilan: el acceso del solicitado queda en rojo largo

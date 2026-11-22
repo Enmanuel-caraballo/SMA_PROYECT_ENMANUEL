@@ -16,6 +16,7 @@ import csv
 import json
 import math
 import random
+import sys
 import time
 from collections import deque
 from contextlib import asynccontextmanager
@@ -34,6 +35,12 @@ RUTA_CRUCES = CARPETA.parent / "cruces.json"
 RUTA_MAPA_3D = CARPETA.parent / "bocagrande" / "bocagrande.json"
 DATOS_REALES = CARPETA.parent.parent / "modelos" / "datos"     # generados por modelos/datos_reales.py
 TIPOS_EVENTO = {"accidente", "congestion", "aglomeracion", "placa_reportada", "persona_solicitada"}
+REGISTRO_ROSTROS = CARPETA.parent.parent / "vision" / "registro" / "registro.json"   # Caso 2 (ignorado por Git)
+try:
+    sys.path.insert(0, str(CARPETA.parent.parent / "agentes"))
+    from conocimiento import CAMARAS                                  # cámara -> cruce que vigila
+except ImportError:
+    CAMARAS = {}
 
 args = None
 clientes_ws: set[WebSocket] = set()
@@ -231,6 +238,34 @@ def accidentes_reales():
             return list(csv.DictReader(f))
     except OSError:
         return []
+
+
+class Persona(BaseModel):
+    cruce: str
+
+
+@app.post("/api/persona")
+def api_persona(pedido: Persona):
+    """Caso 2 sin webcam: simula que la cámara del cruce ve a una persona registrada (su vector + ruido), así pasa por
+    Vigilancia -> Consultor (comparación) -> Clasificador -> ... igual que con la cámara real. Si el cruce no tiene
+    cámara o no hay nadie registrado, publica el evento persona_solicitada directamente (marcado como simulado)."""
+    if cliente_mqtt is None or not cliente_mqtt.is_connected():
+        raise HTTPException(503, "sin conexión a Mosquitto")
+    camara = next((c for c, cr in CAMARAS.items() if cr == pedido.cruce), None)
+    try:
+        personas = json.loads(REGISTRO_ROSTROS.read_text(encoding="utf-8")).get("personas", [])
+    except (OSError, ValueError):
+        personas = []
+    if camara and personas:
+        v = random.choice(personas)["vector"]
+        ruido = [x + random.gauss(0, 0.04) for x in v]          # otra toma de la misma cara
+        cliente_mqtt.publish(f"sma/camaras/{camara}", json.dumps({"camara": camara, "ubicacion": pedido.cruce,
+                                                                  "embedding": ruido, "simulado": True}))
+        log(f"persona solicitada simulada: la cámara {camara} ve a una persona registrada en {pedido.cruce}")
+        return {"modo": "camara", "camara": camara}
+    cliente_mqtt.publish(f"sma/eventos/{pedido.cruce}", json.dumps({"tipo": "persona_solicitada",
+                                                                     "camara": "panel (simulado)"}))
+    return {"modo": "evento", "motivo": "el cruce no tiene cámara" if not camara else "nadie registrado"}
 
 
 class AccidenteReal(BaseModel):

@@ -210,4 +210,14 @@ Más detalles (instalación, ESP32, Git, problemas comunes) en [`COMANDOS.txt`](
 
 1. **Accidente → plan de desvío por utilidad** (contraflujo de la Carrera 1 en la salida/entrada de Bocagrande):
    funcionando (ESP32 y maqueta virtual).
-2. **Persona solicitada → cerco semafórico**: pendiente.
+2. **Persona solicitada → retención semafórica en la ruta de huida**: funcionando.
+   - La webcam hace de cámara de un cruce: `python vision/camara.py --camara cam2` (cam1 = cruce1, cam2 = cruce3,
+     cam3 = cruce5). OpenCV **YuNet** detecta el rostro y **SFace** calcula su vector (128 números); no se guardan imágenes.
+   - El **Consultor** lo compara (similitud coseno ≥ 0,363) con los compañeros registrados **con consentimiento**
+     (`python vision/camara.py --registrar ALIAS --consentimiento`; solo se guarda el vector, en una carpeta que no
+     se sube a Git; `--borrar ALIAS` lo elimina). Los rostros que no coinciden se descartan sin guardarse (Ley 1581).
+   - El **Predictor** calcula las rutas de huida más probables hacia la salida (Yen + logit), el acceso por el que
+     llegaría a cada cruce y en cuántos segundos; el **Semafórico** lo **retrasa**: todo rojo en la ruta más probable
+     y rojo largo para su acceso en las alternas, sin que la DQN cambie esos modos.
+   - El **Comunicador** avisa **solo a la Policía** ("posible coincidencia"), con la ruta y el punto de intercepción.
+   - Sin webcam: botón **Persona solicitada** del panel. Prueba automática: `python pruebas/prueba_caso2.py`.

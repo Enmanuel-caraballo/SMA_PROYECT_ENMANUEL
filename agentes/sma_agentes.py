@@ -92,6 +92,8 @@ TEMA_PLAN = "sma/plan/{cruce}"          # plan activo (lo dibuja el gemelo digit
 TEMA_SENSORES = "sma/sensores/#"        # colas por acceso {"A": n, "B": n} (las mide el gemelo digital)
 TEMA_MENTE = "sma/agentes/{agente}"     # estado interno de cada agente (página /agentes)
 TEMA_PANEL_LOG = "sma/panel/log"        # bitácora que muestra el panel
+TEMA_CAMARAS = "sma/camaras/+"          # vectores de rostros de las cámaras (vision/camara.py), Caso 2
+REGISTRO_ROSTROS = Path(__file__).resolve().parent.parent / "vision" / "registro" / "registro.json"   # ignorado por Git
 
 SEGUNDOS_PLAN = K.SEGUNDOS_PLAN
 if "--duracion" in sys.argv:             # p. ej. --duracion 60 (las decisiones siguen siendo inmediatas)
@@ -200,10 +202,21 @@ def escuchar_sensores(agente, client_id, al_leer):
 class AgenteVigilancia(Agent):
     async def setup(self):
         self.cola = asyncio.Queue()
+        self.rostros = asyncio.Queue(maxsize=20)   # vectores de las cámaras (se descartan si se acumulan)
         self.contador = {}
+        self.camaras = {"rostros_enviados": 0, "coincidencias": 0, "descartados": 0}
+        self.alertado = {}                          # alias -> instante de su última alerta (no repetir durante el cerco)
         loop = asyncio.get_running_loop()
 
         def al_llegar(cliente, userdata, msg):
+            if msg.topic.startswith("sma/camaras/"):
+                try:
+                    dato = json.loads(msg.payload)
+                except ValueError:
+                    return
+                if not self.rostros.full():
+                    loop.call_soon_threadsafe(self.rostros.put_nowait, dato)
+                return
             texto = msg.payload.decode(errors="ignore").strip()
             try:
                 evento = json.loads(texto)
@@ -217,23 +230,30 @@ class AgenteVigilancia(Agent):
         try:
             self.mqtt.connect(BROKER_MQTT, PUERTO_MQTT)
             self.mqtt.subscribe(TEMA_EVENTOS)
+            self.mqtt.subscribe(TEMA_CAMARAS)
             self.mqtt.loop_start()
-            log("Vigilancia", f"escuchando eventos en MQTT '{TEMA_EVENTOS}'")
+            log("Vigilancia", f"escuchando eventos en MQTT '{TEMA_EVENTOS}' y cámaras en '{TEMA_CAMARAS}'")
         except OSError:
             log("Vigilancia", "AVISO: no pude conectarme a Mosquitto (usa --simular para probar sin él)")
         self.mente()
         self.add_behaviour(self.Percibir())
+        self.add_behaviour(self.VerRostros())
+        self.add_behaviour(self.RecibirCoincidencia(), plantilla("inform", "Coincidencia"))
 
     def mente(self, ultimo=None):
         publicar_mente("Vigilancia", {
             "tipo": "Reactivo simple", "rol": "Percibe los eventos de la calle y los reenvía al Clasificador.",
-            "percibe": "sma/eventos/<cruce> (botón del ESP32, panel, mosquitto_pub)",
-            "actua": "inform AlertaNovedad -> Clasificador; inform TerminarAlerta -> Coordinador",
+            "percibe": "sma/eventos/<cruce> (botón del ESP32, panel, mosquitto_pub); sma/camaras/<cam> (vectores de rostros)",
+            "actua": "inform AlertaNovedad -> Clasificador; inform TerminarAlerta -> Coordinador; "
+                     "query-ref consultarPersonaSolicitada -> Consultor",
             "codigo": ["agentes/sma_agentes.py · AgenteVigilancia"],
             "reglas": ["SI llega un evento ENTONCES enviarlo al Clasificador (sin razonar: reflejo)",
-                       "SI el evento es fin_contingencia ENTONCES pedir al Coordinador cerrar esa alerta"],
-            "parametros": {"tema": TEMA_EVENTOS},
-            "estado": {"eventos_percibidos": self.contador, "ultimo": ultimo},
+                       "SI el evento es fin_contingencia ENTONCES pedir al Coordinador cerrar esa alerta",
+                       "SI una cámara ve un rostro ENTONCES preguntar al Consultor si es una persona solicitada",
+                       "SI el Consultor confirma una posible coincidencia ENTONCES novedad persona_solicitada "
+                       f"(una vez cada {K.SEGUNDOS_ENTRE_ALERTAS_PERSONA} s por persona)"],
+            "parametros": {"tema": TEMA_EVENTOS, "camaras": K.CAMARAS},
+            "estado": {"eventos_percibidos": self.contador, "camaras": self.camaras, "ultimo": ultimo},
         })
 
     class Percibir(CyclicBehaviour):
@@ -248,6 +268,43 @@ class AgenteVigilancia(Agent):
                 await self.send(mensaje("coordinador", "inform", "TerminarAlerta", evento))
                 return
             log("Vigilancia", f"percibí: {evento}")
+            await self.send(mensaje("clasificador", "inform", "AlertaNovedad", evento))
+
+    class VerRostros(CyclicBehaviour):
+        """Caso 2: cada rostro que ve una cámara se consulta al Consultor (el vector NO se guarda aquí)."""
+        async def run(self):
+            dato = await self.agent.rostros.get()
+            camara = dato.get("camara")
+            if camara not in K.CAMARAS or not isinstance(dato.get("embedding"), list):
+                return
+            self.agent.camaras["rostros_enviados"] += 1
+            await self.send(mensaje("consultor", "query-ref", "consultarPersonaSolicitada",
+                                    {"camara": camara, "ubicacion": K.CAMARAS[camara], "embedding": dato["embedding"]}))
+
+    class RecibirCoincidencia(CyclicBehaviour):
+        async def run(self):
+            msg = await self.receive(timeout=60)
+            if not msg:
+                return
+            ag, r = self.agent, json.loads(msg.body)
+            tema = f"sma/camaras/{r.get('camara')}/resultado"
+            if not r.get("coincide"):
+                ag.camaras["descartados"] += 1
+                ag.mqtt.publish(tema, json.dumps({"texto": "sin coincidencia (rostro descartado)"}))
+                return
+            ag.camaras["coincidencias"] += 1
+            alias, ahora = r["persona"]["alias"], time.monotonic()
+            texto = f"posible coincidencia ({r['similitud']:.2f})"
+            if ahora - ag.alertado.get(alias, -1e9) < K.SEGUNDOS_ENTRE_ALERTAS_PERSONA:
+                ag.mqtt.publish(tema, json.dumps({"texto": texto + " - cerco ya activo"}))
+                return
+            ag.alertado[alias] = ahora
+            ag.mqtt.publish(tema, json.dumps({"texto": texto + " - alerta enviada"}))
+            evento = {"tipo": "persona_solicitada", "ubicacion": r["ubicacion"], "camara": r["camara"],
+                      "persona": alias, "similitud": r["similitud"], "ts": datetime.now().isoformat(timespec="seconds")}
+            log("Vigilancia", f"cámara {r['camara']} ({nombre_cruce(r['ubicacion'])}): posible coincidencia con una persona "
+                              f"solicitada (similitud {r['similitud']:.2f})")
+            ag.mente(evento)
             await self.send(mensaje("clasificador", "inform", "AlertaNovedad", evento))
 
 
@@ -311,8 +368,8 @@ def generar_planes(alerta, cruce, experiencia):
         if clave == "solo_avisar":
             p.update(semaforos={}, aviso=(f"posible coincidencia ({evento}) en {lugar}." if seguridad
                                           else f"{evento} en {lugar}; transite con precaución."))
-        elif clave == "cerco":
-            p.update(semaforos={cruce: "cerco"}, aviso=f"posible coincidencia ({evento}) en {lugar}; cerco semafórico activo.")
+        elif clave == "cerco":       # Caso 2: retener al solicitado en sus rutas probables de huida (Predictor)
+            p.update(retencion_semaforos(alerta, cruce, lugar, evento))
         elif clave.startswith("contraflujo"):
             p.update(semaforos=c["semaforos"], aviso=K.AVISOS_CONTRAFLUJO[clave])
         elif clave == "desvio_local":
@@ -327,6 +384,38 @@ def generar_planes(alerta, cruce, experiencia):
             p.update(semaforos={}, aviso=f"{evento} en {lugar}; semáforos del sector ajustados para repartir el flujo.")
         planes.append(p)
     return planes
+
+
+def retencion_semaforos(alerta, cruce, lugar, evento):
+    """Caso 2: el Semafórico RETRASA al solicitado para que la Policía lo intercepte.
+    - Ruta más probable (Predictor): cerco (todo rojo) en cada cruce: queda retenido en cada uno.
+    - Rutas alternas con probabilidad >= PROB_MINIMA_RUTA_HUIDA: rojo largo SOLO para el acceso por donde llegaría
+      (prioridad al otro grupo), así el resto del tráfico sigue pasando.
+    - Aviso a la Policía: ruta probable, punto de intercepción sugerido y tiempo estimado de llegada."""
+    huida = alerta.get("ruta_huida") or {}
+    rutas_h = huida.get("rutas") or [{"cruces": huida.get("cruces") or [], "accesos": {}, "probabilidad": 1.0}]
+    semaforos = {c: "cerco" for c in dict.fromkeys([cruce] + list(rutas_h[0]["cruces"]))}
+    alternas = []
+    for r in rutas_h[1:]:
+        if r.get("probabilidad", 0) < K.PROB_MINIMA_RUTA_HUIDA:
+            continue
+        for c, g in r.get("accesos", {}).items():
+            if c not in semaforos:
+                semaforos[c] = "prioridad_b" if g == "A" else "prioridad_a"     # el acceso del solicitado en rojo largo
+                alternas.append(c)
+    por = f" por {' → '.join(huida['calles'])}" if huida.get("calles") else ""
+    inter = huida.get("intercepcion") or {}
+    if not inter.get("cruce"):
+        punto = ""
+    elif inter.get("segundos", 0) <= 0:
+        punto = f" Está junto a la salida de Bocagrande: interceptar de inmediato en {nombre_cruce(inter['cruce'])}."
+    else:
+        punto = (f" Intercepción sugerida en {nombre_cruce(inter['cruce'])} (llegaría en ~{inter['segundos']} s sin "
+                 f"retención; los semáforos anteriores lo retrasan).")
+    detalle = f"cerco en {', '.join(c for c, m in semaforos.items() if m == 'cerco')}" +         (f"; acceso del solicitado en rojo largo en {', '.join(alternas)}" if alternas else "")
+    return {"semaforos": semaforos, "detalle": detalle,
+            "aviso": f"posible coincidencia ({evento}) en {lugar} (cámara {alerta.get('camara', '-')}); ruta probable de "
+                     f"huida{por} (probabilidad {huida.get('confianza', '-')}); {detalle}.{punto}"}
 
 
 def accidente_de(alerta, cruce):
@@ -487,6 +576,15 @@ class AgenteCoordinador(Agent):
             estado = await self.esperar("EstadoTrafico") or {"nivel": "desconocido"}
             log("Coordinador", f"estado vial en {cruce}: {estado['nivel']}" +
                 (f" (cola A={estado['A']:.0f}, B={estado['B']:.0f})" if "A" in estado else ""))
+            huida = None
+            if a.get("tipo") == "Seguridad":      # Caso 2: ¿por dónde huiría? (Predictor, k-rutas de Yen)
+                await self.send(mensaje("predictor", "request", "predecirRutaHuida", {"ubicacion": cruce}, hilo))
+                huida = await self.esperar("Ruta", 20)
+                if huida:
+                    a["ruta_huida"] = huida
+                    log("Coordinador", "rutas probables de huida desde " + cruce + ": " + " | ".join(
+                        f"{' → '.join(r['calles'])} (p={r['probabilidad']}, cruces {r['cruces']})"
+                        for r in huida.get("rutas", [huida])))
 
             # 2) Generar planes, evaluarlos con el modelo matemático y elegir el de mayor utilidad
             factor = K.FACTOR_TRAFICO.get(estado["nivel"], K.FACTOR_TRAFICO_DESCONOCIDO)
@@ -556,6 +654,10 @@ class AgenteCoordinador(Agent):
             plan = {"plan": mejor["clave"], "nombre": mejor["nombre"], "semaforos": mejor["semaforos"],
                     "alerta": hilo, "cruce": cruce, "evento": a.get("tipo_evento"),
                     "sentido": a.get("sentido") or sentido, "duracion": SEGUNDOS_PLAN, "rutas": sugeridas}
+            if mejor["clave"] == "cerco":
+                plan["persecucion"] = True        # el Semafórico mantiene estos modos (la DQN no los cambia)
+                if huida and huida.get("p"):     # el gemelo 3D dibuja la ruta de huida
+                    plan["rutas"] = {"huida": [{k: huida[k] for k in ("calles", "minutos", "p") if k in huida}]}
             await self.send(mensaje("semaforico", "request", "activarPlan", plan, hilo))
             resultado = await self.esperar("ResultadoAccion") or {"estado": "sin respuesta"}
             log("Coordinador", f"resultado del Semafórico: {resultado}")
@@ -606,6 +708,8 @@ class AgenteConsultor(Agent):
         self.cache = {}                                   # (acción, sector) -> (instante, respuesta)
         self.historial = {}                               # cruce -> deque[(instante, A, B)]
         self.ultimo = {}                                  # cruce -> (instante, A, B)
+        self.registro, self.registro_mtime = [], None     # Caso 2: vectores de las personas solicitadas (con consentimiento)
+        self.rostros = {"consultas": 0, "coincidencias": 0, "descartados": 0}
         self.mqtt = escuchar_sensores("Consultor", "sma-consultor", self.al_leer)
         self.add_behaviour(self.Responder(), plantilla("query-ref"))
         self.add_behaviour(self.Mente(period=5))
@@ -617,6 +721,27 @@ class AgenteConsultor(Agent):
         h.append((ahora, a, b))
         while h and ahora - h[0][0] > K.HISTORIAL_SEGUNDOS:
             h.popleft()
+
+    def personas(self):
+        """Lee vision/registro/registro.json (solo vectores, sin fotos) y lo recarga si cambió."""
+        try:
+            mtime = REGISTRO_ROSTROS.stat().st_mtime
+        except OSError:
+            self.registro, self.registro_mtime = [], None
+            return self.registro
+        if mtime != self.registro_mtime:
+            datos = json.loads(REGISTRO_ROSTROS.read_text(encoding="utf-8"))
+            self.registro = [(x["alias"], np.asarray(x["vector"], dtype=float)) for x in datos.get("personas", [])]
+            self.registro_mtime = mtime
+            log("Consultor", f"registro de personas solicitadas: {len(self.registro)} (con consentimiento)")
+        return self.registro
+
+    def comparar(self, vector):
+        """Similitud coseno con cada persona registrada; el vector consultado NO se guarda (Ley 1581 de 2012)."""
+        v = np.asarray(vector, dtype=float)
+        v = v / (np.linalg.norm(v) or 1.0)
+        return max(((alias, float(v @ (r / (np.linalg.norm(r) or 1.0)))) for alias, r in self.personas()),
+                   key=lambda x: x[1], default=(None, 0.0))
 
     def nivel(self, cola):
         return "alto" if cola >= K.UMBRAL_NIVEL["alto"] else "medio" if cola >= K.UMBRAL_NIVEL["medio"] else "bajo"
@@ -651,9 +776,12 @@ class AgenteConsultor(Agent):
                 "codigo": ["agentes/sma_agentes.py · AgenteConsultor", "agentes/conocimiento.py · Consultor"],
                 "reglas": [f"nivel = alto SI cola ≥ {K.UMBRAL_NIVEL['alto']}; medio SI cola ≥ {K.UMBRAL_NIVEL['medio']}; si no, bajo",
                            f"SI la misma consulta se repite en menos de {K.CACHE_SEGUNDOS} s ENTONCES responder desde caché",
-                           "SI no hay lecturas en 15 s ENTONCES nivel desconocido"],
-                "parametros": {"umbral_nivel": K.UMBRAL_NIVEL, "cache_s": K.CACHE_SEGUNDOS, "historial_s": K.HISTORIAL_SEGUNDOS},
-                "estado": {"niveles": niveles},
+                           "SI no hay lecturas en 15 s ENTONCES nivel desconocido",
+                           f"SI similitud coseno del rostro ≥ {K.UMBRAL_SIMILITUD_ROSTRO} ENTONCES posible coincidencia; "
+                           "SI no ENTONCES descartar el rostro sin guardarlo"],
+                "parametros": {"umbral_nivel": K.UMBRAL_NIVEL, "cache_s": K.CACHE_SEGUNDOS, "historial_s": K.HISTORIAL_SEGUNDOS,
+                               "umbral_rostro": K.UMBRAL_SIMILITUD_ROSTRO},
+                "estado": {"niveles": niveles, "personas_registradas": len(ag.personas()), "rostros": ag.rostros},
             })
 
     class Responder(CyclicBehaviour):
@@ -663,6 +791,21 @@ class AgenteConsultor(Agent):
                 return
             ag, accion = self.agent, msg.get_metadata("action")
             pedido = json.loads(msg.body)
+            if accion == "consultarPersonaSolicitada":
+                alias, similitud = ag.comparar(pedido.get("embedding") or [])
+                ag.rostros["consultas"] += 1
+                coincide = alias is not None and similitud >= K.UMBRAL_SIMILITUD_ROSTRO
+                respuesta = {"coincide": coincide, "similitud": round(similitud, 3), "camara": pedido.get("camara"),
+                             "ubicacion": pedido.get("ubicacion")}
+                if coincide:
+                    ag.rostros["coincidencias"] += 1
+                    respuesta["persona"] = {"alias": alias}
+                    log("Consultor", f"cámara {pedido.get('camara')}: posible coincidencia (similitud {similitud:.2f} ≥ "
+                                     f"{K.UMBRAL_SIMILITUD_ROSTRO})")
+                else:
+                    ag.rostros["descartados"] += 1       # no se registra nada del rostro: se descarta
+                await self.send(responder(msg, "Coincidencia", respuesta))
+                return
             if accion == "consultarColaMedia":
                 r = ag.cola_media(pedido.get("cruces", []), float(pedido.get("segundos", 60)))
                 log("Consultor", f"cola media de {', '.join(pedido.get('cruces') or ['todo el sector'])} en {float(pedido.get('segundos', 60)):.0f} s: "
@@ -779,8 +922,11 @@ class AgentePredictor(Agent):
 
 
 def ruta_huida(ubicacion):
-    """Caso 2: rutas más rápidas (Yen, casi sin tráfico) desde el cruce hacia la salida de Bocagrande.
-    Confianza = probabilidad logit de la mejor ruta entre las k (la más rápida es la más probable)."""
+    """Caso 2: ¿por dónde huiría quien fue visto en `ubicacion`? Modelo de elección de ruta del conductor:
+    k rutas más rápidas hacia la salida de Bocagrande (Yen, con los tiempos de la red con poco tráfico) y probabilidad
+    de cada una por logit sobre su tiempo (Dial 1971). Para cada ruta: cruces semaforizados en orden, acceso por el que
+    llega (A/B, para que el Semafórico lo retenga) y segundos hasta cada cruce. Punto de intercepción sugerido = último
+    cruce de la ruta más probable (llega más tarde y ya retrasado por los semáforos anteriores)."""
     import math
     R = rutas.red()
     origen = R.cruces[ubicacion]["nodos"][0] if ubicacion in R.cruces else R.cruces["cruce1"]["nodos"][0]
@@ -789,17 +935,28 @@ def ruta_huida(ubicacion):
     if not candidatas:
         return dict(K.RUTA_HUIDA_POR_DEFECTO)
     minimo = min(c["minutos"] for c in candidatas)
-    pesos = [math.exp(-(c["minutos"] - minimo) / 0.5) for c in candidatas]
-    mejor = candidatas[pesos.index(max(pesos))]
-    orden = []
-    for i in mejor["aristas"]:
-        for c, d in R.cruces.items():
-            if R.E[i]["hasta"] in d["nodosSet"] and c not in orden:
-                orden.append(c)
-    if ubicacion in R.cruces and ubicacion not in orden:
-        orden.insert(0, ubicacion)
-    return {"cruces": orden, "confianza": round(max(pesos) / sum(pesos), 2), "calles": mejor["calles"],
-            "minutos": mejor["minutos"]}
+    pesos = [math.exp(-(c["minutos"] - minimo) / K.DISPERSION_RUTAS_MIN) for c in candidatas]
+    total = sum(pesos)
+    opciones = []
+    for c, w in sorted(zip(candidatas, pesos), key=lambda x: -x[1]):
+        llegadas, accesos, reloj = {}, {}, 0.0
+        if ubicacion in R.cruces:
+            llegadas[ubicacion] = 0
+        for i in c["aristas"]:
+            reloj += float(base["tiempo"][i])
+            ctl = R.E[i]["control"]
+            if ctl and ctl[0] not in llegadas:
+                llegadas[ctl[0]], accesos[ctl[0]] = round(reloj), ctl[1]
+        opciones.append({"cruces": list(llegadas), "llegadas": llegadas, "accesos": accesos, "calles": c["calles"],
+                         "minutos": c["minutos"], "probabilidad": round(w / total, 2),
+                         "p": [[round(v, 1) for v in q] for i in c["aristas"] for q in R.E[i]["p"]]})
+    mejor = opciones[0]
+    ultimo = mejor["cruces"][-1] if mejor["cruces"] else ubicacion
+    return {"cruces": mejor["cruces"], "confianza": mejor["probabilidad"], "calles": mejor["calles"],
+            "minutos": mejor["minutos"], "p": mejor["p"],
+            "rutas": [{k: o[k] for k in ("cruces", "llegadas", "accesos", "calles", "minutos", "probabilidad")}
+                      for o in opciones],
+            "intercepcion": {"cruce": ultimo, "segundos": mejor["llegadas"].get(ultimo, 0)}}
 
 
 # =====================================================================
@@ -981,14 +1138,15 @@ class AgenteSemaforico(Agent):
                 cruces = datos.get("ruta") or datos.get("cruces") or ["cruce1"]
                 ordenes = {c: ORDEN_ESP32.get(accion) for c in cruces}
             modos = set(ordenes.values())
-            ag.objetivo = ("CercoPersecucion" if "cerco" in modos else
+            ag.objetivo = ("Fluidez" if accion == "restaurarPlanNormal" else
+                           "CercoPersecucion" if "cerco" in modos or datos.get("persecucion") else
                            "CorredorEmergencia" if "corredor" in modos else "Fluidez")
             for c, orden in ordenes.items():
                 if accion == "restaurarPlanNormal":
                     ag.sugerido.pop(c, None)
                     ag.bloqueado.pop(c, None)
-                elif orden in K.MODOS_BLOQUEADOS:
-                    ag.bloqueado[c] = orden
+                elif orden in K.MODOS_BLOQUEADOS or datos.get("persecucion"):
+                    ag.bloqueado[c] = orden      # retención del solicitado (Caso 2) o modo fijo: no se adapta
                 else:
                     ag.sugerido[c] = orden       # sugerencia: el control adaptativo puede priorizar otra cosa
                 ag.previo.pop(c, None)            # no mezclar la recompensa de una orden externa con el aprendizaje

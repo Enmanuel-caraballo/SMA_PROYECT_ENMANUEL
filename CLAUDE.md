@@ -101,9 +101,17 @@ Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
   Carrera 1** cuando el accidente bloquea la única salida/entrada de Bocagrande (cruce5, Av. San Martín × Calle 15):
   sentido salida → desde el cruce4 todo sale por Calle 10 → Carrera 1 (solo salida, 2 carriles) y el ingreso solo por la
   Av. San Martín; sentido entrada → ingreso solo por la Carrera 1 y la Av. San Martín para salir.
-- **Caso 2 – Persona solicitada → cerco semafórico** (PENDIENTE):
-  cámara detecta rostro → Consultor confirma coincidencia → alerta Crítica → Predictor da ruta de huida →
-  Semafórico pone `cerco` en **todos los cruces de la ruta** → Comunicador avisa **solo a la Policía**.
+- **Caso 2 – Persona solicitada → retención semafórica en la ruta de huida** (FUNCIONA desde el 21-nov):
+  `vision/camara.py` (webcam = cámara de un cruce, `CAMARAS` en conocimiento.py; OpenCV YuNet detecta, SFace da un
+  vector de 128) publica el vector en `sma/camaras/<cam>` → Vigilancia pregunta al Consultor
+  (`consultarPersonaSolicitada`, similitud coseno ≥ `UMBRAL_SIMILITUD_ROSTRO` 0,363 contra `vision/registro/`) →
+  alerta Crítica → Predictor da las k rutas de huida (Yen + logit) con acceso A/B y segundos a cada cruce → el
+  Coordinador (`retencion_semaforos`) pone `cerco` en la ruta más probable y rojo largo para el acceso del solicitado
+  en las alternas (prob ≥ `PROB_MINIMA_RUTA_HUIDA`); el plan va con `persecucion: true` y el Semafórico no adapta
+  esos modos → Comunicador avisa **solo a la Policía** con ruta, punto de intercepción (último cruce) y tiempo.
+  Registro: `python vision/camara.py --registrar ALIAS --consentimiento` (solo guarda el vector, nunca fotos);
+  `--borrar ALIAS`. Panel: botón "Persona solicitada" (`/api/persona`: simula la cámara del cruce con un registrado).
+  Prueba: `python pruebas/prueba_caso2.py` (vector sintético, sin webcam).
   Reglas éticas obligatorias: los "solicitados" son compañeros que dieron consentimiento; los rostros que no
   coinciden se descartan sin guardarse (Ley 1581 de 2012); la alerta dice "posible coincidencia"; nunca se
   notifica a la ciudadanía.
@@ -127,7 +135,8 @@ SMA_IA/
 │   ├── datos_reales.py, tgcn.py, dqn.py, predictor_colas.py, sumo_red.py, entorno_sumo.py
 │   ├── entrenar_predictor.py, entrenar_dqn.py
 │   ├── datos/ (limpios + reporte_limpieza.md; crudos/ ignorado)   sumo/ (red SUMO)   entrenados/ (.pt, métricas, gráficas)
-├── pruebas/prueba_punta_a_punta.py (Caso 1 sin ESP32 ni panel; funciona en Windows)
+├── pruebas/prueba_punta_a_punta.py (Caso 1 sin ESP32 ni panel; funciona en Windows), prueba_caso2.py (Caso 2)
+├── vision/camara.py           (Caso 2: webcam + YuNet/SFace; modelos/ y registro/ ignorados por Git)
 ├── esp32/
 │   ├── esp32_mqtt_prueba/esp32_mqtt_prueba.ino   (prueba del LED azul)
 │   └── esp32_cruce/esp32_cruce.ino               (cruce con 2 semáforos + botón en GPIO4)
@@ -152,12 +161,8 @@ corregido, Mosquitto + ESP32 conectados, 7 agentes SPADE funcionando con el Caso
 (Three.js) con datos reales de OSM: 5 cruces semaforizados, carros y peatones simulados en el navegador que obedecen
 los semáforos y reaccionan a eventos (accidente, congestión, aglomeración, cerco). Ver sección 9.
 
-Pendiente (en orden): **Caso 2** (reconocimiento facial con DeepFace o face_recognition +
-cerco) → bot de Telegram para el Comunicador (+ LLM local con Ollama o Gemini gratis) → mediciones y resultados → informe.
-
-Para el Caso 2: `generar_planes` ya manda las alertas de tipo Seguridad a un plan `cerco` en el cruce del evento con
-aviso **solo a la Policía** ("posible coincidencia"); falta el reconocimiento facial y usar el Predictor para poner el
-cerco en todos los cruces de la ruta de huida. En el panel el botón "Persona solicitada" sigue deshabilitado.
+Pendiente (en orden): bot de Telegram para el Comunicador (+ LLM local con Ollama o Gemini gratis) → mediciones y
+resultados → informe. (Caso 2 hecho el 21-nov: ver sección 5.)
 
 ## 8. Maqueta virtual v1 (HECHA — especificación original de 8 cruces de la ciudad; reemplazada por la sección 9)
 

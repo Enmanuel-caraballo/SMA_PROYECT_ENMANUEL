@@ -17,3 +17,5 @@ torch
 eclipse-sumo
 traci
 libsumo
+# Caso 2: reconocimiento facial (YuNet + SFace de OpenCV Zoo)
+opencv-python
