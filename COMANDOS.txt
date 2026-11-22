@@ -278,6 +278,13 @@ python vision/camara.py --registrar "Alias" --consentimiento
 python vision/camara.py --listar
 python vision/camara.py --borrar "Alias"        # derecho de supresión (Ley 1581 de 2012)
 
+# Ver las cámaras del equipo (integrada del portátil, USB, virtuales) y si dan imagen:
+python vision/camara.py --camaras
+# Elegir cámara en cualquier comando con --indice: número o parte del nombre (sin --indice: la primera física)
+python vision/camara.py --camara cam2 --indice HP
+python vision/camara.py --camara cam2 --indice USB
+# Si sale NEGRA: obturador de privacidad cerrado o tecla de cámara desactivada (HP: tecla con ícono de cámara).
+
 # Vigilar con la webcam como cámara de un cruce (cam1=cruce1, cam2=cruce3, cam3=cruce5); ESC para salir:
 python vision/camara.py --camara cam2
 

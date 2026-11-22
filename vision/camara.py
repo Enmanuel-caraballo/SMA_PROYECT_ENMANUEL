@@ -11,6 +11,9 @@ Uso:
   python vision/camara.py --registrar "Alias" --consentimiento     registra a un compañero (solo guarda su vector)
   python vision/camara.py --camara cam1                            vigila: envía los vectores a sma/camaras/cam1
   python vision/camara.py --listar | --borrar "Alias"              registro (derecho de supresión, Ley 1581 de 2012)
+  python vision/camara.py --camaras                                lista las cámaras del equipo (integrada, USB, virtuales)
+  ... --indice 1  |  --indice HP  |  --indice USB                  elige la cámara por número o por parte de su nombre
+                                                                   (sin --indice: la primera cámara física, no virtual)
 
 Reglas éticas (obligatorias del proyecto):
   - Solo se registran compañeros que DIERON SU CONSENTIMIENTO (--consentimiento es obligatorio).
@@ -21,6 +24,8 @@ Reglas éticas (obligatorias del proyecto):
 
 import argparse
 import json
+import re
+import subprocess
 import sys
 import time
 import urllib.request
@@ -81,10 +86,83 @@ def guardar_registro(datos):
     REGISTRO.write_text(json.dumps(datos, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+VIRTUALES = ("virtual", "obs", "animaze", "snap camera", "droidcam", "manycam", "xsplit")
+
+
+def nombres_camaras():
+    """Nombres de las cámaras en el orden de DirectShow (el mismo índice que usa OpenCV en Windows).
+    Usa el ffmpeg de imageio-ffmpeg si está instalado; si no, devuelve [] y se trabaja solo con números."""
+    if sys.platform != "win32":
+        return []
+    try:
+        import imageio_ffmpeg
+        salida = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-hide_banner", "-list_devices", "true", "-f", "dshow",
+                                 "-i", "dummy"], capture_output=True, text=True, errors="replace", timeout=15).stderr
+    except Exception:
+        return []
+    return re.findall(r'"([^"]+)" \(video\)', salida)
+
+
+def elegir_indice(texto):
+    """--indice: número, parte del nombre ('HP', 'USB', 'Logitech') o nada (la primera cámara física)."""
+    nombres = nombres_camaras()
+    if texto is not None and str(texto).isdigit():
+        i = int(texto)
+    elif texto:
+        coincide = [i for i, n in enumerate(nombres) if str(texto).lower() in n.lower()]
+        if not coincide:
+            sys.exit(f"no hay una cámara que se llame '{texto}'. Cámaras: {nombres or 'no pude leer los nombres; use un número'}")
+        i = coincide[0]
+    else:
+        fisicas = [i for i, n in enumerate(nombres) if not any(v in n.lower() for v in VIRTUALES)]
+        i = fisicas[0] if fisicas else 0
+    return i, (nombres[i] if i < len(nombres) else f"cámara {i}")
+
+
+def capturar(indice):
+    return cv2.VideoCapture(indice, cv2.CAP_DSHOW) if sys.platform == "win32" else cv2.VideoCapture(indice)
+
+
+def brillo(cam, segundos=1.5):
+    """Brillo medio tras calentar la cámara; None si no entrega imágenes."""
+    fin, imagen = time.monotonic() + segundos, None
+    while time.monotonic() < fin:
+        ok, f = cam.read()
+        if ok:
+            imagen = f
+    return None if imagen is None else float(imagen.mean())
+
+
+def listar_camaras():
+    nombres = nombres_camaras()
+    for i in range(max(len(nombres), 4)):
+        cam = capturar(i)
+        if not cam.isOpened():
+            if i >= len(nombres):
+                break
+            estado = "no abre (¿la usa otro programa?)"
+        else:
+            b = brillo(cam)
+            estado = ("no entrega imágenes" if b is None else
+                      "imagen NEGRA (tapada, obturador de privacidad o virtual sin programa)" if b < 8 else "OK")
+        cam.release()
+        nombre = nombres[i] if i < len(nombres) else "(sin nombre)"
+        tipo = "virtual" if any(v in nombre.lower() for v in VIRTUALES) else "física"
+        print(f"  --indice {i}   {nombre:32s} {tipo:8s} {estado}")
+
+
 def abrir_camara(indice):
-    cam = cv2.VideoCapture(indice, cv2.CAP_DSHOW) if sys.platform == "win32" else cv2.VideoCapture(indice)
+    i, nombre = elegir_indice(indice)
+    cam = capturar(i)
     if not cam.isOpened():
-        sys.exit(f"no pude abrir la cámara {indice}")
+        sys.exit(f"no pude abrir {nombre} (--indice {i}). ¿La usa otro programa (Teams, Zoom, el navegador)? "
+                 f"Vea las cámaras con: python vision/camara.py --camaras")
+    print(f"Usando {nombre} (--indice {i}).")
+    b = brillo(cam)
+    if b is not None and b < 8:
+        print("  OJO: la imagen sale negra. Si es la cámara del portátil, abra el obturador de privacidad o pulse la tecla "
+              "con el ícono de cámara (en los HP suele ser F10 o una tecla junto a F12). Si sigue negra, pruebe otra con "
+              "--indice (lista: python vision/camara.py --camaras).")
     return cam
 
 
@@ -182,13 +260,18 @@ def main():
     p.add_argument("--consentimiento", action="store_true", help="confirmo que la persona dio su consentimiento")
     p.add_argument("--muestras", type=int, default=15)
     p.add_argument("--camara", default="cam1", help="id de la cámara (conocimiento.CAMARAS)")
-    p.add_argument("--indice", type=int, default=0, help="índice de la webcam en el sistema")
+    p.add_argument("--indice", default=None,
+                   help="cámara: número o parte del nombre (HP, USB...); por defecto la primera física")
+    p.add_argument("--camaras", action="store_true", help="lista las cámaras del equipo y si dan imagen")
     p.add_argument("--sin-ventana", action="store_true")
     p.add_argument("--intervalo", type=float, default=1.0, help="segundos entre envíos")
     p.add_argument("--listar", action="store_true")
     p.add_argument("--borrar", metavar="ALIAS")
     a = p.parse_args()
-    if a.listar:
+    if a.camaras:
+        print("Cámaras del equipo (el número es el de --indice):")
+        listar_camaras()
+    elif a.listar:
         for x in leer_registro()["personas"]:
             print(f"{x['alias']}: {x['muestras']} muestras, consistencia {x['consistencia']}, consentimiento {x['consentimiento']}")
     elif a.borrar:

@@ -19,3 +19,4 @@ traci
 libsumo
 # Caso 2: reconocimiento facial (YuNet + SFace de OpenCV Zoo)
 opencv-python
+imageio-ffmpeg          # Caso 2: nombres de las cámaras (--camaras, --indice HP)
