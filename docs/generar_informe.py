@@ -783,21 +783,6 @@ for linea in [
     "9. Mediciones: python mediciones/medir.py todo",
 ]:
     historia.append(Paragraph(linea, CODIGO))
-P("Anexo D. Guion de la demostración", H2)
-vinetas([
-    "<b>Preparación (antes de empezar):</b> broker, simulador, agentes, panel y Ollama abiertos; pestaña del gemelo "
-    "visible; grupos de Telegram abiertos en un celular; un compañero registrado con consentimiento.",
-    "<b>1. Presentación (1 min):</b> gemelo de Bocagrande, cinco cruces y página «Mente de los agentes».",
-    "<b>2. Caso 1 (3 min):</b> pulsar el botón del ESP32 o «Accidente real». Mostrar la conversación de los agentes, "
-    "el plan elegido por utilidad, las rutas sugeridas en el 3D y el aviso en el grupo de la Ciudadanía. Terminar la "
-    "contingencia.",
-    "<b>3. Caso 2 (3 min):</b> el compañero registrado se para frente a la cámara del cruce3. Mostrar la «posible "
-    "coincidencia», la ruta probable de huida, el cerco y el aviso con el alias en el grupo de la Policía. Mostrar "
-    "también que un rostro no registrado se descarta.",
-    "<b>4. Resultados (2 min):</b> tablas del capítulo 5.",
-    "<b>Plan B:</b> si falla la red, usar el video grabado de la demo y los botones del panel, que funcionan sin "
-    "cámara ni ESP32.",
-])
 
 
 # ====================================================================== construcción con tabla de contenido
