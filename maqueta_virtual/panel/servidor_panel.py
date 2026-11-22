@@ -111,6 +111,16 @@ async def ciclo_de_vida(app):
 app = FastAPI(title="Maqueta virtual SMA CTG", lifespan=ciclo_de_vida)
 
 
+@app.middleware("http")
+async def sin_cache_vieja(request, call_next):
+    """El navegador debe revalidar (ETag) el mapa, los scripts y las páginas: si se regenera bocagrande.json o se
+    cambia bocagrande3d.js, un recargar normal ya muestra la versión nueva (antes quedaba la red vieja en caché)."""
+    respuesta = await call_next(request)
+    if not request.url.path.startswith("/api/"):
+        respuesta.headers["Cache-Control"] = "no-cache"
+    return respuesta
+
+
 app.mount("/static", StaticFiles(directory=CARPETA / "static"), name="static")
 
 

@@ -58,7 +58,7 @@ let tiempo = 0;
 // 1. Carga y construcción de la escena
 // =====================================================================
 export async function iniciar(contenedor) {
-  mapa = await (await fetch("/datos/bocagrande.json")).json();
+  mapa = await (await fetch("/datos/bocagrande.json", { cache: "no-cache" })).json();
   const panel = await (await fetch("/api/cruces")).json();
   const porId = Object.fromEntries(panel.map(c => [c.id, c]));
   estado.cruces = mapa.cruces.map(c => ({ ...c, ...porId[c.id], nodosSet: new Set(c.nodos) }));
