@@ -93,6 +93,7 @@ TEMA_PLAN = "sma/plan/{cruce}"          # plan activo (lo dibuja el gemelo digit
 TEMA_SENSORES = "sma/sensores/#"        # colas por acceso {"A": n, "B": n} (las mide el gemelo digital)
 TEMA_MENTE = "sma/agentes/{agente}"     # estado interno de cada agente (página /agentes)
 TEMA_PANEL_LOG = "sma/panel/log"        # bitácora que muestra el panel
+TEMA_TRAZAS = "sma/trazas"              # cada mensaje entre agentes (para el diagrama de secuencia del panel)
 TEMA_CAMARAS = "sma/camaras/+"          # vectores de rostros de las cámaras (vision/camara.py), Caso 2
 REGISTRO_ROSTROS = Path(__file__).resolve().parent.parent / "vision" / "registro" / "registro.json"   # ignorado por Git
 
@@ -160,6 +161,63 @@ def plantilla(performativa, accion=None):
     if accion:
         t.set_metadata("action", accion)
     return t
+
+
+# ---------------------------------------------------------------- trazas para el diagrama de secuencia
+# Cada mensaje FIPA-ACL que un agente envía (y cada decisión interna clave) se publica en sma/trazas. El panel los
+# agrupa por incidente: el id de la alerta (hilo de la conversación, p. ej. AL-0002) o, antes de que exista la alerta,
+# el id de traza que la Vigilancia asigna al percibir el evento (EV-...). Nunca se publican vectores de rostros.
+_contador_trazas = 0
+SESION = datetime.now().strftime("%Y%m%d-%H%M%S")   # los ids de alerta (AL-0001…) se reinician en cada arranque
+CAMPOS_SIN_TRAZA = {"embedding", "vector", "p", "rutas", "llegadas", "accesos"}
+
+
+def nueva_traza():
+    global _contador_trazas
+    _contador_trazas += 1
+    return f"EV-{datetime.now():%H%M%S}-{_contador_trazas:04d}"
+
+
+def resumir(cuerpo, largo=420):
+    """Resumen legible del contenido de un mensaje, sin datos biométricos (Ley 1581) ni listas largas."""
+    if isinstance(cuerpo, dict):
+        cuerpo = {k: v for k, v in cuerpo.items() if k not in CAMPOS_SIN_TRAZA}
+    texto = json.dumps(cuerpo, ensure_ascii=False, default=str)
+    return texto if len(texto) <= largo else texto[:largo] + "…"
+
+
+def traza(de, para, tipo, accion, hilo=None, detalle=None, traza_id=None):
+    """tipo: performativa FIPA (inform, request, query-ref), 'interno' (decisión del agente), 'mqtt' o 'telegram'."""
+    if _mqtt_log is None:
+        return
+    ahora = datetime.now()
+    dato = {"ts": time.time(), "sesion": SESION, "hora": f"{ahora:%H:%M:%S}.{ahora.microsecond // 1000:03d}", "de": de, "para": para,
+            "tipo": tipo, "accion": accion, "hilo": hilo, "traza": traza_id, "detalle": detalle}
+    try:
+        _mqtt_log.publish(TEMA_TRAZAS, json.dumps(dato, ensure_ascii=False, default=str))
+    except Exception:
+        pass
+
+
+_enviar_original = CyclicBehaviour.send
+
+
+async def _enviar_con_traza(self, msg):
+    """Todos los comportamientos de SPADE heredan de CyclicBehaviour: aquí se registra cada mensaje enviado."""
+    try:
+        cuerpo = json.loads(msg.body) if msg.body else {}
+    except ValueError:
+        cuerpo = {}
+    accion = msg.get_metadata("action")
+    hilo = msg.thread
+    if not hilo and isinstance(cuerpo, dict):
+        hilo = cuerpo.get("id") if accion == "Alerta" else cuerpo.get("alerta") if accion == "TerminarAlerta" else None
+    traza(str(self.agent.jid).split("@")[0], str(msg.to).split("@")[0], msg.get_metadata("performative"), accion,
+          hilo, resumir(cuerpo), cuerpo.get("traza") if isinstance(cuerpo, dict) else None)
+    await _enviar_original(self, msg)
+
+
+CyclicBehaviour.send = _enviar_con_traza
 
 
 def responder(msg, accion, contenido):
@@ -261,7 +319,10 @@ class AgenteVigilancia(Agent):
         async def run(self):
             evento = await self.agent.cola.get()
             evento["ts"] = datetime.now().isoformat(timespec="seconds")
+            evento["traza"] = nueva_traza()
             tipo = evento.get("tipo")
+            traza("entorno", "vigilancia", "mqtt", f"sma/eventos/{evento.get('ubicacion')}: {tipo}",
+                  evento.get("alerta") if tipo == "fin_contingencia" else None, resumir(evento), evento["traza"])
             self.agent.contador[tipo] = self.agent.contador.get(tipo, 0) + 1
             self.agent.mente(evento)
             if tipo == "fin_contingencia":
@@ -279,8 +340,12 @@ class AgenteVigilancia(Agent):
             if camara not in K.CAMARAS or not isinstance(dato.get("embedding"), list):
                 return
             self.agent.camaras["rostros_enviados"] += 1
+            id_traza = nueva_traza()
+            traza("camara", "vigilancia", "mqtt", f"sma/camaras/{camara}: vector del rostro", None,
+                  f"cámara {camara} en {K.CAMARAS[camara]} (no se envían imágenes)", id_traza)
             await self.send(mensaje("consultor", "query-ref", "consultarPersonaSolicitada",
-                                    {"camara": camara, "ubicacion": K.CAMARAS[camara], "embedding": dato["embedding"]}))
+                                    {"camara": camara, "ubicacion": K.CAMARAS[camara], "embedding": dato["embedding"],
+                                     "traza": id_traza}))
 
     class RecibirCoincidencia(CyclicBehaviour):
         async def run(self):
@@ -302,7 +367,8 @@ class AgenteVigilancia(Agent):
             ag.alertado[alias] = ahora
             ag.mqtt.publish(tema, json.dumps({"texto": texto + " - alerta enviada"}))
             evento = {"tipo": "persona_solicitada", "ubicacion": r["ubicacion"], "camara": r["camara"],
-                      "persona": alias, "similitud": r["similitud"], "ts": datetime.now().isoformat(timespec="seconds")}
+                      "persona": alias, "similitud": r["similitud"], "ts": datetime.now().isoformat(timespec="seconds"),
+                      "traza": r.get("traza")}
             log("Vigilancia", f"cámara {r['camara']} ({nombre_cruce(r['ubicacion'])}): posible coincidencia con una persona "
                               f"solicitada (similitud {r['similitud']:.2f})")
             ag.mente(evento)
@@ -340,6 +406,8 @@ class AgenteClasificador(Agent):
             alerta = {**novedad, "tipo_evento": novedad.get("tipo"),
                       "id": f"AL-{self.agent.contador:04d}", "tipo": tipo, "prioridad": prioridad}
             log("Clasificador", f"{alerta['id']}: {novedad.get('tipo')} -> {tipo}, prioridad {prioridad}")
+            traza("clasificador", "clasificador", "interno", f"clasifica: {tipo}, prioridad {prioridad}", alerta["id"],
+                  None, novedad.get("traza"))
             self.agent.mente(alerta)
             await self.send(mensaje("coordinador", "inform", "Alerta", alerta))
 
@@ -624,6 +692,9 @@ class AgenteCoordinador(Agent):
             if explorado:
                 log("Coordinador", f"exploro (ε={eps:.2f}): pruebo '{mejor['nombre']}' (usado {mejor['veces']} veces en "
                                    f"esta situación) en vez de '{optimo['nombre']}', para medirlo con datos reales")
+            traza("coordinador", "coordinador", "interno",
+                  f"elige «{mejor['nombre']}» (utilidad {mejor.get('utilidad')})" + (" explorando" if explorado else ""),
+                  hilo, ", ".join(f"{p['nombre']}={p.get('utilidad')}" for p in planes))
             log("Coordinador", f"plan elegido: {mejor['nombre']}" + (f" [{mejor['detalle']}]" if mejor.get("detalle") else "")
                 + (f" [el modelo ajustó sus semáforos: {mejor['ajuste_modelo']}]" if mejor.get("ajuste_modelo") else ""))
             # rutas alternativas (Yen) con los tiempos del equilibrio del plan elegido
@@ -799,7 +870,11 @@ class AgenteConsultor(Agent):
                 ag.rostros["consultas"] += 1
                 coincide = alias is not None and similitud >= K.UMBRAL_SIMILITUD_ROSTRO
                 respuesta = {"coincide": coincide, "similitud": round(similitud, 3), "camara": pedido.get("camara"),
-                             "ubicacion": pedido.get("ubicacion")}
+                             "ubicacion": pedido.get("ubicacion"), "traza": pedido.get("traza")}
+                traza("consultor", "consultor", "interno",
+                      f"similitud {similitud:.2f} {'≥' if coincide else '<'} {K.UMBRAL_SIMILITUD_ROSTRO}: "
+                      + ("posible coincidencia" if coincide else "descarta el rostro sin guardarlo"),
+                      None, None, pedido.get("traza"))
                 if coincide:
                     ag.rostros["coincidencias"] += 1
                     respuesta["persona"] = {"alias": alias}
@@ -921,6 +996,9 @@ class AgentePredictor(Agent):
                 log("Predictor", f"AVISO: sin modelo de rutas ({error}); uso la ruta por defecto")
                 ruta = dict(K.RUTA_HUIDA_POR_DEFECTO)
             log("Predictor", f"ruta probable desde {pedido.get('ubicacion')}: {ruta['cruces']} (confianza {ruta['confianza']})")
+            traza("predictor", "predictor", "interno",
+                  f"{len(ruta.get('rutas') or [ruta])} rutas de huida (Yen + logit); más probable p={ruta['confianza']}",
+                  msg.thread, " → ".join(ruta.get("calles") or []))
             await self.send(responder(msg, "Ruta", ruta))
 
 
@@ -1157,6 +1235,9 @@ class AgenteSemaforico(Agent):
                 log("Semaforico", f"{accion} en {c} -> '{orden}' (objetivo: {ag.objetivo})")
             if not ordenes:
                 log("Semaforico", f"{accion}: sin cambios de semáforos")
+            else:
+                traza("semaforico", "cruces", "mqtt", "sma/semaforo: " + ", ".join(f"{c}={o}" for c, o in ordenes.items()),
+                      msg.thread, f"objetivo {ag.objetivo}")
             # el plan (desvíos, contraflujo) también se publica para el gemelo digital
             if accion in ("activarPlan", "restaurarPlanNormal") and "plan" in datos and ag.conectado:
                 aviso = {**datos, "activo": accion == "activarPlan"}
@@ -1198,8 +1279,11 @@ class AgenteComunicador(Agent):
                 datos["receptor"] = "Policia"            # regla dura: Seguridad nunca va a la ciudadanía
             texto, origen = await asyncio.to_thread(comunicador.redactar, datos)
             log("Comunicador", f"[para {datos['receptor']}] {texto}   ({origen})")
+            hilo = msg.thread or datos["alerta"].get("id")
+            traza("comunicador", "comunicador", "interno", f"redacta el aviso ({origen})", hilo, texto)
             envio = await asyncio.to_thread(comunicador.enviar, datos["receptor"], texto)
             log("Comunicador", envio)
+            traza("comunicador", datos["receptor"].lower(), "telegram", "aviso por Telegram", hilo, envio)
             self.agent.enviados += 1
             self.agent.mente({"receptor": datos["receptor"], "texto": texto, "redaccion": origen, "envio": envio})
 

@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secuencia de agentes · SMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #03050a; --vidrio: rgba(8, 16, 30, .78); --borde: rgba(0, 229, 255, .22); --texto: #d9f4ff; --tenue: #6f8ba3;
+    --cian: #00e5ff; --verde: #00ff7a; --ambar: #ffb300; --violeta: #b04dff; --rojo: #ff1744; --magenta: #ff2bd6;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.45 "Rajdhani", sans-serif;
+    background-image: radial-gradient(circle at 20% 0%, rgba(0,229,255,.08), transparent 45%), radial-gradient(circle at 90% 30%, rgba(176,77,255,.07), transparent 40%);
+    display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; flex-wrap: wrap;
+    background: rgba(3,5,10,.9); border-bottom: 1px solid var(--borde); }
+  h1 { font: 700 18px "Orbitron"; letter-spacing: .14em; margin: 0; color: var(--cian); text-shadow: 0 0 12px rgba(0,229,255,.5); }
+  header .sub { color: var(--tenue); font-size: 13px; }
+  header .der { margin-left: auto; display: flex; gap: 12px; align-items: center; font-size: 13px; }
+  header a { color: var(--cian); text-decoration: none; border: 1px solid var(--borde); padding: 4px 10px; border-radius: 6px; }
+  .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--rojo); display: inline-block; margin-right: 6px; }
+  .punto.ok { background: var(--verde); box-shadow: 0 0 8px var(--verde); }
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr) 320px; gap: 14px; padding: 14px 16px; }
+  .caja { background: var(--vidrio); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+  h2 { font: 700 12px "Orbitron"; letter-spacing: .16em; color: var(--cian); margin: 0 0 8px; text-transform: uppercase; }
+  .tenue { color: var(--tenue); }
+  .filtros { display: grid; gap: 4px; font-size: 13px; margin-bottom: 10px; color: var(--tenue); }
+  .filtros label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+  .lista { overflow-y: auto; display: grid; gap: 6px; align-content: start; padding-right: 4px; }
+  .inc { border: 1px solid rgba(0,229,255,.14); border-radius: 10px; padding: 8px 10px; cursor: pointer; background: rgba(0,0,0,.2); }
+  .inc:hover { border-color: rgba(0,229,255,.45); }
+  .inc.sel { border-color: var(--cian); box-shadow: 0 0 0 1px var(--cian) inset, 0 0 14px rgba(0,229,255,.18); }
+  .inc .fila { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .inc b { font: 700 12px "Orbitron"; letter-spacing: .06em; }
+  .inc .det { font-size: 13px; color: var(--tenue); }
+  .chip { font: 600 10px "Orbitron"; letter-spacing: .08em; padding: 2px 7px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+  .chip.c1 { color: var(--ambar); border-color: var(--ambar); }
+  .chip.c2 { color: var(--rojo); border-color: var(--rojo); }
+  .chip.otro { color: var(--violeta); border-color: var(--violeta); }
+  .chip.fondo { color: var(--tenue); border-color: var(--tenue); }
+  .estado { font-size: 12px; }
+  .estado.activo { color: var(--verde); }
+  .barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .titulo { font: 700 13px "Orbitron"; letter-spacing: .06em; color: var(--texto); margin-right: auto; }
+  button { font: 600 13px "Rajdhani"; color: var(--cian); background: rgba(0,229,255,.06); border: 1px solid var(--borde);
+    border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  button:hover { background: rgba(0,229,255,.14); }
+  button.on { background: rgba(0,255,122,.12); color: var(--verde); border-color: rgba(0,255,122,.5); }
+  input[type=range] { width: 130px; accent-color: var(--cian); }
+  .paso { font: 12px "JetBrains Mono"; color: var(--tenue); min-width: 70px; }
+  #lienzo { flex: 1; min-height: 0; overflow: auto; border-radius: 10px; background: rgba(0,0,0,.25); padding: 10px; }
+  #lienzo svg { max-width: none !important; height: auto; }
+  .vacio { color: var(--tenue); padding: 30px; text-align: center; }
+  .resumen { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px; }
+  .resumen div { border: 1px solid rgba(0,229,255,.14); border-radius: 8px; padding: 4px 8px; }
+  .resumen span { display: block; font-size: 11px; color: var(--tenue); text-transform: uppercase; letter-spacing: .08em; }
+  .resumen b { font: 700 15px "Orbitron"; color: var(--cian); }
+  .detalle { overflow-y: auto; font-size: 14px; }
+  .detalle dl { display: grid; grid-template-columns: 92px 1fr; gap: 4px 8px; margin: 0 0 10px; }
+  .detalle dt { color: var(--tenue); }
+  .detalle dd { margin: 0; word-break: break-word; }
+  pre { font: 11.5px/1.4 "JetBrains Mono", monospace; color: #9fe8ff; background: rgba(0,0,0,.35); border-radius: 8px;
+    padding: 8px; white-space: pre-wrap; word-break: break-word; margin: 0; }
+  .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--tenue); margin-top: 8px; }
+  .leyenda i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 5px; }
+  .ayuda { font-size: 13px; color: var(--tenue); }
+  .ayuda p { margin: 0 0 8px; }
+  /* realce del último mensaje y del seleccionado */
+  #lienzo .ultimo { filter: drop-shadow(0 0 4px var(--verde)); stroke-width: 3px !important; }
+  #lienzo .elegido { filter: drop-shadow(0 0 5px #fff); stroke-width: 3px !important; }
+  #lienzo .messageText { cursor: pointer; }
+  @media (max-width: 1150px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>SECUENCIA DE AGENTES</h1>
+    <div class="sub">Diagrama de secuencia dinámico · se dibuja con los mensajes FIPA-ACL reales de cada incidente</div>
+  </div>
+  <div class="der">
+    <span><span class="punto" id="punto"></span><span id="conexion">conectando…</span></span>
+    <a href="/">Gemelo 3D</a>
+    <a href="/agentes">Mente de los agentes</a>
+  </div>
+</header>
+<main>
+  <section class="caja">
+    <h2>Incidentes</h2>
+    <div class="filtros">
+      <label><input type="checkbox" id="seguir" checked> Seguir el incidente más reciente</label>
+      <label><input type="checkbox" id="verDescartes"> Mostrar rostros descartados</label>
+      <label><input type="checkbox" id="verFondo"> Mostrar control continuo (sin incidente)</label>
+    </div>
+    <div class="lista" id="lista"><div class="vacio">Esperando mensajes de los agentes…</div></div>
+  </section>
+
+  <section class="caja">
+    <div class="barra">
+      <span class="titulo" id="titulo">Sin incidente seleccionado</span>
+      <button id="btnInicio" title="Primer paso">⏮</button>
+      <button id="btnPlay" title="Reproducir paso a paso">▶ Reproducir</button>
+      <button id="btnFin" title="Mostrar todo">⏭</button>
+      <input type="range" id="paso" min="0" max="0" value="0">
+      <span class="paso" id="pasoTxt">0 / 0</span>
+      <button id="zoomMenos" title="Alejar">−</button>
+      <button id="zoomAjustar" title="Ajustar al ancho"><span id="zoomTxt">100 %</span></button>
+      <button id="zoomMas" title="Acercar">+</button>
+      <button id="btnSvg">SVG</button>
+      <button id="btnPng">PNG</button>
+    </div>
+    <div class="resumen">
+      <div><span>Mensajes</span><b id="rMsj">0</b></div>
+      <div><span>Agentes</span><b id="rAg">0</b></div>
+      <div><span>Duración</span><b id="rDur">-</b></div>
+      <div><span>Evento → semáforos</span><b id="rSem">-</b></div>
+    </div>
+    <div id="lienzo"><div class="vacio">Dispara un evento desde el gemelo 3D (accidente, persona solicitada…) o desde la cámara y la conversación aparecerá aquí.</div></div>
+    <div class="leyenda">
+      <span><i style="border-color:#ffb300"></i>request</span>
+      <span><i style="border-color:#b04dff"></i>query-ref</span>
+      <span><i style="border-color:#00e5ff"></i>inform</span>
+      <span><i style="border-color:#00e5ff;border-top-style:dashed"></i>respuesta</span>
+      <span><i style="border-color:#00ff7a"></i>decisión interna</span>
+      <span><i style="border-color:#ff2bd6"></i>MQTT (dispositivos)</span>
+      <span><i style="border-color:#7CFFB2"></i>Telegram</span>
+    </div>
+  </section>
+
+  <section class="caja">
+    <h2>Detalle del mensaje</h2>
+    <div class="detalle" id="detalle">
+      <div class="ayuda">
+        <p>Haz clic en el texto de una flecha para ver el mensaje completo: performativa, acción, contenido y en qué momento se envió.</p>
+        <p>Solo aparecen los agentes que <b>participaron</b> en el incidente: cada caso de uso muestra su propia conversación.</p>
+        <p>Las flechas que vuelven al mismo agente son sus <b>decisiones internas</b> (clasificar, elegir plan, comparar rostro…).</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
+
+mermaid.initialize({
+  startOnLoad: false, securityLevel: "strict", theme: "base",
+  themeVariables: {
+    fontFamily: "Rajdhani, sans-serif", fontSize: "15px", background: "transparent",
+    actorBkg: "#0b1a2b", actorBorder: "#00e5ff", actorTextColor: "#d9f4ff", actorLineColor: "#2c4a63",
+    signalColor: "#9fe8ff", signalTextColor: "#d9f4ff", labelBoxBkgColor: "#0b1a2b", labelBoxBorderColor: "#00e5ff",
+    labelTextColor: "#d9f4ff", noteBkgColor: "#1a1330", noteBorderColor: "#b04dff", noteTextColor: "#e8d9ff",
+    sequenceNumberColor: "#03050a", activationBkgColor: "#11324a",
+  },
+  sequence: { showSequenceNumbers: true, mirrorActors: false, messageMargin: 30, boxMargin: 8, actorMargin: 26,
+              noteMargin: 8, wrap: true, width: 128, height: 52, messageFontSize: 14, actorFontSize: 14 },
+});
+
+// ---------------------------------------------------------------- modelo
+const PARTICIPANTES = [   // orden del flujo: así los diagramas de todos los casos se leen igual
+  ["entorno", "participant", "Entorno<br/>gemelo · ESP32 · panel"],
+  ["camara", "participant", "Cámara<br/>YuNet + SFace"],
+  ["vigilancia", "participant", "Vigilancia"],
+  ["clasificador", "participant", "Clasificador"],
+  ["coordinador", "participant", "Coordinador"],
+  ["consultor", "participant", "Consultor"],
+  ["predictor", "participant", "Predictor"],
+  ["semaforico", "participant", "Semafórico"],
+  ["comunicador", "participant", "Comunicador"],
+  ["cruces", "participant", "Semáforos<br/>de los cruces"],
+  ["ciudadania", "actor", "Ciudadanía"],
+  ["policia", "actor", "Policía"],
+];
+const ORDEN = Object.fromEntries(PARTICIPANTES.map((p, i) => [p[0], i]));
+const COLOR = { request: "#ffb300", "query-ref": "#b04dff", inform: "#00e5ff", respuesta: "#00e5ff",
+                interno: "#00ff7a", mqtt: "#ff2bd6", telegram: "#7CFFB2" };
+
+const $ = id => document.getElementById(id);
+let trazas = [];
+let seleccionado = null;
+let pasoVisible = null;        // null = todos los mensajes (en vivo); número = reproducción
+let reproduciendo = null;
+let ultimoSvg = "";
+let mensajesDibujados = [];
+
+// los ids de alerta se reinician con cada arranque de los agentes: la clave incluye la sesión
+function clave(t, mapa) {
+  const s = (t.sesion || "") + "|";
+  return t.hilo ? s + t.hilo : (t.traza && mapa[s + t.traza]) || (t.traza ? s + t.traza : "fondo");
+}
+
+function incidentes() {
+  const mapa = {};                                  // EV-… -> AL-… (la alerta nace en el Clasificador)
+  for (const t of trazas) if (t.hilo && t.traza) mapa[(t.sesion || "") + "|" + t.traza] = (t.sesion || "") + "|" + t.hilo;
+  const grupos = new Map();
+  for (const t of trazas) {
+    const k = clave(t, mapa);
+    if (!grupos.has(k)) grupos.set(k, []);
+    grupos.get(k).push(t);
+  }
+  const lista = [];
+  for (const [k, msjs] of grupos) {
+    msjs.sort((a, b) => a.ts - b.ts);
+    const origen = msjs.find(m => m.de === "entorno" || m.de === "camara");
+    const descarte = msjs.some(m => m.de === "consultor" && m.tipo === "interno" && /descarta/.test(m.accion));
+    const nombre = k.split("|").pop();
+    const esAlerta = nombre.startsWith("AL-");
+    let evento = "", cruce = "";
+    if (origen) {
+      const m = origen.accion.match(/sma\/eventos\/([^:]+): (.+)$/);
+      if (m) { cruce = m[1]; evento = m[2]; }
+      else { const c = origen.accion.match(/sma\/camaras\/(\w+)/); evento = "rostro en " + (c ? c[1] : "cámara");
+             const u = (origen.detalle || "").match(/en (cruce\d)/); cruce = u ? u[1] : ""; }
+    }
+    if (msjs.some(m => /persona_solicitada|coincidencia/.test(m.accion + (m.detalle || ""))) && esAlerta) evento = "persona_solicitada";
+    const clasif = msjs.find(m => m.de === "clasificador" && m.tipo === "interno");
+    const caso = k === "fondo" ? "fondo" : evento === "persona_solicitada" ? "c2" : evento === "accidente" ? "c1" :
+                 (!esAlerta && descarte) ? "descarte" : esAlerta ? "otro" : "pre";
+    const cerrado = msjs.some(m => m.accion === "restaurarPlanNormal") || caso === "descarte";
+    lista.push({ k, nombre, msjs, evento, cruce, caso, cerrado, esAlerta, clasif: clasif ? clasif.accion.replace("clasifica: ", "") : "",
+                 inicio: msjs[0].ts, fin: msjs[msjs.length - 1].ts });
+  }
+  return lista.sort((a, b) => b.inicio - a.inicio);
+}
+
+function visibles() {
+  return incidentes().filter(i => (i.caso !== "fondo" || $("verFondo").checked) &&
+                                  (i.caso !== "descarte" || $("verDescartes").checked) && i.caso !== "pre");
+}
+
+// ---------------------------------------------------------------- lista de incidentes
+const NOMBRE_CASO = { c1: "CASO 1", c2: "CASO 2", otro: "OTRO", fondo: "FONDO", descarte: "DESCARTE" };
+function pintarLista() {
+  const lista = visibles();
+  if ($("seguir").checked && lista.length && pasoVisible === null) {
+    const nuevo = lista.find(i => i.caso !== "fondo") || lista[0];
+    if (!seleccionado || seleccionado !== nuevo.k) seleccionado = nuevo.k;
+  }
+  if (!lista.length) { $("lista").innerHTML = '<div class="vacio">Esperando mensajes de los agentes…</div>'; return; }
+  $("lista").innerHTML = lista.map(i => {
+    const titulo = i.caso === "fondo" ? "Control continuo" : i.caso === "descarte" ? "Rostro descartado" : i.nombre;
+    const det = i.caso === "fondo" ? "predicción de colas y control cada 12 s" :
+                `${(i.evento || "").replace("_", " ")}${i.cruce ? " · " + i.cruce : ""}${i.clasif ? " · " + i.clasif : ""}`;
+    const hora = new Date(i.inicio * 1000).toLocaleTimeString("es-CO", { hour12: false });
+    return `<div class="inc ${i.k === seleccionado ? "sel" : ""}" data-k="${i.k}">
+      <div class="fila"><b>${titulo}</b><span class="chip ${i.caso}">${NOMBRE_CASO[i.caso] || ""}</span></div>
+      <div class="det">${det}</div>
+      <div class="fila det"><span>${hora} · ${i.msjs.length} mensajes</span>
+        <span class="estado ${i.cerrado ? "" : "activo"}">${i.caso === "fondo" ? "" : i.cerrado ? "cerrado" : "● activo"}</span></div>
+    </div>`;
+  }).join("");
+  for (const el of document.querySelectorAll(".inc")) el.onclick = () => {
+    seleccionado = el.dataset.k; $("seguir").checked = false; detener(); pasoVisible = null; pintarLista(); dibujar();
+  };
+}
+
+// ---------------------------------------------------------------- diagrama
+const limpio = s => String(s ?? "").replace(/[;#]/g, ",").replace(/[<>]/g, m => m === "<" ? "‹" : "›")
+                                   .replace(/[{}]/g, "").replace(/\s+/g, " ").trim();
+const corto = (s, n = 70) => { s = limpio(s); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+
+function comoMensajes(msjs) {
+  // marca como «respuesta» el inform que contesta un request/query-ref previo en sentido contrario
+  const pendientes = [];
+  return msjs.map(m => {
+    let tipo = m.tipo;
+    if (tipo === "request" || tipo === "query-ref") pendientes.push(m);
+    else if (tipo === "inform") {
+      const i = pendientes.findIndex(p => p.de === m.para && p.para === m.de);
+      if (i >= 0) { pendientes.splice(i, 1); tipo = "respuesta"; }
+    }
+    return { ...m, clase: tipo };
+  });
+}
+
+function textoMermaid(msjs) {
+  const usados = [...new Set(msjs.flatMap(m => [m.de, m.para]))]
+    .filter(p => p in ORDEN).sort((a, b) => ORDEN[a] - ORDEN[b]);
+  const lineas = ["sequenceDiagram", "autonumber"];
+  for (const id of usados) { const p = PARTICIPANTES[ORDEN[id]]; lineas.push(`${p[1]} ${id} as ${p[2]}`); }
+  for (const m of msjs) {
+    if (!(m.de in ORDEN) || !(m.para in ORDEN)) continue;
+    const flecha = m.clase === "respuesta" ? "-->>" : (m.clase === "mqtt" || m.clase === "telegram") ? "-)" : "->>";
+    const etiqueta = m.clase === "interno" ? corto(m.accion, 64) :
+                     m.clase === "mqtt" || m.clase === "telegram" ? corto(m.accion, 64) : `${m.tipo} ${limpio(m.accion)}`;
+    lineas.push(`${m.de}${flecha}${m.para}: ${etiqueta}`);
+  }
+  return lineas.join("\n");
+}
+
+let dibujando = Promise.resolve(), pendiente = false;
+function dibujar() {
+  if (pendiente) return;
+  pendiente = true;
+  dibujando = dibujando.then(async () => {
+    pendiente = false;
+    const inc = incidentes().find(i => i.k === seleccionado);
+    if (!inc) { $("titulo").textContent = "Sin incidente seleccionado"; return; }
+    let msjs = comoMensajes(inc.k === "fondo" ? inc.msjs.slice(-25) : inc.msjs).filter(m => m.de in ORDEN && m.para in ORDEN);
+    const total = msjs.length;
+    $("paso").max = total;
+    const hasta = pasoVisible === null ? total : Math.min(pasoVisible, total);
+    $("paso").value = hasta;
+    $("pasoTxt").textContent = `${hasta} / ${total}`;
+    msjs = msjs.slice(0, hasta);
+    mensajesDibujados = msjs;
+    $("titulo").textContent = inc.caso === "fondo" ? "Control continuo (últimos 25 mensajes)" :
+      `${inc.nombre} · ${(inc.evento || "").replace("_", " ")}${inc.cruce ? " en " + inc.cruce : ""}`;
+    resumen(inc, total);
+    if (!msjs.length) { $("lienzo").innerHTML = '<div class="vacio">Paso 0: pulsa ▶ para reproducir.</div>'; return; }
+    try {
+      const { svg } = await mermaid.render("diag" + Date.now(), textoMermaid(msjs));
+      $("lienzo").innerHTML = svg;
+      ultimoSvg = svg;
+      decorar(msjs, pasoVisible !== null || !inc.cerrado);
+    } catch (e) {
+      $("lienzo").innerHTML = `<div class="vacio">No pude dibujar el diagrama: ${limpio(e.message || e)}</div>`;
+    }
+  });
+}
+
+function decorar(msjs, realzarUltimo) {
+  const svg = $("lienzo").querySelector("svg");
+  if (!svg) return;
+  escalar();
+  const lineas = [...svg.querySelectorAll(".messageLine0, .messageLine1")];
+  const textos = [...svg.querySelectorAll(".messageText")];
+  lineas.forEach((l, i) => {
+    const m = msjs[i]; if (!m) return;
+    l.style.stroke = COLOR[m.clase] || "#9fe8ff";
+    if (m.clase === "respuesta") l.style.strokeDasharray = "5 4";
+  });
+  // un texto largo se parte en varias líneas: cada texto pertenece a la primera flecha que está debajo de él
+  const yLinea = lineas.map(l => { const b = l.getBBox(); return b.y + b.height / 2; });
+  textos.forEach(t => {
+    const b = t.getBBox(), y = b.y + b.height / 2;
+    let i = yLinea.findIndex(yl => yl >= y - 2);
+    if (i < 0) i = yLinea.length - 1;
+    t.onclick = () => elegir(i);
+  });
+  if (realzarUltimo && lineas.length) {
+    const ultima = lineas[lineas.length - 1];
+    ultima.classList.add("ultimo");
+    const caja = $("lienzo"), r = ultima.getBoundingClientRect(), c = caja.getBoundingClientRect();
+    if (r.bottom > c.bottom - 30 || r.top < c.top) caja.scrollTop += r.bottom - c.bottom + 120;   // seguir el último paso
+  }
+}
+
+// ---------------------------------------------------------------- zoom: "ajustar" al ancho (mínimo legible) o escala fija
+let escala = "ajustar";
+const ESCALA_MINIMA = 0.75;
+function escalar() {
+  const svg = $("lienzo").querySelector("svg");
+  if (!svg) return;
+  const vb = (svg.getAttribute("viewBox") || "").split(/\s+/).map(Number);
+  if (vb.length !== 4) return;
+  const disponible = $("lienzo").clientWidth - 24;
+  const f = escala === "ajustar" ? Math.min(1.2, Math.max(ESCALA_MINIMA, disponible / vb[2])) : escala;
+  svg.style.maxWidth = "none";
+  svg.setAttribute("width", Math.round(vb[2] * f));
+  svg.setAttribute("height", Math.round(vb[3] * f));
+  $("zoomTxt").textContent = `${Math.round(f * 100)} %`;
+  return f;
+}
+$("zoomMenos").onclick = () => { escala = Math.max(0.4, (escalar() || 1) - 0.15); escalar(); };
+$("zoomMas").onclick = () => { escala = Math.min(2, (escalar() || 1) + 0.15); escalar(); };
+$("zoomAjustar").onclick = () => { escala = "ajustar"; escalar(); };
+window.addEventListener("resize", () => escalar());
+
+function elegir(i) {
+  const m = mensajesDibujados[i]; if (!m) return;
+  const svg = $("lienzo").querySelector("svg");
+  svg?.querySelectorAll(".elegido").forEach(e => e.classList.remove("elegido"));
+  svg?.querySelectorAll(".messageLine0, .messageLine1")[i]?.classList.add("elegido");
+  const t0 = mensajesDibujados[0].ts;
+  let contenido = m.detalle || "";
+  try { contenido = JSON.stringify(JSON.parse(contenido), null, 2); } catch { /* texto libre */ }
+  const tipo = { interno: "decisión interna", mqtt: "MQTT (dispositivo)", telegram: "Telegram", respuesta: "inform (respuesta)" }[m.clase] || m.tipo;
+  $("detalle").innerHTML = `<dl>
+      <dt>Paso</dt><dd>${i + 1}</dd>
+      <dt>Hora</dt><dd>${m.hora}</dd>
+      <dt>Desde el evento</dt><dd>+${((m.ts - t0)).toFixed(3)} s</dd>
+      <dt>De → para</dt><dd>${m.de} → ${m.para}</dd>
+      <dt>Tipo</dt><dd style="color:${COLOR[m.clase] || "inherit"}">${tipo}</dd>
+      <dt>Acción</dt><dd>${limpio(m.accion)}</dd>
+      <dt>Conversación</dt><dd>${m.hilo || m.traza || "-"}${m.sesion ? ` <span class="tenue">(sesión ${m.sesion})</span>` : ""}</dd>
+    </dl><pre>${limpio(contenido) ? contenido.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])) : "(sin contenido)"}</pre>`;
+}
+
+function resumen(inc, total) {
+  const ms = inc.msjs;
+  $("rMsj").textContent = total;
+  $("rAg").textContent = new Set(ms.flatMap(m => [m.de, m.para]).filter(p => !["entorno", "camara", "cruces", "ciudadania", "policia"].includes(p))).size;
+  $("rDur").textContent = ms.length > 1 ? `${(ms[ms.length - 1].ts - ms[0].ts).toFixed(1)} s` : "-";
+  const sem = ms.find(m => m.para === "cruces");
+  $("rSem").textContent = sem && inc.caso !== "fondo" ? `${(sem.ts - ms[0].ts).toFixed(2)} s` : "-";
+}
+
+// ---------------------------------------------------------------- reproducción y exportación
+function detener() { clearInterval(reproduciendo); reproduciendo = null; $("btnPlay").textContent = "▶ Reproducir"; $("btnPlay").classList.remove("on"); }
+$("btnPlay").onclick = () => {
+  if (reproduciendo) { detener(); return; }
+  $("seguir").checked = false;
+  const total = Number($("paso").max);
+  if (pasoVisible === null || pasoVisible >= total) pasoVisible = 0;
+  $("btnPlay").textContent = "⏸ Pausa"; $("btnPlay").classList.add("on");
+  reproduciendo = setInterval(() => {
+    pasoVisible += 1; dibujar();
+    if (pasoVisible >= Number($("paso").max)) detener();
+  }, 900);
+};
+$("btnInicio").onclick = () => { detener(); $("seguir").checked = false; pasoVisible = 1; dibujar(); };
+$("btnFin").onclick = () => { detener(); pasoVisible = null; dibujar(); };
+$("paso").oninput = e => { detener(); $("seguir").checked = false; pasoVisible = Number(e.target.value); dibujar(); };
+for (const id of ["verDescartes", "verFondo", "seguir"]) $(id).onchange = () => { pintarLista(); dibujar(); };
+
+function descargar(nombre, blob) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function svgConFondo() {
+  const svg = $("lienzo").querySelector("svg");
+  if (!svg) return null;
+  const copia = svg.cloneNode(true);
+  const vb = (copia.getAttribute("viewBox") || "0 0 1000 600").split(/\s+/).map(Number);
+  const fondo = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  fondo.setAttribute("x", vb[0]); fondo.setAttribute("y", vb[1]); fondo.setAttribute("width", vb[2]); fondo.setAttribute("height", vb[3]);
+  fondo.setAttribute("fill", "#03050a");
+  copia.insertBefore(fondo, copia.firstChild);
+  copia.setAttribute("width", vb[2]); copia.setAttribute("height", vb[3]);
+  return { texto: new XMLSerializer().serializeToString(copia), ancho: vb[2], alto: vb[3] };
+}
+const nombreArchivo = ext => `secuencia_${(seleccionado || "sma").split("|").pop().replace(/[^\w-]/g, "")}.${ext}`;
+$("btnSvg").onclick = () => { const s = svgConFondo(); if (s) descargar(nombreArchivo("svg"), new Blob([s.texto], { type: "image/svg+xml" })); };
+$("btnPng").onclick = () => {
+  const s = svgConFondo(); if (!s) return;
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas"); c.width = s.ancho * 2; c.height = s.alto * 2;
+    const g = c.getContext("2d"); g.scale(2, 2); g.drawImage(img, 0, 0);
+    c.toBlob(b => descargar(nombreArchivo("png"), b), "image/png");
+  };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s.texto);
+};
+
+// ---------------------------------------------------------------- datos: historial + en vivo
+let refresco = null;
+function programar() { clearTimeout(refresco); refresco = setTimeout(() => { pintarLista(); if (pasoVisible === null) dibujar(); }, 150); }
+
+async function cargar() {
+  try { trazas = await (await fetch("/api/trazas")).json(); } catch { trazas = []; }
+  pintarLista(); dibujar();
+}
+function conectar() {
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen = () => { $("punto").classList.add("ok"); $("conexion").textContent = "en vivo"; };
+  ws.onmessage = e => {
+    const p = JSON.parse(e.data);
+    if (p.tema === "sma/trazas" && !p.historial && typeof p.datos === "object") { trazas.push(p.datos); programar(); }
+  };
+  ws.onclose = () => { $("punto").classList.remove("ok"); $("conexion").textContent = "reconectando…"; setTimeout(conectar, 2000); };
+}
+cargar().then(conectar);
+</script>
+</body>
+</html>

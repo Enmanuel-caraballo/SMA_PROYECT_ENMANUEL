@@ -48,6 +48,30 @@ estados = {}                    # último sma/estado/<cruce>
 planes = {}                     # planes activos (sma/plan/<cruce>) por id de alerta
 mentes = {}                     # último sma/agentes/<agente>: reglas, parámetros y estado interno de cada agente
 bitacora = deque(maxlen=300)    # últimos mensajes para quien abra la página tarde
+trazas = deque(maxlen=6000)     # sma/trazas: mensajes entre agentes para el diagrama de secuencia (/secuencia)
+RUTA_TRAZAS = CARPETA / "trazas" / "trazas.jsonl"   # historial en disco (ignorado por Git; sin datos biométricos)
+
+
+def cargar_trazas():
+    try:
+        lineas = RUTA_TRAZAS.read_text(encoding="utf-8").splitlines()[-trazas.maxlen:]
+    except OSError:
+        return
+    for linea in lineas:
+        try:
+            trazas.append(json.loads(linea))
+        except ValueError:
+            pass
+
+
+def guardar_traza(dato):
+    try:
+        RUTA_TRAZAS.parent.mkdir(exist_ok=True)
+        with RUTA_TRAZAS.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(dato, ensure_ascii=False))
+            f.write("\n")
+    except OSError:
+        pass
 cliente_mqtt = None
 
 
@@ -80,7 +104,10 @@ def al_mensaje_mqtt(loop):
         partes = msg.topic.split("/")
         if len(partes) == 3 and partes[1] == "sensores":
             return                      # los publica el propio navegador; no hace falta reenviarlos
-        if len(partes) == 3 and partes[1] == "agentes":
+        if msg.topic == "sma/trazas" and isinstance(datos, dict):
+            trazas.append(datos)
+            guardar_traza(datos)
+        elif len(partes) == 3 and partes[1] == "agentes":
             mentes[partes[2]] = paquete
         elif len(partes) == 3 and partes[1] == "estado":
             estados[partes[2]] = paquete
@@ -100,7 +127,8 @@ def al_mensaje_mqtt(loop):
 async def ciclo_de_vida(app):
     global cliente_mqtt
     loop = asyncio.get_running_loop()
-    cliente_mqtt = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="sma-panel")
+    cargar_trazas()
+    cliente_mqtt = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"sma-panel-{args.puerto_web}")
     cliente_mqtt.on_connect = lambda c, u, f, rc, p: (c.subscribe("sma/#"),
                                                       log(f"conectado a Mosquitto {args.broker}; escuchando sma/#"))
     cliente_mqtt.on_message = al_mensaje_mqtt(loop)
@@ -147,6 +175,18 @@ def pagina_2d():
 def pagina_agentes():
     """Mente de los agentes: reglas, parámetros, aprendizaje y decisiones en vivo."""
     return FileResponse(CARPETA / "agentes.html")
+
+
+@app.get("/secuencia")
+def pagina_secuencia():
+    """Diagrama de secuencia dinámico: la conversación real entre agentes de cada incidente."""
+    return FileResponse(CARPETA / "secuencia.html")
+
+
+@app.get("/api/trazas")
+def api_trazas():
+    """Mensajes entre agentes registrados (sma/trazas), del más antiguo al más reciente."""
+    return JSONResponse(list(trazas))
 
 
 @app.get("/datos/bocagrande.json")

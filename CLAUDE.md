@@ -69,6 +69,7 @@ Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
 | `sma/agentes/<agente>` | cada agente | Panel `/agentes` | JSON **retenido**: tipo, reglas, parámetros, estado interno |
 | `sma/plan/<cruce>` | AgenteSemaforico | Panel (gemelo 3D) | JSON `{"plan","nombre","semaforos","alerta","cruce","evento","sentido","duracion","activo"}` |
 | `sma/estado/<cruce>` | ESP32 / simulador | Panel | JSON **retenido** `{"modo":"normal","A":"verde","B":"rojo"}` |
+| `sma/trazas` | todos los agentes | Panel `/secuencia` | JSON por mensaje FIPA-ACL enviado o decisión interna: `{"ts","sesion","hora","de","para","tipo","accion","hilo","traza","detalle"}` (sin vectores de rostros) |
 
 - `<cruce>` = `cruce1`, `cruce2`, … `cruce1` es el **cruce físico** del ESP32.
 - Semáforo **A** = vía principal, **B** = vía secundaria.
@@ -265,6 +266,15 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
   **cierra el tramo** en los tres modelos: en el 3D (`e.bloqueada`, chocados en todos los carriles, los que ya venían
   quedan en cola y nadie más entra), en `rutas.py` (`CAPACIDAD_RESIDUAL_ACCIDENTE = 0` -> tramo deshabilitado) y en SUMO
   (un vehículo detenido por carril + reruteo). Al retirarse el accidente el tramo se reabre y todos recalculan.
+- **Secuencia de agentes (22-nov):** página `/secuencia` (`panel/secuencia.html`, Mermaid 11 por CDN): un diagrama de
+  secuencia UML por incidente, dibujado con los mensajes REALES. `sma_agentes.py` reemplaza `CyclicBehaviour.send` por
+  `_enviar_con_traza` (todo mensaje enviado se publica en `sma/trazas`) y llama a `traza()` en las decisiones internas
+  (clasificar, comparar rostro, elegir plan, rutas de huida, órdenes MQTT a los cruces, redacción y envío por Telegram).
+  Correlación: la Vigilancia pone un id `EV-…` (`nueva_traza`) al percibir; el Clasificador crea `AL-…` y las dos quedan
+  unidas; los ids de alerta se reinician en cada arranque, por eso la clave incluye `sesion`. Solo se dibujan los agentes
+  que participaron; en vivo, reproducción paso a paso, detalle por mensaje, zoom y exportación SVG/PNG. El panel guarda las
+  trazas en `panel/trazas/trazas.jsonl` (ignorado por Git) y las sirve en `/api/trazas`. Cada panel usa el client_id MQTT
+  `sma-panel-<puerto>` (dos paneles con el mismo id se desconectaban entre sí).
 - Depuración desde la consola: `window.__bocagrande` (cámara, controles, escena, geo, aristasDir, `avanzar(s)`) e
   `import('/static/bocagrande3d.js')` para leer `estado` (carros, peatones, métricas, planes, fps, ms).
   Ojo: `avanzar(s)` es síncrono y los semáforos no cambian mientras corre; para medir colas usar pasos cortos

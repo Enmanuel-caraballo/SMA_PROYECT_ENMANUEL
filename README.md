@@ -171,6 +171,14 @@ grafo no aporta sobre la GRU sola (estaciones lejanas y datos horarios): se repo
 
 Los accidentes cierran el tramo (todos los carriles). Sin accidente o con un accidente real del DATT, la DQN baja la demora 5-12 % frente al semáforo fijo; con la salida del cruce5 cerrada ningún controlador semafórico mejora (±1,6 %): ese caso solo lo resuelve un plan de rutas como el contraflujo del Coordinador.
 
+## Secuencia de agentes (diagrama dinámico)
+
+`http://localhost:8000/secuencia` dibuja, con los mensajes FIPA-ACL **reales**, un diagrama de secuencia UML por
+incidente: solo aparecen los agentes que participaron (el Caso 1 no muestra al Predictor; el Caso 2 agrega la cámara, el
+Predictor y la Policía). Se actualiza en vivo, se puede reproducir paso a paso, cada flecha muestra su contenido al hacer
+clic y se exporta a SVG o PNG. Las flechas que vuelven al mismo agente son sus decisiones internas (clasificar, comparar
+el rostro, elegir el plan por utilidad…). Los agentes publican cada mensaje en `sma/trazas`, sin datos biométricos.
+
 ## Gemelo digital 3D
 
 - **Vehículos**: siguen la red real (sentidos únicos incluidos), mantienen distancia y frenan en la línea de pare

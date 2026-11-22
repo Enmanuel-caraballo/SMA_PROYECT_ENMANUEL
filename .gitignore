@@ -21,3 +21,6 @@ vision/registro/
 
 # mediciones: respaldo temporal de la memoria y del registro mientras corre la latencia
 mediciones/.respaldo/
+
+# trazas de la conversación entre agentes (panel /secuencia)
+maqueta_virtual/panel/trazas/

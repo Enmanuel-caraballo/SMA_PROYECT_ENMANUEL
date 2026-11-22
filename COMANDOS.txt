@@ -308,6 +308,17 @@ python agentes/comunicador.py --probar           # redacta y envía un aviso "PR
 
 
 ----------------------------------------------------------------------
+ 10e. SECUENCIA DE AGENTES (diagrama dinámico)
+----------------------------------------------------------------------
+# Con los agentes y el panel corriendo, abrir:
+#   http://localhost:8000/secuencia
+# Cada incidente (accidente, persona solicitada…) aparece en la lista con su diagrama de secuencia real.
+# ▶ Reproducir = paso a paso para explicarlo; clic en el texto de una flecha = contenido del mensaje;
+# SVG / PNG = exportar el diagrama para el informe.
+# Historial: maqueta_virtual/panel/trazas/trazas.jsonl (no se sube a Git; se puede borrar).
+
+
+----------------------------------------------------------------------
  10d. MEDICIONES Y RESULTADOS (resultados en docs/resultados/resultados.md)
 ----------------------------------------------------------------------
 python mediciones/medir.py todo          # Caso 1 y Caso 2 en SUMO + redacción del LLM + informe (~25 min)
