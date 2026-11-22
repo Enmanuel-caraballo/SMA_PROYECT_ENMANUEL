@@ -150,7 +150,7 @@ sus parámetros, la decisión que tomó y por qué, y lo que lleva aprendido.
 
 | Predicción de colas / flujo | Persistencia | Promedio histórico | GRU sin grafo | **T-GCN** |
 |---|---|---|---|---|
-| Bocagrande (SUMO, cola en veh, 36 s) | MAE 1,44 | 1,56 | 1,20 | **1,16** |
+| Bocagrande (SUMO, cola en veh, 36 s) | MAE 1,42 | 2,14 | 1,24 | **1,21** |
 | Medellín, flujo REAL SIMM (veh/h, 1-3 h) | MAE 306 | 196 | 157 | 163 |
 
 En Bocagrande la T-GCN es la mejor; con el flujo real de Medellín baja el error 47 % frente a la persistencia, pero el
@@ -158,10 +158,12 @@ grafo no aporta sobre la GRU sola (estaciones lejanas y datos horarios): se repo
 
 | Semáforos en SUMO (12 escenarios iguales) | Demora (veh·h) | Viaje medio (s) | Cola media (veh) |
 |---|---|---|---|
-| Semáforo fijo | 72,6 | 353 | 25,5 |
-| Tabla Q (anterior) | 67,1 | 329 | 18,3 |
-| Max-pressure (matemático) | 66,9 | 329 | 18,6 |
-| **DQN + T-GCN** | **65,6** | **319** | **14,1** |
+| Semáforo fijo | 98,0 | 342 | 25,8 |
+| Tabla Q (anterior) | 95,2 | 326 | 20,6 |
+| Max-pressure (matemático) | 94,0 | 320 | 19,2 |
+| **DQN + T-GCN** | **93,2** | **310** | **14,7** |
+
+Los accidentes cierran el tramo (todos los carriles). Sin accidente o con un accidente real del DATT, la DQN baja la demora 5-12 % frente al semáforo fijo; con la salida del cruce5 cerrada ningún controlador semafórico mejora (±1,6 %): ese caso solo lo resuelve un plan de rutas como el contraflujo del Coordinador.
 
 ## Gemelo digital 3D
 

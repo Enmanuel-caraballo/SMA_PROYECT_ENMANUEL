@@ -4,35 +4,35 @@
  "resumen": [
   {
    "controlador": "DQN + T-GCN (neuronal)",
-   "demora_veh_h": 65.56,
-   "viaje_medio_s": 318.94,
-   "llegados": 1709.83,
-   "cola_media": 14.06,
-   "mejora_demora_vs_fijo_%": 9.7
+   "demora_veh_h": 93.24,
+   "viaje_medio_s": 310.23,
+   "llegados": 1563.33,
+   "cola_media": 14.73,
+   "mejora_demora_vs_fijo_%": 4.8
   },
   {
    "controlador": "Max-pressure (matemático)",
-   "demora_veh_h": 66.88,
-   "viaje_medio_s": 328.55,
-   "llegados": 1703.92,
-   "cola_media": 18.6,
-   "mejora_demora_vs_fijo_%": 7.9
+   "demora_veh_h": 94.01,
+   "viaje_medio_s": 319.62,
+   "llegados": 1556.33,
+   "cola_media": 19.22,
+   "mejora_demora_vs_fijo_%": 4.1
   },
   {
    "controlador": "Semáforo fijo",
-   "demora_veh_h": 72.58,
-   "viaje_medio_s": 353.27,
-   "llegados": 1624.17,
-   "cola_media": 25.54,
+   "demora_veh_h": 97.99,
+   "viaje_medio_s": 342.37,
+   "llegados": 1484.83,
+   "cola_media": 25.77,
    "mejora_demora_vs_fijo_%": 0.0
   },
   {
    "controlador": "Tabla Q (actual)",
-   "demora_veh_h": 67.07,
-   "viaje_medio_s": 328.72,
-   "llegados": 1695.58,
-   "cola_media": 18.26,
-   "mejora_demora_vs_fijo_%": 7.6
+   "demora_veh_h": 95.15,
+   "viaje_medio_s": 326.06,
+   "llegados": 1528.17,
+   "cola_media": 20.56,
+   "mejora_demora_vs_fijo_%": 2.9
   }
  ]
 }
