@@ -308,6 +308,22 @@ python agentes/comunicador.py --probar           # redacta y envía un aviso "PR
 
 
 ----------------------------------------------------------------------
+ 10d. MEDICIONES Y RESULTADOS (resultados en docs/resultados/resultados.md)
+----------------------------------------------------------------------
+python mediciones/medir.py todo          # Caso 1 y Caso 2 en SUMO + redacción del LLM + informe (~25 min)
+python mediciones/medir.py latencia      # tiempos de la cadena de agentes: CON LOS AGENTES DETENIDOS
+python mediciones/medir.py informe       # vuelve a armar resultados.md y las gráficas
+python mediciones/medir.py restaurar     # si la latencia se cortó: devuelve la memoria y el registro de rostros
+# Mientras corre la latencia NO registrar personas (usa un registro temporal; camara.py lo impide).
+
+# Reconocimiento facial con compañeros (solo se guardan similitudes, nunca imágenes):
+#  1) registrar a cada uno:  python vision/camara.py --registrar "Alias" --consentimiento
+#  2) python vision/camara.py --medir   -> por turnos: alias (u 'otro' si NO está registrado) y condición
+#     (una toma por condición: frente / lejos / poca luz / de lado). Cuenta 3 s antes de cada toma.
+#  3) python mediciones/medir.py informe   (los alias salen como P1, P2...)
+
+
+----------------------------------------------------------------------
  11. PROBLEMAS COMUNES
 ----------------------------------------------------------------------
 # "No module named 'greenlet'" (o cualquier otro módulo)

@@ -43,6 +43,12 @@ Sobre esa red circulan carros y peatones simulados que **obedecen los semáforos
 agentes/sma_agentes.py                  los 7 agentes del SMA
 agentes/conocimiento.py                 reglas y parámetros de todos los agentes
 agentes/aprendizaje.py                  aprendizaje (Q-learning del Semafórico, experiencia del Coordinador)
+agentes/rutas.py                        modelo matemático de rutas (Akçelik, Frank-Wolfe, Yen)
+agentes/comunicador.py                  LLM (Ollama) + Telegram del Comunicador
+modelos/                                datos reales, T-GCN, DQN y SUMO
+vision/camara.py                        cámara con reconocimiento facial (Caso 2)
+mediciones/medir.py                     experimentos -> docs/resultados/
+pruebas/                                pruebas de punta a punta del Caso 1 y del Caso 2
 esp32/esp32_cruce/                      cruce físico (2 semáforos + botón)
 esp32/esp32_mqtt_prueba/                prueba de conexión (LED azul)
 maqueta_virtual/cruces.json             5 cruces semaforizados de Bocagrande (generado)
@@ -50,7 +56,7 @@ maqueta_virtual/bocagrande/             bocagrande.json: red vial, edificios y s
 maqueta_virtual/preparar_bocagrande.py  descarga OSM (Overpass) y genera los dos archivos anteriores
 maqueta_virtual/simulador_ciudad.py     simula los cruces con el mismo contrato MQTT que el ESP32
 maqueta_virtual/panel/                  servidor FastAPI, vista 3D (index.html + static/bocagrande3d.js) y mapa 2D
-docs/                                   diagramas, documento y checklist
+docs/                                   diagramas, documento, checklist y resultados/
 ```
 
 ## Cruces semaforizados de Bocagrande
@@ -219,11 +225,29 @@ Más detalles (instalación, ESP32, Git, problemas comunes) en [`COMANDOS.txt`](
    - El **Predictor** calcula las rutas de huida más probables hacia la salida (Yen + logit), el acceso por el que
      llegaría a cada cruce y en cuántos segundos; el **Semafórico** lo **retrasa**: todo rojo en la ruta más probable
      y rojo largo para su acceso en las alternas, sin que la DQN cambie esos modos.
-   - El **Comunicador** avisa **solo a la Policía** ("posible coincidencia"), con la ruta y el punto de intercepción.
+   - El **Comunicador** avisa **solo a la Policía** ("posible coincidencia" con el alias), con la ruta y el punto de
+     intercepción.
+   - Sin webcam: botón **Persona solicitada** del panel. Prueba automática: `python pruebas/prueba_caso2.py`.
 
 **Comunicador (Telegram + LLM local):** un LLM que corre en el portátil (**Ollama**, modelo `llama3.2:3b`, gratis y sin
 enviar datos fuera) redacta cada aviso en lenguaje natural y el bot de **Telegram** lo envía al grupo de la Ciudadanía
 (Caso 1) o al de la Policía (Caso 2). El código verifica que el LLM no cambie datos (cruces, calles, cifras) ni omita
 "posible coincidencia"; si falla, tarda o se equivoca, el aviso sale con la plantilla. El token y los grupos van en
 `.env` (no se sube a Git; ver `.env.ejemplo`).
-   - Sin webcam: botón **Persona solicitada** del panel. Prueba automática: `python pruebas/prueba_caso2.py`.
+
+## Resultados (mediciones del 22-nov-2026)
+
+Todo se reproduce con `python mediciones/medir.py todo` (+ `latencia` con los agentes detenidos) y queda en
+[`docs/resultados/resultados.md`](docs/resultados/resultados.md) con tablas, gráficas, media ± IC 95 % y semillas fijas.
+
+| Medición | Resultado |
+|---|---|
+| **Caso 1** (SUMO, hora pico, 10 accidentes REALES del DATT, mismo tráfico para todas las políticas) | Demora frente a semáforos fijos: plan del Coordinador solo **−0,5 % ± 1,0** (no significativo); **DQN −7,8 % ± 2,4**; SMA completo (DQN + plan) **−7,5 % ± 2,6**; viaje medio −9,7 %; mejora en 10 de 10 accidentes |
+| **Caso 2** (SUMO, hora pico, 5 semillas por cámara) | La retención le da a la Policía **+441 s** (cam1), **+588 s** (cam2) y **+277 s** (cam3, ya en la salida); costo: 16–39 veh·h de demora extra para el resto durante el cerco |
+| **Latencia** de la cadena de agentes (8 + 8 eventos) | Evento → semáforos: **0,5 s** (Caso 1, incluye Frank-Wolfe) y **< 0,1 s** (Caso 2); evento → aviso redactado: **~20 s** (casi todo el LLM) |
+| **Comunicador** (avisos reales) | Ciudadanía: **10/10** redactados por el LLM (~11 s); Policía: 0/3 (el LLM omite cifras -> plantilla exacta, como se diseñó) |
+| **Reconocimiento facial** (4 compañeros registrados + 1 no registrado, 117 muestras) | Registrados reconocidos **93,8 %**; confusiones entre registrados **0 %**; **falsos positivos 0 %** con el umbral 0,363 (con 0,25 subirían a 10 %) |
+| **Redes neuronales** (al entrenarlas) | T-GCN MAE 1,21 vs persistencia 1,42; DQN la mejor de 4 controladores (ver `modelos/entrenados/`) |
+
+Limitaciones: Cartagena no publica aforos (la demanda se calibra con el perfil del SIMM de Medellín); SUMO no invierte
+carriles, así que el contraflujo solo se evalúa con el modelo de equilibrio; la muestra de rostros es pequeña (prototipo).

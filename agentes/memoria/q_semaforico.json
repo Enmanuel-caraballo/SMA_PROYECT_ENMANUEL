@@ -2,7 +2,7 @@
  "q": {
   "cruce1": {
    "a0-b0": {
-    "normal": -0.0201,
+    "normal": -0.017,
     "prioridad_a": -0.2843,
     "prioridad_b": -1.2
    },
@@ -54,7 +54,7 @@
     "prioridad_b": -0.913
    },
    "a0-b1": {
-    "normal": 0.1064,
+    "normal": 0.1069,
     "prioridad_a": 0.1797,
     "prioridad_b": 0.0931
    },
@@ -83,7 +83,7 @@
    "a0-b1": {
     "normal": -0.6089,
     "prioridad_a": -0.2234,
-    "prioridad_b": -0.0689
+    "prioridad_b": -0.0583
    },
    "a1-b1": {
     "normal": -0.0391,
@@ -160,7 +160,7 @@
    "a0-b1": {
     "normal": -0.4733,
     "prioridad_a": -0.0014,
-    "prioridad_b": -0.0313
+    "prioridad_b": -0.0203
    },
    "a1-b0": {
     "normal": -0.2899,
@@ -195,7 +195,7 @@
     "prioridad_b": 0.4751
    },
    "a0-b0": {
-    "normal": -0.0219,
+    "normal": -0.0185,
     "prioridad_a": -1.0677,
     "prioridad_b": -0.3507
    },
@@ -234,7 +234,7 @@
  "visitas": {
   "cruce1": {
    "a0-b0": {
-    "normal": 110,
+    "normal": 112,
     "prioridad_a": 16
    },
    "a0-b1": {
@@ -274,7 +274,7 @@
     "prioridad_b": 6
    },
    "a0-b1": {
-    "normal": 33,
+    "normal": 35,
     "prioridad_a": 14,
     "prioridad_b": 3
    },
@@ -297,7 +297,7 @@
    "a0-b1": {
     "normal": 14,
     "prioridad_a": 46,
-    "prioridad_b": 23
+    "prioridad_b": 25
    },
    "a1-b1": {
     "normal": 6,
@@ -353,7 +353,7 @@
    "a0-b1": {
     "normal": 43,
     "prioridad_a": 44,
-    "prioridad_b": 16
+    "prioridad_b": 18
    },
    "a1-b0": {
     "normal": 6,
@@ -382,7 +382,7 @@
     "prioridad_b": 6
    },
    "a0-b0": {
-    "normal": 58,
+    "normal": 60,
     "prioridad_a": 2,
     "prioridad_b": 19
    },
@@ -412,18 +412,8 @@
   }
  },
  "epsilon": 0.02,
- "pasos": 1300,
+ "pasos": 1310,
  "recompensas": [
-  -0.83,
-  -0.17,
-  0.83,
-  -0.17,
-  0.0,
-  -0.17,
-  -1.0,
-  -1.17,
-  -1.0,
-  -1.83,
   1.0,
   0.83,
   -2.5,
@@ -568,6 +558,16 @@
   0.0,
   0.0,
   -0.5,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
   0.0,
   0.0,
   0.0,

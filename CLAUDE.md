@@ -41,8 +41,8 @@ la tarea actual (ver sección 8).
 | AgenteClasificadorAlertas | basado en objetivos | Tabla `REGLAS`: tipo de evento → (TipoAlerta, NivelPrioridad). Envía `Alerta` al Coordinador |
 | AgenteCoordinador | basado en utilidad | Consulta al Consultor, genera planes de desvío (`generar_planes`), elige el de mayor utilidad, ordena al Semafórico (`activarPlan`) y al Comunicador, mantiene el plan `SEGUNDOS_PLAN`=300 s (`--duracion N`) y restaura el normal |
 | AgenteConsultor | reactivo basado en modelos | Modelo del tráfico con los sensores `sma/sensores/<cruce>`: responde `consultarEstadoVial` (nivel por umbrales) y `consultarColaMedia` (historia 15 min), con caché de 5 s |
-| AgentePredictor | híbrido: basado en modelos + utilidad | Responde `predecirRutaHuida` (por ahora reglas simples) |
-| AgenteSemaforico | objetivos + **Q-learning** | Control adaptativo cada 12 s: con las colas A/B decide `normal`/`prioridad_a`/`prioridad_b` y aprende (tabla Q en `agentes/memoria/`); los modos del plan son sugerencias (`cerco`/`peatonal` se respetan). `activarPlan` trae un modo por cruce y lo publica en `sma/semaforo/<cruce>`, además publica el plan en `sma/plan/<cruce>`; `restaurarPlanNormal`→`normal` (se conservan `abrirCorredorEmergencia`→`corredor` y `activarCerco`→`cerco`) |
+| AgentePredictor | híbrido: basado en modelos + utilidad | **T-GCN** (predicción de colas a 36 s, `inform PrediccionColas` cada 12 s) y `predecirRutaHuida` del Caso 2 (k rutas de Yen + logit, acceso A/B y segundos a cada cruce) |
+| AgenteSemaforico | objetivos + **DQN** (tabla Q de respaldo) | Control adaptativo cada 12 s: con las colas A/B y la predicción decide `normal`/`prioridad_a`/`prioridad_b` con la DQN y su capa de seguridad (la tabla Q en `agentes/memoria/` sigue aprendiendo); los modos del plan son sugerencias (`cerco`/`peatonal` se respetan). `activarPlan` trae un modo por cruce y lo publica en `sma/semaforo/<cruce>`, además publica el plan en `sma/plan/<cruce>`; `restaurarPlanNormal`→`normal` (se conservan `abrirCorredorEmergencia`→`corredor` y `activarCerco`→`cerco`) |
 | AgenteComunicador | basado en objetivos | Un LLM local (Ollama `llama3.2:3b`) redacta el aviso y lo envía por **Telegram** al grupo de la Ciudadanía o al de la Policía (`agentes/comunicador.py`). Si el LLM falla o cambia datos (cruces, calles, cifras) se usa la plantilla; Seguridad va SIEMPRE solo a la Policía |
 
 Enumeraciones del dominio: `TipoAlerta {Movilidad, Seguridad, Mixta}`,
@@ -137,7 +137,8 @@ SMA_IA/
 │   ├── entrenar_predictor.py, entrenar_dqn.py
 │   ├── datos/ (limpios + reporte_limpieza.md; crudos/ ignorado)   sumo/ (red SUMO)   entrenados/ (.pt, métricas, gráficas)
 ├── pruebas/prueba_punta_a_punta.py (Caso 1 sin ESP32 ni panel; funciona en Windows), prueba_caso2.py (Caso 2)
-├── vision/camara.py           (Caso 2: webcam + YuNet/SFace; modelos/ y registro/ ignorados por Git)
+├── vision/camara.py           (Caso 2: webcam + YuNet/SFace; modelos/ y registro/ ignorados por Git; --medir)
+├── mediciones/medir.py        (caso1, caso2, comunicador, latencia, informe -> docs/resultados/; .respaldo/ ignorado)
 ├── esp32/
 │   ├── esp32_mqtt_prueba/esp32_mqtt_prueba.ino   (prueba del LED azul)
 │   └── esp32_cruce/esp32_cruce.ino               (cruce con 2 semáforos + botón en GPIO4)
@@ -147,7 +148,7 @@ SMA_IA/
 │   ├── preparar_bocagrande.py (descarga OSM/Overpass y genera los dos JSON)
 │   ├── simulador_ciudad.py
 │   └── panel/                 (servidor_panel.py, index.html = vista 3D, static/bocagrande3d.js, mapa2d.html)
-└── docs/                      (diagramas .drawio/.pdf, documento Word, checklist, informe)
+└── docs/                      (diagramas, documento Word, checklist, resultados/, Especificaciones_Tecnicas_SMA.pdf + generar_especificaciones.py)
 ```
 
 Pines del ESP32 (cruce1): A rojo/amarillo/verde = GPIO 25/26/27, B = 32/33/13, botón = GPIO4 a GND (INPUT_PULLUP),
@@ -162,7 +163,8 @@ corregido, Mosquitto + ESP32 conectados, 7 agentes SPADE funcionando con el Caso
 (Three.js) con datos reales de OSM: 5 cruces semaforizados, carros y peatones simulados en el navegador que obedecen
 los semáforos y reaccionan a eventos (accidente, congestión, aglomeración, cerco). Ver sección 9.
 
-Pendiente (en orden): mediciones y resultados → informe. (Caso 2 hecho el 21-nov: ver sección 5. Comunicador con
+Mediciones HECHAS el 22-nov (`mediciones/medir.py`, resultados en `docs/resultados/resultados.md`; resumen en el
+README). Pendiente: informe final y PDF de especificaciones con el Caso 2, el Comunicador y los resultados. (Caso 2 hecho el 21-nov: ver sección 5. Comunicador con
 Telegram + LLM hecho el 22-nov: bot @comunic4dor_bot, grupos "Ciudadanía" y "Policía"; Ollama instalado con winget.
 Las pruebas automáticas ponen `SMA_SIN_TELEGRAM=1` para no escribir a los grupos reales.)
 
