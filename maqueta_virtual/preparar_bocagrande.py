@@ -263,9 +263,7 @@ def corregir_sentidos(nodos, aristas, cruces):
     sm = [i for i, a in enumerate(aristas) if a["nombre"] == "Avenida San Martín" and a["unico"]
           and (a["a"] in c3["nodos"]) != (a["b"] in c3["nodos"])
           and nodos[a["b"] if a["a"] in c3["nodos"] else a["a"]][1] < zc3]      # tocan el cruce3 por el lado norte
-    if len(sm) != 2:
-        return                                                                 # ya corregido (o la red cambió)
-    for iy, ix in (sm, sm[::-1]):
+    for iy, ix in ((sm, sm[::-1]) if len(sm) == 2 else ()):                  # si no son 2, ya está partido
         y, x = aristas[iy], aristas[ix]
         j = x["b"] if x["a"] in c3["nodos"] else x["a"]                        # extremo norte del tramo paralelo
         d = [dist(q, nodos[j]) for q in y["p"][1:-1]]
@@ -277,7 +275,21 @@ def corregir_sentidos(nodos, aristas, cruces):
             for e in (x, y):
                 e["largo"] = round(sum(dist(e["p"][i], e["p"][i + 1]) for i in range(len(e["p"]) - 1)), 1)
             print(f"  corrección: San Martín Calle 10A -> cruce3 una sola calzada de entrada ({x['largo']} m)")
-            return
+            break
+
+    # En esa Y (donde la Calle 10A cae a la San Martín) los carros SOLO cruzan hacia Bocagrande: no hay incorporación
+    # a la calzada de salida (sentido Centro Histórico). Se quita el tramo de OSM que sale de la Y hacia el norte.
+    # La salida de la Carrera 3 sigue por el otro brazo de la Calle 10A hacia la calzada junto a la Base Naval.
+    hacia_c3 = [a for a in aristas if a["nombre"] == "Avenida San Martín" and a["b"] in c3["nodos"]
+                and a["a"] not in c3["nodos"] and nodos[a["a"]][1] < zc3]
+    for y in hacia_c3:
+        j = y["a"]
+        llega_10a = any(a["b"] == j and a["nombre"] == "Calle 10A" for a in aristas)
+        quitar = [a for a in aristas if llega_10a and a["a"] == j and a["nombre"] == "Avenida San Martín"
+                  and a["b"] not in c3["nodos"]]
+        for a in quitar:
+            aristas.remove(a)
+            print(f"  corrección: sin incorporación hacia el Centro en la Y de la Calle 10A ({a['largo']} m)")
 
 
 def main():

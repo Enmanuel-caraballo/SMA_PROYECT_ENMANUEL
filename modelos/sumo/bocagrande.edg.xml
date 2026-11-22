@@ -223,110 +223,109 @@
   <edge id="e221" from="n6" to="n119" numLanes="1" speed="10.0" shape="283.00,-65.40 305.10,-9.80 312.80,9.40 329.20,50.40" name="Avenida Chile"/>
   <edge id="e222" from="n119" to="n6" numLanes="1" speed="10.0" shape="329.20,50.40 312.80,9.40 305.10,-9.80 283.00,-65.40" name="Avenida Chile"/>
   <edge id="e223" from="n118" to="n93" numLanes="3" speed="12.0" shape="401.50,455.20 386.70,446.50 318.80,369.80 317.50,368.40 316.00,366.60" name="Avenida San Martín"/>
-  <edge id="e224" from="n118" to="n88" numLanes="2" speed="12.0" shape="401.50,455.20 415.40,471.70 434.80,499.50 445.20,512.80 455.80,523.70" name="Avenida San Martín"/>
-  <edge id="e225" from="n88" to="n130" numLanes="2" speed="12.0" shape="455.80,523.70 472.40,569.50 476.90,587.20 480.50,604.00 530.30,1152.50 530.80,1166.60 530.60,1173.60 529.70,1180.70" name="Avenida San Martín"/>
-  <edge id="e226" from="n131" to="n132" numLanes="2" speed="10.0" shape="-508.10,-617.40 -504.70,-622.40 -501.50,-626.70 -467.90,-672.40" name="Calle 4"/>
-  <edge id="e227" from="n111" to="n133" numLanes="2" speed="10.0" shape="-624.40,-453.70 -621.40,-458.10 -565.40,-536.80" name="Calle 4"/>
-  <edge id="e228" from="n121" to="n108" numLanes="1" speed="10.0" shape="-32.80,-606.50 -11.00,-587.10" name="Carrera 6"/>
-  <edge id="e229" from="n108" to="n121" numLanes="1" speed="10.0" shape="-11.00,-587.10 -32.80,-606.50" name="Carrera 6"/>
-  <edge id="e230" from="n134" to="n121" numLanes="1" speed="10.0" shape="-66.20,-635.30 -32.80,-606.50" name="Carrera 6"/>
-  <edge id="e231" from="n121" to="n134" numLanes="1" speed="10.0" shape="-32.80,-606.50 -66.20,-635.30" name="Carrera 6"/>
-  <edge id="e232" from="n132" to="n44" numLanes="2" speed="10.0" shape="-467.90,-672.40 -451.70,-693.70" name="Calle 4"/>
-  <edge id="e233" from="n44" to="n14" numLanes="2" speed="10.0" shape="-451.70,-693.70 -436.50,-713.90 -420.60,-735.70 -392.70,-772.20" name="Calle 4"/>
-  <edge id="e234" from="n25" to="n82" numLanes="2" speed="12.0" shape="-381.40,-523.10 -267.00,-429.00" name="Carrera 3"/>
-  <edge id="e235" from="n82" to="n135" numLanes="2" speed="12.0" shape="-267.00,-429.00 -210.70,-378.00 -207.50,-375.10" name="Carrera 3"/>
-  <edge id="e236" from="n135" to="n102" numLanes="2" speed="12.0" shape="-207.50,-375.10 -160.60,-328.60" name="Carrera 3"/>
-  <edge id="e237" from="n102" to="n59" numLanes="2" speed="12.0" shape="-160.60,-328.60 -54.80,-219.60" name="Carrera 3"/>
-  <edge id="e238" from="n117" to="n64" numLanes="2" speed="10.0" shape="-669.40,-489.00 -721.70,-555.40" name="Carrera 1"/>
-  <edge id="e239" from="n23" to="n136" numLanes="1" speed="8.0" shape="670.70,-1175.90 692.70,-1140.80"/>
-  <edge id="e240" from="n136" to="n23" numLanes="1" speed="8.0" shape="692.70,-1140.80 670.70,-1175.90"/>
-  <edge id="e241" from="n70" to="n137" numLanes="1" speed="8.0" shape="283.20,-891.50 323.40,-916.00"/>
-  <edge id="e242" from="n137" to="n70" numLanes="1" speed="8.0" shape="323.40,-916.00 283.20,-891.50"/>
-  <edge id="e243" from="n72" to="n80" numLanes="1" speed="10.0" shape="322.00,-1094.30 374.20,-1126.40" name="Calle 5"/>
-  <edge id="e244" from="n80" to="n72" numLanes="1" speed="10.0" shape="374.20,-1126.40 322.00,-1094.30" name="Calle 5"/>
-  <edge id="e245" from="n138" to="n72" numLanes="1" speed="10.0" shape="294.60,-1077.20 322.00,-1094.30" name="Calle 5"/>
-  <edge id="e246" from="n72" to="n138" numLanes="1" speed="10.0" shape="322.00,-1094.30 294.60,-1077.20" name="Calle 5"/>
-  <edge id="e247" from="n139" to="n138" numLanes="1" speed="10.0" shape="249.70,-1049.30 255.50,-1052.90 294.60,-1077.20" name="Calle 5"/>
-  <edge id="e248" from="n138" to="n139" numLanes="1" speed="10.0" shape="294.60,-1077.20 255.50,-1052.90 249.70,-1049.30" name="Calle 5"/>
-  <edge id="e249" from="n71" to="n139" numLanes="1" speed="10.0" shape="203.90,-1020.90 249.70,-1049.30" name="Calle 5"/>
-  <edge id="e250" from="n139" to="n71" numLanes="1" speed="10.0" shape="249.70,-1049.30 203.90,-1020.90" name="Calle 5"/>
-  <edge id="e251" from="n140" to="n71" numLanes="1" speed="10.0" shape="168.30,-999.20 203.90,-1020.90" name="Calle 5"/>
-  <edge id="e252" from="n71" to="n140" numLanes="1" speed="10.0" shape="203.90,-1020.90 168.30,-999.20" name="Calle 5"/>
-  <edge id="e253" from="n141" to="n140" numLanes="1" speed="10.0" shape="124.20,-972.30 168.30,-999.20" name="Calle 5"/>
-  <edge id="e254" from="n140" to="n141" numLanes="1" speed="10.0" shape="168.30,-999.20 124.20,-972.30" name="Calle 5"/>
-  <edge id="e255" from="n67" to="n141" numLanes="1" speed="10.0" shape="81.90,-946.50 110.30,-963.80 124.20,-972.30" name="Calle 5"/>
-  <edge id="e256" from="n141" to="n67" numLanes="1" speed="10.0" shape="124.20,-972.30 110.30,-963.80 81.90,-946.50" name="Calle 5"/>
-  <edge id="e257" from="n142" to="n67" numLanes="1" speed="10.0" shape="46.10,-924.70 81.90,-946.50" name="Calle 5"/>
-  <edge id="e258" from="n67" to="n142" numLanes="1" speed="10.0" shape="81.90,-946.50 46.10,-924.70" name="Calle 5"/>
-  <edge id="e259" from="n143" to="n142" numLanes="1" speed="10.0" shape="-6.00,-893.00 46.10,-924.70" name="Calle 5"/>
-  <edge id="e260" from="n142" to="n143" numLanes="1" speed="10.0" shape="46.10,-924.70 -6.00,-893.00" name="Calle 5"/>
-  <edge id="e261" from="n13" to="n143" numLanes="1" speed="10.0" shape="-38.60,-873.30 -6.00,-893.00" name="Calle 5"/>
-  <edge id="e262" from="n143" to="n13" numLanes="1" speed="10.0" shape="-6.00,-893.00 -38.60,-873.30" name="Calle 5"/>
-  <edge id="e263" from="n144" to="n13" numLanes="1" speed="10.0" shape="-64.70,-857.10 -38.60,-873.30" name="Calle 5"/>
-  <edge id="e264" from="n13" to="n144" numLanes="1" speed="10.0" shape="-38.60,-873.30 -64.70,-857.10" name="Calle 5"/>
-  <edge id="e265" from="n51" to="n144" numLanes="1" speed="10.0" shape="-207.30,-750.50 -195.40,-765.50 -182.30,-778.70 -163.60,-794.90 -145.40,-807.30 -129.30,-817.90 -108.70,-829.70 -95.70,-837.80 -71.20,-853.00 -64.70,-857.10" name="Calle 5"/>
-  <edge id="e266" from="n144" to="n51" numLanes="1" speed="10.0" shape="-64.70,-857.10 -71.20,-853.00 -95.70,-837.80 -108.70,-829.70 -129.30,-817.90 -145.40,-807.30 -163.60,-794.90 -182.30,-778.70 -195.40,-765.50 -207.30,-750.50" name="Calle 5"/>
-  <edge id="e267" from="n145" to="n43" numLanes="2" speed="10.0" shape="-304.30,-623.30 -323.50,-599.20" name="Calle 5"/>
-  <edge id="e268" from="n30" to="n145" numLanes="2" speed="10.0" shape="-262.90,-675.40 -304.30,-623.30" name="Calle 5"/>
-  <edge id="e269" from="n146" to="n30" numLanes="2" speed="10.0" shape="-237.40,-709.90 -262.90,-675.40" name="Calle 5"/>
-  <edge id="e270" from="n51" to="n146" numLanes="2" speed="10.0" shape="-207.30,-750.50 -237.40,-709.90" name="Calle 5"/>
-  <edge id="e271" from="n31" to="n129" numLanes="2" speed="10.0" shape="-72.10,-518.30 -25.30,-571.90" name="Calle 6"/>
-  <edge id="e272" from="n89" to="n31" numLanes="2" speed="10.0" shape="-93.50,-496.00 -75.20,-515.00 -72.10,-518.30" name="Calle 6"/>
-  <edge id="e273" from="n147" to="n41" numLanes="2" speed="10.0" shape="-165.90,-419.10 -142.90,-443.30 -139.50,-446.90" name="Calle 6"/>
-  <edge id="e274" from="n123" to="n135" numLanes="2" speed="10.0" shape="-272.20,-304.80 -267.80,-309.50 -211.00,-371.20 -207.50,-375.10" name="Calle 6"/>
-  <edge id="e275" from="n135" to="n147" numLanes="2" speed="10.0" shape="-207.50,-375.10 -203.70,-379.20 -165.90,-419.10" name="Calle 6"/>
-  <edge id="e276" from="n85" to="n100" numLanes="3" speed="8.0" shape="518.60,1188.30 522.50,1188.80 526.90,1190.70" name="Calle 15"/>
-  <edge id="e277" from="n125" to="n46" numLanes="3" speed="12.0" shape="66.50,69.50 14.10,9.10" name="Carrera 2"/>
-  <edge id="e278" from="n46" to="n124" numLanes="3" speed="12.0" shape="14.10,9.10 -69.10,-92.00" name="Carrera 2"/>
-  <edge id="e279" from="n148" to="n133" numLanes="3" speed="12.0" shape="-525.60,-507.70 -562.10,-534.40 -565.40,-536.80" name="Carrera 2"/>
-  <edge id="e280" from="n133" to="n104" numLanes="3" speed="12.0" shape="-565.40,-536.80 -580.70,-547.00" name="Carrera 2"/>
-  <edge id="e281" from="n126" to="n26" numLanes="3" speed="12.0" shape="-391.90,-405.00 -437.10,-441.90 -440.70,-444.80" name="Carrera 2"/>
-  <edge id="e282" from="n26" to="n148" numLanes="3" speed="12.0" shape="-440.70,-444.80 -525.60,-507.70" name="Carrera 2"/>
-  <edge id="e283" from="n149" to="n123" numLanes="2" speed="10.0" shape="-296.40,-278.50 -276.90,-299.70 -272.20,-304.80" name="Calle 6"/>
-  <edge id="e284" from="n110" to="n149" numLanes="2" speed="10.0" shape="-338.50,-232.30 -334.30,-237.30 -296.40,-278.50" name="Calle 6"/>
-  <edge id="e285" from="n150" to="n77" numLanes="1" speed="10.0" shape="822.20,-1132.80 801.90,-1120.20" name="Calle 6"/>
-  <edge id="e286" from="n77" to="n150" numLanes="1" speed="10.0" shape="801.90,-1120.20 822.20,-1132.80" name="Calle 6"/>
-  <edge id="e287" from="n77" to="n78" numLanes="1" speed="10.0" shape="801.90,-1120.20 780.40,-1107.20" name="Calle 6"/>
-  <edge id="e288" from="n78" to="n77" numLanes="1" speed="10.0" shape="780.40,-1107.20 801.90,-1120.20" name="Calle 6"/>
-  <edge id="e289" from="n115" to="n150" numLanes="1" speed="10.0" shape="922.60,-1197.40 893.20,-1176.70 880.10,-1168.60 822.20,-1132.80" name="Calle 6"/>
-  <edge id="e290" from="n150" to="n115" numLanes="1" speed="10.0" shape="822.20,-1132.80 880.10,-1168.60 893.20,-1176.70 922.60,-1197.40" name="Calle 6"/>
-  <edge id="e291" from="n79" to="n73" numLanes="1" speed="10.0" shape="472.40,-918.70 442.00,-900.30" name="Calle 6"/>
-  <edge id="e292" from="n73" to="n79" numLanes="1" speed="10.0" shape="442.00,-900.30 472.40,-918.70" name="Calle 6"/>
-  <edge id="e293" from="n73" to="n151" numLanes="1" speed="10.0" shape="442.00,-900.30 411.60,-882.10" name="Calle 6"/>
-  <edge id="e294" from="n151" to="n73" numLanes="1" speed="10.0" shape="411.60,-882.10 442.00,-900.30" name="Calle 6"/>
-  <edge id="e295" from="n151" to="n152" numLanes="1" speed="10.0" shape="411.60,-882.10 373.20,-858.10 353.30,-845.70" name="Calle 6"/>
-  <edge id="e296" from="n152" to="n151" numLanes="1" speed="10.0" shape="353.30,-845.70 373.20,-858.10 411.60,-882.10" name="Calle 6"/>
-  <edge id="e297" from="n152" to="n69" numLanes="1" speed="10.0" shape="353.30,-845.70 322.90,-826.20" name="Calle 6"/>
-  <edge id="e298" from="n69" to="n152" numLanes="1" speed="10.0" shape="322.90,-826.20 353.30,-845.70" name="Calle 6"/>
-  <edge id="e299" from="n69" to="n153" numLanes="1" speed="10.0" shape="322.90,-826.20 291.50,-806.30" name="Calle 6"/>
-  <edge id="e300" from="n153" to="n69" numLanes="1" speed="10.0" shape="291.50,-806.30 322.90,-826.20" name="Calle 6"/>
-  <edge id="e301" from="n153" to="n68" numLanes="1" speed="10.0" shape="291.50,-806.30 203.60,-750.50" name="Calle 6"/>
-  <edge id="e302" from="n68" to="n153" numLanes="1" speed="10.0" shape="203.60,-750.50 291.50,-806.30" name="Calle 6"/>
-  <edge id="e303" from="n68" to="n154" numLanes="1" speed="10.0" shape="203.60,-750.50 120.70,-698.30" name="Calle 6"/>
-  <edge id="e304" from="n154" to="n68" numLanes="1" speed="10.0" shape="120.70,-698.30 203.60,-750.50" name="Calle 6"/>
-  <edge id="e305" from="n154" to="n11" numLanes="1" speed="10.0" shape="120.70,-698.30 85.20,-675.90" name="Calle 6"/>
-  <edge id="e306" from="n11" to="n154" numLanes="1" speed="10.0" shape="85.20,-675.90 120.70,-698.30" name="Calle 6"/>
-  <edge id="e307" from="n81" to="n75" numLanes="1" speed="10.0" shape="414.80,-1155.00 441.70,-1172.70" name="Calle 5"/>
-  <edge id="e308" from="n75" to="n81" numLanes="1" speed="10.0" shape="441.70,-1172.70 414.80,-1155.00" name="Calle 5"/>
-  <edge id="e309" from="n75" to="n155" numLanes="1" speed="10.0" shape="441.70,-1172.70 468.30,-1188.40" name="Calle 5"/>
-  <edge id="e310" from="n155" to="n75" numLanes="1" speed="10.0" shape="468.30,-1188.40 441.70,-1172.70" name="Calle 5"/>
-  <edge id="e311" from="n22" to="n156" numLanes="1" speed="8.0" shape="652.60,-1164.70 649.20,-1169.40"/>
-  <edge id="e312" from="n156" to="n22" numLanes="1" speed="8.0" shape="649.20,-1169.40 652.60,-1164.70"/>
-  <edge id="e313" from="n133" to="n131" numLanes="2" speed="10.0" shape="-565.40,-536.80 -512.90,-610.60 -511.30,-613.00 -508.10,-617.40" name="Calle 4"/>
-  <edge id="e314" from="n157" to="n113" numLanes="2" speed="12.0" shape="-628.50,-698.40 -622.70,-697.30 -613.80,-693.50 -553.60,-650.10" name="Carrera 3"/>
-  <edge id="e315" from="n113" to="n131" numLanes="2" speed="12.0" shape="-553.60,-650.10 -513.00,-621.00 -508.10,-617.40" name="Carrera 3"/>
-  <edge id="e316" from="n104" to="n62" numLanes="2" speed="12.0" shape="-580.70,-547.00 -591.00,-549.10 -601.60,-549.50 -612.20,-548.20 -622.40,-545.30 -631.90,-540.80" name="Carrera 2"/>
-  <edge id="e317" from="n10" to="n157" numLanes="2" speed="12.0" shape="-711.70,-683.20 -695.10,-684.60 -673.40,-689.40 -660.10,-693.20 -647.00,-696.30 -636.50,-698.60 -628.50,-698.40" name="Avenida el Retorno"/>
-  <edge id="e318" from="n128" to="n9" numLanes="2" speed="12.0" shape="-772.30,-890.30 -797.20,-857.10 -801.70,-847.80 -805.20,-837.70 -807.40,-827.70 -808.50,-812.00 -809.10,-789.60 -806.50,-761.60" name="Avenida el Retorno"/>
-  <edge id="e319" from="n111" to="n117" numLanes="1" speed="10.0" shape="-624.40,-453.70 -643.00,-466.40 -661.30,-480.20 -669.40,-489.00" name="Carrera 1"/>
-  <edge id="e320" from="n117" to="n111" numLanes="1" speed="10.0" shape="-669.40,-489.00 -661.30,-480.20 -643.00,-466.40 -624.40,-453.70" name="Carrera 1"/>
-  <edge id="e321" from="n59" to="n0" numLanes="2" speed="12.0" shape="-54.80,-219.60 89.50,-55.30" name="Carrera 3"/>
-  <edge id="e322" from="n0" to="n38" numLanes="2" speed="8.0" shape="89.50,-55.30 93.30,-58.60 163.40,-118.40" name="Calle 8"/>
-  <edge id="e323" from="n38" to="n5" numLanes="2" speed="8.0" shape="163.40,-118.40 236.70,-181.00" name="Calle 8"/>
-  <edge id="e324" from="n16" to="n134" numLanes="1" speed="10.0" shape="-123.80,-684.10 -103.90,-667.30 -66.20,-635.30" name="Carrera 6"/>
-  <edge id="e325" from="n134" to="n16" numLanes="1" speed="10.0" shape="-66.20,-635.30 -103.90,-667.30 -123.80,-684.10" name="Carrera 6"/>
-  <edge id="e326" from="n131" to="n25" numLanes="2" speed="12.0" shape="-508.10,-617.40 -381.40,-523.10" name="Carrera 3"/>
-  <edge id="e327" from="n43" to="n25" numLanes="2" speed="10.0" shape="-323.50,-599.20 -378.20,-527.30 -381.40,-523.10" name="Calle 5"/>
-  <edge id="e328" from="n35" to="n47" numLanes="2" speed="10.0" shape="357.30,106.60 417.50,270.20" name="Avenida Chile"/>
-  <edge id="e329" from="n2" to="n93" numLanes="2" speed="8.0" shape="390.00,303.60 386.90,306.30 322.60,361.00 316.00,366.60" name="Calle 10"/>
+  <edge id="e224" from="n88" to="n130" numLanes="2" speed="12.0" shape="455.80,523.70 472.40,569.50 476.90,587.20 480.50,604.00 530.30,1152.50 530.80,1166.60 530.60,1173.60 529.70,1180.70" name="Avenida San Martín"/>
+  <edge id="e225" from="n131" to="n132" numLanes="2" speed="10.0" shape="-508.10,-617.40 -504.70,-622.40 -501.50,-626.70 -467.90,-672.40" name="Calle 4"/>
+  <edge id="e226" from="n111" to="n133" numLanes="2" speed="10.0" shape="-624.40,-453.70 -621.40,-458.10 -565.40,-536.80" name="Calle 4"/>
+  <edge id="e227" from="n121" to="n108" numLanes="1" speed="10.0" shape="-32.80,-606.50 -11.00,-587.10" name="Carrera 6"/>
+  <edge id="e228" from="n108" to="n121" numLanes="1" speed="10.0" shape="-11.00,-587.10 -32.80,-606.50" name="Carrera 6"/>
+  <edge id="e229" from="n134" to="n121" numLanes="1" speed="10.0" shape="-66.20,-635.30 -32.80,-606.50" name="Carrera 6"/>
+  <edge id="e230" from="n121" to="n134" numLanes="1" speed="10.0" shape="-32.80,-606.50 -66.20,-635.30" name="Carrera 6"/>
+  <edge id="e231" from="n132" to="n44" numLanes="2" speed="10.0" shape="-467.90,-672.40 -451.70,-693.70" name="Calle 4"/>
+  <edge id="e232" from="n44" to="n14" numLanes="2" speed="10.0" shape="-451.70,-693.70 -436.50,-713.90 -420.60,-735.70 -392.70,-772.20" name="Calle 4"/>
+  <edge id="e233" from="n25" to="n82" numLanes="2" speed="12.0" shape="-381.40,-523.10 -267.00,-429.00" name="Carrera 3"/>
+  <edge id="e234" from="n82" to="n135" numLanes="2" speed="12.0" shape="-267.00,-429.00 -210.70,-378.00 -207.50,-375.10" name="Carrera 3"/>
+  <edge id="e235" from="n135" to="n102" numLanes="2" speed="12.0" shape="-207.50,-375.10 -160.60,-328.60" name="Carrera 3"/>
+  <edge id="e236" from="n102" to="n59" numLanes="2" speed="12.0" shape="-160.60,-328.60 -54.80,-219.60" name="Carrera 3"/>
+  <edge id="e237" from="n117" to="n64" numLanes="2" speed="10.0" shape="-669.40,-489.00 -721.70,-555.40" name="Carrera 1"/>
+  <edge id="e238" from="n23" to="n136" numLanes="1" speed="8.0" shape="670.70,-1175.90 692.70,-1140.80"/>
+  <edge id="e239" from="n136" to="n23" numLanes="1" speed="8.0" shape="692.70,-1140.80 670.70,-1175.90"/>
+  <edge id="e240" from="n70" to="n137" numLanes="1" speed="8.0" shape="283.20,-891.50 323.40,-916.00"/>
+  <edge id="e241" from="n137" to="n70" numLanes="1" speed="8.0" shape="323.40,-916.00 283.20,-891.50"/>
+  <edge id="e242" from="n72" to="n80" numLanes="1" speed="10.0" shape="322.00,-1094.30 374.20,-1126.40" name="Calle 5"/>
+  <edge id="e243" from="n80" to="n72" numLanes="1" speed="10.0" shape="374.20,-1126.40 322.00,-1094.30" name="Calle 5"/>
+  <edge id="e244" from="n138" to="n72" numLanes="1" speed="10.0" shape="294.60,-1077.20 322.00,-1094.30" name="Calle 5"/>
+  <edge id="e245" from="n72" to="n138" numLanes="1" speed="10.0" shape="322.00,-1094.30 294.60,-1077.20" name="Calle 5"/>
+  <edge id="e246" from="n139" to="n138" numLanes="1" speed="10.0" shape="249.70,-1049.30 255.50,-1052.90 294.60,-1077.20" name="Calle 5"/>
+  <edge id="e247" from="n138" to="n139" numLanes="1" speed="10.0" shape="294.60,-1077.20 255.50,-1052.90 249.70,-1049.30" name="Calle 5"/>
+  <edge id="e248" from="n71" to="n139" numLanes="1" speed="10.0" shape="203.90,-1020.90 249.70,-1049.30" name="Calle 5"/>
+  <edge id="e249" from="n139" to="n71" numLanes="1" speed="10.0" shape="249.70,-1049.30 203.90,-1020.90" name="Calle 5"/>
+  <edge id="e250" from="n140" to="n71" numLanes="1" speed="10.0" shape="168.30,-999.20 203.90,-1020.90" name="Calle 5"/>
+  <edge id="e251" from="n71" to="n140" numLanes="1" speed="10.0" shape="203.90,-1020.90 168.30,-999.20" name="Calle 5"/>
+  <edge id="e252" from="n141" to="n140" numLanes="1" speed="10.0" shape="124.20,-972.30 168.30,-999.20" name="Calle 5"/>
+  <edge id="e253" from="n140" to="n141" numLanes="1" speed="10.0" shape="168.30,-999.20 124.20,-972.30" name="Calle 5"/>
+  <edge id="e254" from="n67" to="n141" numLanes="1" speed="10.0" shape="81.90,-946.50 110.30,-963.80 124.20,-972.30" name="Calle 5"/>
+  <edge id="e255" from="n141" to="n67" numLanes="1" speed="10.0" shape="124.20,-972.30 110.30,-963.80 81.90,-946.50" name="Calle 5"/>
+  <edge id="e256" from="n142" to="n67" numLanes="1" speed="10.0" shape="46.10,-924.70 81.90,-946.50" name="Calle 5"/>
+  <edge id="e257" from="n67" to="n142" numLanes="1" speed="10.0" shape="81.90,-946.50 46.10,-924.70" name="Calle 5"/>
+  <edge id="e258" from="n143" to="n142" numLanes="1" speed="10.0" shape="-6.00,-893.00 46.10,-924.70" name="Calle 5"/>
+  <edge id="e259" from="n142" to="n143" numLanes="1" speed="10.0" shape="46.10,-924.70 -6.00,-893.00" name="Calle 5"/>
+  <edge id="e260" from="n13" to="n143" numLanes="1" speed="10.0" shape="-38.60,-873.30 -6.00,-893.00" name="Calle 5"/>
+  <edge id="e261" from="n143" to="n13" numLanes="1" speed="10.0" shape="-6.00,-893.00 -38.60,-873.30" name="Calle 5"/>
+  <edge id="e262" from="n144" to="n13" numLanes="1" speed="10.0" shape="-64.70,-857.10 -38.60,-873.30" name="Calle 5"/>
+  <edge id="e263" from="n13" to="n144" numLanes="1" speed="10.0" shape="-38.60,-873.30 -64.70,-857.10" name="Calle 5"/>
+  <edge id="e264" from="n51" to="n144" numLanes="1" speed="10.0" shape="-207.30,-750.50 -195.40,-765.50 -182.30,-778.70 -163.60,-794.90 -145.40,-807.30 -129.30,-817.90 -108.70,-829.70 -95.70,-837.80 -71.20,-853.00 -64.70,-857.10" name="Calle 5"/>
+  <edge id="e265" from="n144" to="n51" numLanes="1" speed="10.0" shape="-64.70,-857.10 -71.20,-853.00 -95.70,-837.80 -108.70,-829.70 -129.30,-817.90 -145.40,-807.30 -163.60,-794.90 -182.30,-778.70 -195.40,-765.50 -207.30,-750.50" name="Calle 5"/>
+  <edge id="e266" from="n145" to="n43" numLanes="2" speed="10.0" shape="-304.30,-623.30 -323.50,-599.20" name="Calle 5"/>
+  <edge id="e267" from="n30" to="n145" numLanes="2" speed="10.0" shape="-262.90,-675.40 -304.30,-623.30" name="Calle 5"/>
+  <edge id="e268" from="n146" to="n30" numLanes="2" speed="10.0" shape="-237.40,-709.90 -262.90,-675.40" name="Calle 5"/>
+  <edge id="e269" from="n51" to="n146" numLanes="2" speed="10.0" shape="-207.30,-750.50 -237.40,-709.90" name="Calle 5"/>
+  <edge id="e270" from="n31" to="n129" numLanes="2" speed="10.0" shape="-72.10,-518.30 -25.30,-571.90" name="Calle 6"/>
+  <edge id="e271" from="n89" to="n31" numLanes="2" speed="10.0" shape="-93.50,-496.00 -75.20,-515.00 -72.10,-518.30" name="Calle 6"/>
+  <edge id="e272" from="n147" to="n41" numLanes="2" speed="10.0" shape="-165.90,-419.10 -142.90,-443.30 -139.50,-446.90" name="Calle 6"/>
+  <edge id="e273" from="n123" to="n135" numLanes="2" speed="10.0" shape="-272.20,-304.80 -267.80,-309.50 -211.00,-371.20 -207.50,-375.10" name="Calle 6"/>
+  <edge id="e274" from="n135" to="n147" numLanes="2" speed="10.0" shape="-207.50,-375.10 -203.70,-379.20 -165.90,-419.10" name="Calle 6"/>
+  <edge id="e275" from="n85" to="n100" numLanes="3" speed="8.0" shape="518.60,1188.30 522.50,1188.80 526.90,1190.70" name="Calle 15"/>
+  <edge id="e276" from="n125" to="n46" numLanes="3" speed="12.0" shape="66.50,69.50 14.10,9.10" name="Carrera 2"/>
+  <edge id="e277" from="n46" to="n124" numLanes="3" speed="12.0" shape="14.10,9.10 -69.10,-92.00" name="Carrera 2"/>
+  <edge id="e278" from="n148" to="n133" numLanes="3" speed="12.0" shape="-525.60,-507.70 -562.10,-534.40 -565.40,-536.80" name="Carrera 2"/>
+  <edge id="e279" from="n133" to="n104" numLanes="3" speed="12.0" shape="-565.40,-536.80 -580.70,-547.00" name="Carrera 2"/>
+  <edge id="e280" from="n126" to="n26" numLanes="3" speed="12.0" shape="-391.90,-405.00 -437.10,-441.90 -440.70,-444.80" name="Carrera 2"/>
+  <edge id="e281" from="n26" to="n148" numLanes="3" speed="12.0" shape="-440.70,-444.80 -525.60,-507.70" name="Carrera 2"/>
+  <edge id="e282" from="n149" to="n123" numLanes="2" speed="10.0" shape="-296.40,-278.50 -276.90,-299.70 -272.20,-304.80" name="Calle 6"/>
+  <edge id="e283" from="n110" to="n149" numLanes="2" speed="10.0" shape="-338.50,-232.30 -334.30,-237.30 -296.40,-278.50" name="Calle 6"/>
+  <edge id="e284" from="n150" to="n77" numLanes="1" speed="10.0" shape="822.20,-1132.80 801.90,-1120.20" name="Calle 6"/>
+  <edge id="e285" from="n77" to="n150" numLanes="1" speed="10.0" shape="801.90,-1120.20 822.20,-1132.80" name="Calle 6"/>
+  <edge id="e286" from="n77" to="n78" numLanes="1" speed="10.0" shape="801.90,-1120.20 780.40,-1107.20" name="Calle 6"/>
+  <edge id="e287" from="n78" to="n77" numLanes="1" speed="10.0" shape="780.40,-1107.20 801.90,-1120.20" name="Calle 6"/>
+  <edge id="e288" from="n115" to="n150" numLanes="1" speed="10.0" shape="922.60,-1197.40 893.20,-1176.70 880.10,-1168.60 822.20,-1132.80" name="Calle 6"/>
+  <edge id="e289" from="n150" to="n115" numLanes="1" speed="10.0" shape="822.20,-1132.80 880.10,-1168.60 893.20,-1176.70 922.60,-1197.40" name="Calle 6"/>
+  <edge id="e290" from="n79" to="n73" numLanes="1" speed="10.0" shape="472.40,-918.70 442.00,-900.30" name="Calle 6"/>
+  <edge id="e291" from="n73" to="n79" numLanes="1" speed="10.0" shape="442.00,-900.30 472.40,-918.70" name="Calle 6"/>
+  <edge id="e292" from="n73" to="n151" numLanes="1" speed="10.0" shape="442.00,-900.30 411.60,-882.10" name="Calle 6"/>
+  <edge id="e293" from="n151" to="n73" numLanes="1" speed="10.0" shape="411.60,-882.10 442.00,-900.30" name="Calle 6"/>
+  <edge id="e294" from="n151" to="n152" numLanes="1" speed="10.0" shape="411.60,-882.10 373.20,-858.10 353.30,-845.70" name="Calle 6"/>
+  <edge id="e295" from="n152" to="n151" numLanes="1" speed="10.0" shape="353.30,-845.70 373.20,-858.10 411.60,-882.10" name="Calle 6"/>
+  <edge id="e296" from="n152" to="n69" numLanes="1" speed="10.0" shape="353.30,-845.70 322.90,-826.20" name="Calle 6"/>
+  <edge id="e297" from="n69" to="n152" numLanes="1" speed="10.0" shape="322.90,-826.20 353.30,-845.70" name="Calle 6"/>
+  <edge id="e298" from="n69" to="n153" numLanes="1" speed="10.0" shape="322.90,-826.20 291.50,-806.30" name="Calle 6"/>
+  <edge id="e299" from="n153" to="n69" numLanes="1" speed="10.0" shape="291.50,-806.30 322.90,-826.20" name="Calle 6"/>
+  <edge id="e300" from="n153" to="n68" numLanes="1" speed="10.0" shape="291.50,-806.30 203.60,-750.50" name="Calle 6"/>
+  <edge id="e301" from="n68" to="n153" numLanes="1" speed="10.0" shape="203.60,-750.50 291.50,-806.30" name="Calle 6"/>
+  <edge id="e302" from="n68" to="n154" numLanes="1" speed="10.0" shape="203.60,-750.50 120.70,-698.30" name="Calle 6"/>
+  <edge id="e303" from="n154" to="n68" numLanes="1" speed="10.0" shape="120.70,-698.30 203.60,-750.50" name="Calle 6"/>
+  <edge id="e304" from="n154" to="n11" numLanes="1" speed="10.0" shape="120.70,-698.30 85.20,-675.90" name="Calle 6"/>
+  <edge id="e305" from="n11" to="n154" numLanes="1" speed="10.0" shape="85.20,-675.90 120.70,-698.30" name="Calle 6"/>
+  <edge id="e306" from="n81" to="n75" numLanes="1" speed="10.0" shape="414.80,-1155.00 441.70,-1172.70" name="Calle 5"/>
+  <edge id="e307" from="n75" to="n81" numLanes="1" speed="10.0" shape="441.70,-1172.70 414.80,-1155.00" name="Calle 5"/>
+  <edge id="e308" from="n75" to="n155" numLanes="1" speed="10.0" shape="441.70,-1172.70 468.30,-1188.40" name="Calle 5"/>
+  <edge id="e309" from="n155" to="n75" numLanes="1" speed="10.0" shape="468.30,-1188.40 441.70,-1172.70" name="Calle 5"/>
+  <edge id="e310" from="n22" to="n156" numLanes="1" speed="8.0" shape="652.60,-1164.70 649.20,-1169.40"/>
+  <edge id="e311" from="n156" to="n22" numLanes="1" speed="8.0" shape="649.20,-1169.40 652.60,-1164.70"/>
+  <edge id="e312" from="n133" to="n131" numLanes="2" speed="10.0" shape="-565.40,-536.80 -512.90,-610.60 -511.30,-613.00 -508.10,-617.40" name="Calle 4"/>
+  <edge id="e313" from="n157" to="n113" numLanes="2" speed="12.0" shape="-628.50,-698.40 -622.70,-697.30 -613.80,-693.50 -553.60,-650.10" name="Carrera 3"/>
+  <edge id="e314" from="n113" to="n131" numLanes="2" speed="12.0" shape="-553.60,-650.10 -513.00,-621.00 -508.10,-617.40" name="Carrera 3"/>
+  <edge id="e315" from="n104" to="n62" numLanes="2" speed="12.0" shape="-580.70,-547.00 -591.00,-549.10 -601.60,-549.50 -612.20,-548.20 -622.40,-545.30 -631.90,-540.80" name="Carrera 2"/>
+  <edge id="e316" from="n10" to="n157" numLanes="2" speed="12.0" shape="-711.70,-683.20 -695.10,-684.60 -673.40,-689.40 -660.10,-693.20 -647.00,-696.30 -636.50,-698.60 -628.50,-698.40" name="Avenida el Retorno"/>
+  <edge id="e317" from="n128" to="n9" numLanes="2" speed="12.0" shape="-772.30,-890.30 -797.20,-857.10 -801.70,-847.80 -805.20,-837.70 -807.40,-827.70 -808.50,-812.00 -809.10,-789.60 -806.50,-761.60" name="Avenida el Retorno"/>
+  <edge id="e318" from="n111" to="n117" numLanes="1" speed="10.0" shape="-624.40,-453.70 -643.00,-466.40 -661.30,-480.20 -669.40,-489.00" name="Carrera 1"/>
+  <edge id="e319" from="n117" to="n111" numLanes="1" speed="10.0" shape="-669.40,-489.00 -661.30,-480.20 -643.00,-466.40 -624.40,-453.70" name="Carrera 1"/>
+  <edge id="e320" from="n59" to="n0" numLanes="2" speed="12.0" shape="-54.80,-219.60 89.50,-55.30" name="Carrera 3"/>
+  <edge id="e321" from="n0" to="n38" numLanes="2" speed="8.0" shape="89.50,-55.30 93.30,-58.60 163.40,-118.40" name="Calle 8"/>
+  <edge id="e322" from="n38" to="n5" numLanes="2" speed="8.0" shape="163.40,-118.40 236.70,-181.00" name="Calle 8"/>
+  <edge id="e323" from="n16" to="n134" numLanes="1" speed="10.0" shape="-123.80,-684.10 -103.90,-667.30 -66.20,-635.30" name="Carrera 6"/>
+  <edge id="e324" from="n134" to="n16" numLanes="1" speed="10.0" shape="-66.20,-635.30 -103.90,-667.30 -123.80,-684.10" name="Carrera 6"/>
+  <edge id="e325" from="n131" to="n25" numLanes="2" speed="12.0" shape="-508.10,-617.40 -381.40,-523.10" name="Carrera 3"/>
+  <edge id="e326" from="n43" to="n25" numLanes="2" speed="10.0" shape="-323.50,-599.20 -378.20,-527.30 -381.40,-523.10" name="Calle 5"/>
+  <edge id="e327" from="n35" to="n47" numLanes="2" speed="10.0" shape="357.30,106.60 417.50,270.20" name="Avenida Chile"/>
+  <edge id="e328" from="n2" to="n93" numLanes="2" speed="8.0" shape="390.00,303.60 386.90,306.30 322.60,361.00 316.00,366.60" name="Calle 10"/>
 </edges>
