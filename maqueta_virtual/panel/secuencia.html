@@ -16,7 +16,7 @@
   body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.45 "Rajdhani", sans-serif;
     background-image: radial-gradient(circle at 20% 0%, rgba(0,229,255,.08), transparent 45%), radial-gradient(circle at 90% 30%, rgba(176,77,255,.07), transparent 40%);
     display: flex; flex-direction: column; }
-  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; flex-wrap: wrap;
+  header { display: flex; align-items: center; gap: 16px; padding: 10px 20px; flex-wrap: wrap;
     background: rgba(3,5,10,.9); border-bottom: 1px solid var(--borde); }
   h1 { font: 700 18px "Orbitron"; letter-spacing: .14em; margin: 0; color: var(--cian); text-shadow: 0 0 12px rgba(0,229,255,.5); }
   header .sub { color: var(--tenue); font-size: 13px; }
@@ -24,9 +24,10 @@
   header a { color: var(--cian); text-decoration: none; border: 1px solid var(--borde); padding: 4px 10px; border-radius: 6px; }
   .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--rojo); display: inline-block; margin-right: 6px; }
   .punto.ok { background: var(--verde); box-shadow: 0 0 8px var(--verde); }
-  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr) 320px; gap: 14px; padding: 14px 16px; }
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 270px minmax(0, 1fr) 340px; gap: 12px; padding: 12px 14px; }
   .caja { background: var(--vidrio); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
   h2 { font: 700 12px "Orbitron"; letter-spacing: .16em; color: var(--cian); margin: 0 0 8px; text-transform: uppercase; }
+  h3 { font: 700 11px "Orbitron"; letter-spacing: .12em; color: var(--cian); margin: 12px 0 6px; text-transform: uppercase; }
   .tenue { color: var(--tenue); }
   .filtros { display: grid; gap: 4px; font-size: 13px; margin-bottom: 10px; color: var(--tenue); }
   .filtros label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
@@ -41,17 +42,21 @@
   .chip.c1 { color: var(--ambar); border-color: var(--ambar); }
   .chip.c2 { color: var(--rojo); border-color: var(--rojo); }
   .chip.otro { color: var(--violeta); border-color: var(--violeta); }
-  .chip.fondo { color: var(--tenue); border-color: var(--tenue); }
+  .chip.fondo, .chip.descarte { color: var(--tenue); border-color: var(--tenue); }
   .estado { font-size: 12px; }
   .estado.activo { color: var(--verde); }
-  .barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .barra { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
   .titulo { font: 700 13px "Orbitron"; letter-spacing: .06em; color: var(--texto); margin-right: auto; }
   button { font: 600 13px "Rajdhani"; color: var(--cian); background: rgba(0,229,255,.06); border: 1px solid var(--borde);
     border-radius: 8px; padding: 4px 10px; cursor: pointer; }
   button:hover { background: rgba(0,229,255,.14); }
   button.on { background: rgba(0,255,122,.12); color: var(--verde); border-color: rgba(0,255,122,.5); }
-  input[type=range] { width: 130px; accent-color: var(--cian); }
-  .paso { font: 12px "JetBrains Mono"; color: var(--tenue); min-width: 70px; }
+  .grupo { display: inline-flex; }
+  .grupo button { border-radius: 0; }
+  .grupo button:first-child { border-radius: 8px 0 0 8px; }
+  .grupo button:last-child { border-radius: 0 8px 8px 0; border-left: 0; }
+  input[type=range] { width: 120px; accent-color: var(--cian); }
+  .paso { font: 12px "JetBrains Mono"; color: var(--tenue); min-width: 58px; }
   #lienzo { flex: 1; min-height: 0; overflow: auto; border-radius: 10px; background: rgba(0,0,0,.25); padding: 10px; }
   #lienzo svg { max-width: none !important; height: auto; }
   .vacio { color: var(--tenue); padding: 30px; text-align: center; }
@@ -60,16 +65,21 @@
   .resumen span { display: block; font-size: 11px; color: var(--tenue); text-transform: uppercase; letter-spacing: .08em; }
   .resumen b { font: 700 15px "Orbitron"; color: var(--cian); }
   .detalle { overflow-y: auto; font-size: 14px; }
-  .detalle dl { display: grid; grid-template-columns: 92px 1fr; gap: 4px 8px; margin: 0 0 10px; }
+  .detalle dl { display: grid; grid-template-columns: 96px 1fr; gap: 3px 8px; margin: 0 0 8px; }
   .detalle dt { color: var(--tenue); }
   .detalle dd { margin: 0; word-break: break-word; }
-  pre { font: 11.5px/1.4 "JetBrains Mono", monospace; color: #9fe8ff; background: rgba(0,0,0,.35); border-radius: 8px;
-    padding: 8px; white-space: pre-wrap; word-break: break-word; margin: 0; }
-  .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--tenue); margin-top: 8px; }
+  .explica { font-size: 16px; line-height: 1.4; border-left: 3px solid var(--cian); padding: 4px 0 4px 10px; margin: 0 0 6px; }
+  .perf { font: 700 12px "Orbitron"; letter-spacing: .08em; }
+  pre { font: 11.5px/1.45 "JetBrains Mono", monospace; color: #9fe8ff; background: rgba(0,0,0,.35); border-radius: 8px;
+    padding: 8px 10px; white-space: pre-wrap; word-break: break-word; margin: 0; }
+  pre .k { color: #ffb300; } pre .v { color: #d9f4ff; }
+  .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--tenue); margin-top: 8px; }
   .leyenda i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 5px; }
-  .ayuda { font-size: 13px; color: var(--tenue); }
+  .leyenda b { color: var(--texto); font-weight: 600; }
+  .ayuda { font-size: 14px; color: var(--tenue); }
   .ayuda p { margin: 0 0 8px; }
-  /* realce del último mensaje y del seleccionado */
+  .ayuda table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ayuda td { border-top: 1px solid rgba(0,229,255,.12); padding: 4px 4px; vertical-align: top; }
   #lienzo .ultimo { filter: drop-shadow(0 0 4px var(--verde)); stroke-width: 3px !important; }
   #lienzo .elegido { filter: drop-shadow(0 0 5px #fff); stroke-width: 3px !important; }
   #lienzo .messageText { cursor: pointer; }
@@ -80,7 +90,7 @@
 <header>
   <div>
     <h1>SECUENCIA DE AGENTES</h1>
-    <div class="sub">Diagrama de secuencia dinámico · se dibuja con los mensajes FIPA-ACL reales de cada incidente</div>
+    <div class="sub">Diagrama de secuencia UML · mensajes FIPA-ACL reales de cada incidente · ontología <b>sma-ctg</b></div>
   </div>
   <div class="der">
     <span><span class="punto" id="punto"></span><span id="conexion">conectando…</span></span>
@@ -93,8 +103,9 @@
     <h2>Incidentes</h2>
     <div class="filtros">
       <label><input type="checkbox" id="seguir" checked> Seguir el incidente más reciente</label>
+      <label><input type="checkbox" id="verFases" checked> Mostrar las fases del caso</label>
       <label><input type="checkbox" id="verDescartes"> Mostrar rostros descartados</label>
-      <label><input type="checkbox" id="verFondo"> Mostrar control continuo (sin incidente)</label>
+      <label><input type="checkbox" id="verFondo"> Mostrar control continuo</label>
     </div>
     <div class="lista" id="lista"><div class="vacio">Esperando mensajes de los agentes…</div></div>
   </section>
@@ -102,6 +113,7 @@
   <section class="caja">
     <div class="barra">
       <span class="titulo" id="titulo">Sin incidente seleccionado</span>
+      <span class="grupo"><button id="modoPublico" title="Textos en lenguaje cotidiano para la presentación">Público</button><button id="modoTecnico" title="Vista técnica: notación FIPA-ACL «ACL:PERFORMATIVA» (contenido)">FIPA-ACL</button></span>
       <button id="btnInicio" title="Primer paso">⏮</button>
       <button id="btnPlay" title="Reproducir paso a paso">▶ Reproducir</button>
       <button id="btnFin" title="Mostrar todo">⏭</button>
@@ -110,34 +122,32 @@
       <button id="zoomMenos" title="Alejar">−</button>
       <button id="zoomAjustar" title="Ajustar al ancho"><span id="zoomTxt">100 %</span></button>
       <button id="zoomMas" title="Acercar">+</button>
-      <button id="btnSvg">SVG</button>
-      <button id="btnPng">PNG</button>
+      <button id="btnSvg" title="Descargar el diagrama en SVG">SVG</button>
+      <button id="btnPng" title="Descargar el diagrama en PNG">PNG</button>
     </div>
     <div class="resumen">
       <div><span>Mensajes</span><b id="rMsj">0</b></div>
-      <div><span>Agentes</span><b id="rAg">0</b></div>
+      <div><span>Agentes que actuaron</span><b id="rAg">0</b></div>
       <div><span>Duración</span><b id="rDur">-</b></div>
       <div><span>Evento → semáforos</span><b id="rSem">-</b></div>
     </div>
     <div id="lienzo"><div class="vacio">Dispara un evento desde el gemelo 3D (accidente, persona solicitada…) o desde la cámara y la conversación aparecerá aquí.</div></div>
-    <div class="leyenda">
-      <span><i style="border-color:#ffb300"></i>request</span>
-      <span><i style="border-color:#b04dff"></i>query-ref</span>
-      <span><i style="border-color:#00e5ff"></i>inform</span>
-      <span><i style="border-color:#00e5ff;border-top-style:dashed"></i>respuesta</span>
-      <span><i style="border-color:#00ff7a"></i>decisión interna</span>
-      <span><i style="border-color:#ff2bd6"></i>MQTT (dispositivos)</span>
-      <span><i style="border-color:#7CFFB2"></i>Telegram</span>
-    </div>
+    <div class="leyenda" id="leyenda"></div>
   </section>
 
   <section class="caja">
     <h2>Detalle del mensaje</h2>
     <div class="detalle" id="detalle">
       <div class="ayuda">
-        <p>Haz clic en el texto de una flecha para ver el mensaje completo: performativa, acción, contenido y en qué momento se envió.</p>
-        <p>Solo aparecen los agentes que <b>participaron</b> en el incidente: cada caso de uso muestra su propia conversación.</p>
-        <p>Las flechas que vuelven al mismo agente son sus <b>decisiones internas</b> (clasificar, elegir plan, comparar rostro…).</p>
+        <p>Haz clic en el texto de una flecha para ver qué significa y el <b>mensaje FIPA-ACL</b> completo.</p>
+        <p>Solo aparecen los agentes que <b>participaron</b> en el incidente: cada caso de uso tiene su propia conversación.</p>
+        <table>
+          <tr><td class="perf" style="color:#ffb300">REQUEST</td><td>Pide a otro agente que <b>haga</b> algo (perspectiva accional).</td></tr>
+          <tr><td class="perf" style="color:#b04dff">QUERY-REF</td><td><b>Pregunta</b> por un dato (perspectiva cognitiva).</td></tr>
+          <tr><td class="perf" style="color:#00e5ff">INFORM</td><td><b>Comunica</b> un hecho que el agente cree verdadero (perspectiva cognitiva).</td></tr>
+          <tr><td class="perf" style="color:#00ff7a">f()</td><td>Razonamiento <b>interno</b> del agente (no es un mensaje).</td></tr>
+          <tr><td class="perf" style="color:#ff2bd6">MQTT</td><td>Comunicación con el <b>entorno</b>: sensores, cámara, semáforos.</td></tr>
+        </table>
       </div>
     </div>
   </section>
@@ -152,48 +162,66 @@ mermaid.initialize({
     fontFamily: "Rajdhani, sans-serif", fontSize: "15px", background: "transparent",
     actorBkg: "#0b1a2b", actorBorder: "#00e5ff", actorTextColor: "#d9f4ff", actorLineColor: "#2c4a63",
     signalColor: "#9fe8ff", signalTextColor: "#d9f4ff", labelBoxBkgColor: "#0b1a2b", labelBoxBorderColor: "#00e5ff",
-    labelTextColor: "#d9f4ff", noteBkgColor: "#1a1330", noteBorderColor: "#b04dff", noteTextColor: "#e8d9ff",
-    sequenceNumberColor: "#03050a", activationBkgColor: "#11324a",
+    labelTextColor: "#d9f4ff", noteBkgColor: "#0e2236", noteBorderColor: "#2c6e8f", noteTextColor: "#bfefff",
+    sequenceNumberColor: "#03050a", activationBkgColor: "#123a55", activationBorderColor: "#00e5ff",
+    titleColor: "#00e5ff",
   },
-  sequence: { showSequenceNumbers: true, mirrorActors: false, messageMargin: 30, boxMargin: 8, actorMargin: 26,
-              noteMargin: 8, wrap: true, width: 128, height: 52, messageFontSize: 14, actorFontSize: 14 },
+  sequence: { showSequenceNumbers: true, mirrorActors: false, messageMargin: 30, boxMargin: 6, actorMargin: 28,
+              noteMargin: 6, wrap: true, width: 150, height: 56, messageFontSize: 14, actorFontSize: 14, noteFontSize: 13 },
 });
 
-// ---------------------------------------------------------------- modelo
-const PARTICIPANTES = [   // orden del flujo: así los diagramas de todos los casos se leen igual
-  ["entorno", "participant", "Entorno<br/>gemelo · ESP32 · panel"],
-  ["camara", "participant", "Cámara<br/>YuNet + SFace"],
-  ["vigilancia", "participant", "Vigilancia"],
-  ["clasificador", "participant", "Clasificador"],
-  ["coordinador", "participant", "Coordinador"],
-  ["consultor", "participant", "Consultor"],
-  ["predictor", "participant", "Predictor"],
-  ["semaforico", "participant", "Semafórico"],
-  ["comunicador", "participant", "Comunicador"],
-  ["cruces", "participant", "Semáforos<br/>de los cruces"],
-  ["ciudadania", "actor", "Ciudadanía"],
-  ["policia", "actor", "Policía"],
+// ====================================================================== vocabulario del dominio
+const PARTICIPANTES = [   // [id, forma, nombre, estereotipo UML] en el orden del flujo
+  ["entorno", "participant", "Entorno", "environment"],
+  ["camara", "participant", "Cámara", "environment"],
+  ["vigilancia", "participant", "Vigilancia", "agent"],
+  ["clasificador", "participant", "Clasificador", "agent"],
+  ["coordinador", "participant", "Coordinador", "agent"],
+  ["consultor", "participant", "Consultor", "agent"],
+  ["predictor", "participant", "Predictor", "agent"],
+  ["semaforico", "participant", "Semafórico", "agent"],
+  ["comunicador", "participant", "Comunicador", "agent"],
+  ["cruces", "participant", "Semáforos", "environment"],
+  ["ciudadania", "actor", "Ciudadanía", "actor"],
+  ["policia", "actor", "Policía", "actor"],
 ];
 const ORDEN = Object.fromEntries(PARTICIPANTES.map((p, i) => [p[0], i]));
+const NOMBRE = Object.fromEntries(PARTICIPANTES.map(p => [p[0], p[2]]));
 const COLOR = { request: "#ffb300", "query-ref": "#b04dff", inform: "#00e5ff", respuesta: "#00e5ff",
                 interno: "#00ff7a", mqtt: "#ff2bd6", telegram: "#7CFFB2" };
+const PERFORMATIVA = {     // significado según la especificación FIPA ACL
+  request: ["Solicita que el receptor ejecute una acción.", "Accional"],
+  "query-ref": ["Pide información sobre un objeto o referencia.", "Cognitiva"],
+  inform: ["Comunica que algo es verdadero.", "Cognitiva"],
+};
+const MODOS = { normal: "ciclo normal", prioridad_a: "más verde a la vía principal", prioridad_b: "más verde a la vía secundaria",
+                cerco: "todo en rojo", peatonal: "fase peatonal", corredor: "corredor en verde" };
+const FASES = [
+  ["Percepción", "el sistema detecta lo que pasa"], ["Clasificación", "¿qué tipo de alerta es y qué tan grave?"],
+  ["Análisis", "consulta el tráfico y predice"], ["Decisión", "elige la mejor respuesta"],
+  ["Acción", "cambia los semáforos"], ["Comunicación", "avisa a las personas"], ["Cierre", "todo vuelve a la normalidad"],
+];
+const COLOR_FASE = ["rgba(255,43,214,0.06)", "rgba(176,77,255,0.07)", "rgba(0,229,255,0.05)", "rgba(0,255,122,0.06)",
+                    "rgba(255,179,0,0.06)", "rgba(124,255,178,0.06)", "rgba(111,139,163,0.08)"];
 
+// ====================================================================== estado
 const $ = id => document.getElementById(id);
+const guardado = (k, v) => { try { return v === undefined ? localStorage.getItem(k) : localStorage.setItem(k, v); } catch { return null; } };
 let trazas = [];
 let seleccionado = null;
-let pasoVisible = null;        // null = todos los mensajes (en vivo); número = reproducción
+let pasoVisible = null;
 let reproduciendo = null;
-let ultimoSvg = "";
 let mensajesDibujados = [];
+let modo = guardado("secuencia.modo") || "publico";
 
-// los ids de alerta se reinician con cada arranque de los agentes: la clave incluye la sesión
+// ====================================================================== incidentes
 function clave(t, mapa) {
   const s = (t.sesion || "") + "|";
   return t.hilo ? s + t.hilo : (t.traza && mapa[s + t.traza]) || (t.traza ? s + t.traza : "fondo");
 }
 
 function incidentes() {
-  const mapa = {};                                  // EV-… -> AL-… (la alerta nace en el Clasificador)
+  const mapa = {};
   for (const t of trazas) if (t.hilo && t.traza) mapa[(t.sesion || "") + "|" + t.traza] = (t.sesion || "") + "|" + t.hilo;
   const grupos = new Map();
   for (const t of trazas) {
@@ -204,46 +232,43 @@ function incidentes() {
   const lista = [];
   for (const [k, msjs] of grupos) {
     msjs.sort((a, b) => a.ts - b.ts);
-    const origen = msjs.find(m => m.de === "entorno" || m.de === "camara");
-    const descarte = msjs.some(m => m.de === "consultor" && m.tipo === "interno" && /descarta/.test(m.accion));
     const nombre = k.split("|").pop();
     const esAlerta = nombre.startsWith("AL-");
-    let evento = "", cruce = "";
-    if (origen) {
-      const m = origen.accion.match(/sma\/eventos\/([^:]+): (.+)$/);
-      if (m) { cruce = m[1]; evento = m[2]; }
-      else { const c = origen.accion.match(/sma\/camaras\/(\w+)/); evento = "rostro en " + (c ? c[1] : "cámara");
-             const u = (origen.detalle || "").match(/en (cruce\d)/); cruce = u ? u[1] : ""; }
-    }
-    if (msjs.some(m => /persona_solicitada|coincidencia/.test(m.accion + (m.detalle || ""))) && esAlerta) evento = "persona_solicitada";
+    const datosDe = msjs.map(m => m.datos || {});
+    const origen = msjs.find(m => m.de === "entorno" && m.tipo === "mqtt" && !/fin_contingencia/.test(m.accion));
+    const deOrigen = (origen?.accion || "").match(/sma\/eventos\/(cruce\d): (\w+)/) || [];
+    const evento = (datosDe.find(d => d.tipo_evento) || {}).tipo_evento || (origen?.datos || {}).tipo || deOrigen[2] ||
+                   (msjs.some(m => m.de === "camara" || /persona_solicitada/.test(m.detalle || "")) ? "persona_solicitada" : "");
+    const cruce = (origen?.datos || {}).ubicacion || deOrigen[1] ||
+                  ((msjs.find(m => m.de === "camara" || m.de === "vigilancia")?.detalle || "").match(/cruce\d/) || [""])[0];
+    const descarte = msjs.some(m => m.de === "consultor" && m.tipo === "interno" && /descarta/.test(m.accion));
     const clasif = msjs.find(m => m.de === "clasificador" && m.tipo === "interno");
-    const caso = k === "fondo" ? "fondo" : evento === "persona_solicitada" ? "c2" : evento === "accidente" ? "c1" :
-                 (!esAlerta && descarte) ? "descarte" : esAlerta ? "otro" : "pre";
+    const caso = k === "fondo" ? "fondo" : (!esAlerta && descarte) ? "descarte" : !esAlerta ? "pre" :
+                 evento === "persona_solicitada" ? "c2" : evento === "accidente" ? "c1" : "otro";
     const cerrado = msjs.some(m => m.accion === "restaurarPlanNormal") || caso === "descarte";
-    lista.push({ k, nombre, msjs, evento, cruce, caso, cerrado, esAlerta, clasif: clasif ? clasif.accion.replace("clasifica: ", "") : "",
-                 inicio: msjs[0].ts, fin: msjs[msjs.length - 1].ts });
+    lista.push({ k, nombre, msjs, evento, cruce, caso, cerrado, clasif: clasif ? clasif.accion.replace("clasifica: ", "") : "",
+                 inicio: msjs[0].ts });
   }
   return lista.sort((a, b) => b.inicio - a.inicio);
 }
 
-function visibles() {
-  return incidentes().filter(i => (i.caso !== "fondo" || $("verFondo").checked) &&
-                                  (i.caso !== "descarte" || $("verDescartes").checked) && i.caso !== "pre");
-}
+const visibles = () => incidentes().filter(i => (i.caso !== "fondo" || $("verFondo").checked) &&
+                                              (i.caso !== "descarte" || $("verDescartes").checked) && i.caso !== "pre");
 
-// ---------------------------------------------------------------- lista de incidentes
 const NOMBRE_CASO = { c1: "CASO 1", c2: "CASO 2", otro: "OTRO", fondo: "FONDO", descarte: "DESCARTE" };
+const NOMBRE_EVENTO = { accidente: "Accidente", persona_solicitada: "Persona solicitada", congestion: "Congestión",
+                        aglomeracion: "Aglomeración", placa_reportada: "Placa reportada" };
 function pintarLista() {
   const lista = visibles();
   if ($("seguir").checked && lista.length && pasoVisible === null) {
     const nuevo = lista.find(i => i.caso !== "fondo") || lista[0];
-    if (!seleccionado || seleccionado !== nuevo.k) seleccionado = nuevo.k;
+    seleccionado = nuevo.k;
   }
   if (!lista.length) { $("lista").innerHTML = '<div class="vacio">Esperando mensajes de los agentes…</div>'; return; }
   $("lista").innerHTML = lista.map(i => {
     const titulo = i.caso === "fondo" ? "Control continuo" : i.caso === "descarte" ? "Rostro descartado" : i.nombre;
-    const det = i.caso === "fondo" ? "predicción de colas y control cada 12 s" :
-                `${(i.evento || "").replace("_", " ")}${i.cruce ? " · " + i.cruce : ""}${i.clasif ? " · " + i.clasif : ""}`;
+    const det = i.caso === "fondo" ? "predicción de colas cada 12 s" :
+                `${NOMBRE_EVENTO[i.evento] || i.evento || ""}${i.cruce ? " · " + i.cruce : ""}${i.clasif ? " · " + i.clasif : ""}`;
     const hora = new Date(i.inicio * 1000).toLocaleTimeString("es-CO", { hour12: false });
     return `<div class="inc ${i.k === seleccionado ? "sel" : ""}" data-k="${i.k}">
       <div class="fila"><b>${titulo}</b><span class="chip ${i.caso}">${NOMBRE_CASO[i.caso] || ""}</span></div>
@@ -257,37 +282,203 @@ function pintarLista() {
   };
 }
 
-// ---------------------------------------------------------------- diagrama
+// ====================================================================== mensajes: interpretación FIPA-ACL y lenguaje cotidiano
 const limpio = s => String(s ?? "").replace(/[;#]/g, ",").replace(/[<>]/g, m => m === "<" ? "‹" : "›")
                                    .replace(/[{}]/g, "").replace(/\s+/g, " ").trim();
-const corto = (s, n = 70) => { s = limpio(s); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+const corto = (s, n = 60) => { s = limpio(s); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+const pct = x => x == null || isNaN(x) ? "?" : `${Math.round(x * 100)} %`;
+const num = x => x == null || isNaN(x) ? "?" : Number(x).toFixed(Number.isInteger(+x) ? 0 : 2).replace(".", ",");
 
-function comoMensajes(msjs) {
-  // marca como «respuesta» el inform que contesta un request/query-ref previo en sentido contrario
+function emparejar(msjs) {
+  // respuesta = inform que contesta un request/query-ref previo en sentido contrario; ese par activa al receptor
   const pendientes = [];
-  return msjs.map(m => {
-    let tipo = m.tipo;
-    if (tipo === "request" || tipo === "query-ref") pendientes.push(m);
-    else if (tipo === "inform") {
-      const i = pendientes.findIndex(p => p.de === m.para && p.para === m.de);
-      if (i >= 0) { pendientes.splice(i, 1); tipo = "respuesta"; }
+  const salida = msjs.map(m => ({ ...m, clase: m.tipo }));
+  salida.forEach(m => {
+    if (m.clase === "request" || m.clase === "query-ref") pendientes.push(m);
+    else if (m.clase === "inform") {
+      const j = pendientes.findIndex(p => p.de === m.para && p.para === m.de);
+      if (j >= 0) {
+        const p = pendientes.splice(j, 1)[0];
+        m.clase = "respuesta"; m.responde = p; p.activa = true; m.cierra = true;
+      }
     }
-    return { ...m, clase: tipo };
   });
+  return salida;
 }
 
-function textoMermaid(msjs) {
-  const usados = [...new Set(msjs.flatMap(m => [m.de, m.para]))]
-    .filter(p => p in ORDEN).sort((a, b) => ORDEN[a] - ORDEN[b]);
-  const lineas = ["sequenceDiagram", "autonumber"];
-  for (const id of usados) { const p = PARTICIPANTES[ORDEN[id]]; lineas.push(`${p[1]} ${id} as ${p[2]}`); }
-  for (const m of msjs) {
-    if (!(m.de in ORDEN) || !(m.para in ORDEN)) continue;
-    const flecha = m.clase === "respuesta" ? "-->>" : (m.clase === "mqtt" || m.clase === "telegram") ? "-)" : "->>";
-    const etiqueta = m.clase === "interno" ? corto(m.accion, 64) :
-                     m.clase === "mqtt" || m.clase === "telegram" ? corto(m.accion, 64) : `${m.tipo} ${limpio(m.accion)}`;
-    lineas.push(`${m.de}${flecha}${m.para}: ${etiqueta}`);
+function protocolo(m) {
+  if (m.clase === "query-ref" || (m.clase === "respuesta" && m.responde?.clase === "query-ref")) return "FIPA-Query";
+  if (m.clase === "request" || m.clase === "respuesta") return "FIPA-Request";
+  return m.clase === "inform" ? "FIPA-Inform" : "-";
+}
+
+function interpretar(m) {
+  /* publico: etiqueta corta en lenguaje cotidiano · tecnico: [PERFORMATIVA, contenido] · explica: frase completa */
+  let d = m.datos || {};
+  if (!Object.keys(d).length) { try { d = JSON.parse(m.detalle) || {}; } catch { d = {}; } }   // trazas anteriores
+  if (d.persona && typeof d.persona === "object") d = { ...d, persona: d.persona.alias };
+  const a = m.accion || "";
+  const lugar = d.ubicacion || d.sector || "";
+  const R = (publico, tecnico, explica) => ({ publico, tecnico, explica: explica || publico });
+  if (m.tipo === "mqtt" && m.de === "entorno") {
+    const tipo = d.tipo || (a.split(": ")[1] || "evento");
+    if (tipo === "fin_contingencia") return R("El operador pide terminar la contingencia", ["MQTT", "evento(fin_contingencia)"],
+      "El operador pulsó «Terminar» en el panel: el evento llega por MQTT a la Vigilancia.");
+    const via = d.real_via ? ` (${d.real_via.toLowerCase()})` : "";
+    const det = d.real_gravedad ? `, ${d.real_clase || ""} ${d.real_gravedad}`.replace(/\s+/g, " ") : "";
+    const icono = { accidente: "🚨", congestion: "🚗", aglomeracion: "👥", persona_solicitada: "📷" }[tipo] || "⚠";
+    const sitio = lugar || (a.match(/cruce\d/) || [""])[0];
+    return R(`${icono} ${NOMBRE_EVENTO[tipo] || tipo} en ${sitio}${via}`, ["MQTT", `evento(${tipo}, ${sitio})`],
+      `Se reporta ${tipo === "accidente" ? "un accidente" : "el evento «" + tipo + "»"} en ${lugar}${via}${det}. El gemelo 3D, el botón del ESP32 o el panel lo publican por MQTT y la Vigilancia lo percibe.`);
   }
+  if (m.tipo === "mqtt" && m.de === "camara") {
+    const cam = (a.match(/cam\d/) || ["cámara"])[0];
+    return R("📷 Ve un rostro (envía 128 números, no la foto)", ["MQTT", `rostro(vector[128], ${cam})`],
+      `La cámara ${cam} detecta un rostro y envía solo su vector de 128 números; la imagen nunca sale del equipo (Ley 1581).`);
+  }
+  if (m.tipo === "mqtt" && m.para === "cruces") {
+    const ordenes = a.replace("sma/semaforo: ", "").split(", ").map(x => x.split("="));
+    const txt = ordenes.map(([c, o]) => `${c}: ${MODOS[o] || o}`).join(" · ");
+    return R(`🚦 ${corto(txt, 70)}`, ["MQTT", `sma/semaforo(${corto(a.replace("sma/semaforo: ", ""), 60)})`],
+      `El Semafórico ordena por MQTT a los semáforos (físicos y virtuales): ${txt}.`);
+  }
+  if (m.tipo === "telegram") {
+    const ok = /^enviado/.test(m.detalle || "");
+    const aQuien = m.para === "policia" ? "la Policía" : "la ciudadanía";
+    return R(ok ? `📱 Aviso por Telegram a ${aQuien}` : "⚠ No se pudo enviar por Telegram", ["TELEGRAM", `aviso(${m.para})`],
+      ok ? `El aviso llega al grupo de Telegram de ${aQuien}.` : `El envío a Telegram falló: ${m.detalle}`);
+  }
+  if (m.tipo === "interno") {
+    if (m.de === "clasificador") {
+      const c = a.replace("clasifica: ", "");
+      return R(`Clasifica: ${c}`, ["f()", `clasificarAlerta() → ${c}`],
+        `El Clasificador aplica sus reglas (tipo de evento → tipo de alerta y prioridad): ${c}.`);
+    }
+    if (m.de === "consultor") {
+      const s = (a.match(/similitud ([\d.]+)/) || [])[1];
+      const si = /coincidencia/.test(a);
+      return R(si ? `Compara el rostro: se parece (${num(s)})` : `Compara el rostro: no se parece (${num(s)})`,
+        ["f()", `compararRostro() → similitud ${s}`],
+        si ? `El Consultor compara el vector con los registrados: similitud ${s}, mayor que el umbral 0,363 → posible coincidencia.`
+           : `El Consultor compara el vector con los registrados: similitud ${s}, menor que el umbral 0,363 → el rostro se descarta sin guardarse.`);
+    }
+    if (m.de === "coordinador") {
+      const plan = (a.match(/«(.+)»/) || [])[1] || a, u = (a.match(/utilidad ([\d.]+)/) || [])[1];
+      return R(`Decide: «${plan}»${/explorando/.test(a) ? " (explorando)" : ""}`, ["f()", `seleccionarPlan() → ${plan} (u=${u})`],
+        `El Coordinador evalúa los planes con el modelo de tráfico y elige el de mayor utilidad: «${plan}» (${u}). Utilidades: ${m.detalle || ""}.`);
+    }
+    if (m.de === "predictor") {
+      const p = (a.match(/p=([\d.]+)/) || [])[1];
+      return R(`Calcula 3 rutas de huida (la más probable: ${pct(+p)})`, ["f()", `predecirRutaHuida() → p=${p}`],
+        `El Predictor calcula las rutas más rápidas hacia la salida (Yen) y la probabilidad de cada una (logit). La más probable: ${m.detalle || ""} (${pct(+p)}).`);
+    }
+    if (m.de === "comunicador") {
+      const llm = /LLM/.test(a);
+      return R(llm ? "Redacta el aviso con IA (LLM local)" : "Redacta el aviso con la plantilla", ["f()", `redactarAviso() → ${llm ? "LLM" : "plantilla"}`],
+        `El Comunicador redacta el aviso ${llm ? "con el modelo de lenguaje local (Ollama) y verifica que no cambie datos" : "con la plantilla (el LLM no respondió a tiempo o cambió datos)"}: «${corto(m.detalle, 180)}».`);
+    }
+    return R(a, ["f()", a]);
+  }
+  // ---------------------------------------------------------------- mensajes FIPA-ACL entre agentes
+  switch (a) {
+    case "AlertaNovedad": return R(`Novedad: ${NOMBRE_EVENTO[d.tipo] || d.tipo} en ${lugar}`, ["INFORM", `novedad(${d.tipo}, ${lugar})`],
+      `La Vigilancia informa al Clasificador que percibió «${d.tipo}» en ${lugar}.`);
+    case "consultarPersonaSolicitada": return R("¿Este rostro es de alguien solicitado?", ["QUERY-REF", `persona_solicitada(vector, ${d.camara})`],
+      "La Vigilancia pregunta al Consultor si el rostro coincide con alguna persona registrada.");
+    case "Coincidencia": return R(d.coincide ? `Sí: posible coincidencia (${num(d.similitud)})` : "No coincide: se descarta",
+      ["INFORM", `coincidencia(${d.coincide ? "sí" : "no"}, ${d.similitud})`],
+      d.coincide ? `El Consultor responde: posible coincidencia con «${d.persona || "?"}» (similitud ${d.similitud}).`
+                 : "El Consultor responde que no coincide; el vector se descarta sin guardarse.");
+    case "Alerta": return R(`Alerta ${m.hilo}: ${d.tipo}, prioridad ${d.prioridad}`, ["INFORM", `alerta(${m.hilo}, ${d.tipo}, ${d.prioridad})`],
+      `El Clasificador crea la alerta ${m.hilo} (${d.tipo}, prioridad ${d.prioridad}) y se la informa al Coordinador.`);
+    case "consultarEstadoVial": return R(`¿Cómo está el tráfico en ${d.sector}?`, ["QUERY-REF", `estado_vial(${d.sector})`],
+      `El Coordinador le pregunta al Consultor por el estado del tráfico en ${d.sector}.`);
+    case "EstadoTrafico": return R(`Tráfico ${d.nivel || "desconocido"}${d.A != null ? ` (colas ${num(d.A)} y ${num(d.B)})` : ""}`,
+      ["INFORM", `estado_vial(${d.sector}, ${d.nivel})`],
+      `El Consultor responde con su modelo de los sensores: tráfico ${d.nivel || "desconocido"} en ${d.sector}${d.A != null ? `, cola A = ${num(d.A)} y B = ${num(d.B)} vehículos` : ""}.`);
+    case "consultarColaMedia": return R("¿Cuál es la cola media del sector?", ["QUERY-REF", `cola_media(${d.segundos || 60} s)`],
+      "El Coordinador pide la cola media para medir el efecto del plan y aprender de él.");
+    case "ColaMedia": return R(`Cola media: ${num(d.media)} vehículos`, ["INFORM", `cola_media(${d.media})`],
+      `El Consultor responde: ${num(d.media)} vehículos en cola en promedio.`);
+    case "predecirRutaHuida": return R(`¿Por dónde huiría desde ${d.ubicacion}?`, ["REQUEST", `predecir_ruta_huida(${d.ubicacion})`],
+      `El Coordinador le pide al Predictor la ruta de huida más probable desde ${d.ubicacion}.`);
+    case "Ruta": return R(`Ruta probable (${pct(d.confianza)}): ${corto((d.calles || []).join(" → "), 48)}`,
+      ["INFORM", `ruta_huida(p=${d.confianza})`],
+      `El Predictor responde: ruta ${(d.calles || []).join(" → ")} con probabilidad ${pct(d.confianza)}${d.intercepcion ? `; intercepción sugerida en ${d.intercepcion.cruce}` : ""}.`);
+    case "activarPlan": return R(`Aplica el plan «${d.nombre}»`, ["REQUEST", `activar_plan(${d.plan})`],
+      `El Coordinador le pide al Semafórico aplicar «${d.nombre}»: ${Object.entries(d.semaforos || {}).map(([c, o]) => `${c} ${MODOS[o] || o}`).join(", ")}${d.persecucion ? " (persecución: modos fijos)" : ""}.`);
+    case "ResultadoAccion": return R(d.accion === "restaurarPlanNormal" ? "Hecho: semáforos en normal" : `Hecho: plan aplicado en ${(d.cruces || []).length} cruces`,
+      ["INFORM", `resultado(${d.accion}, ${d.estado})`], `El Semafórico confirma que ejecutó «${d.accion}» (estado: ${d.estado}).`);
+    case "comunicar": return R(`Avisa a la ${d.receptor === "Policia" ? "Policía" : "ciudadanía"}`, ["REQUEST", `comunicar(${d.receptor})`],
+      `El Coordinador le pide al Comunicador avisar a la ${d.receptor === "Policia" ? "Policía (alerta de seguridad: nunca a la ciudadanía)" : "ciudadanía"}.`);
+    case "restaurarPlanNormal": return R("Fin del plan: volver a la normalidad", ["REQUEST", "restaurar_plan_normal()"],
+      "Se cumplió el tiempo del plan (o el operador lo terminó): el Coordinador le pide al Semafórico volver al ciclo normal.");
+    case "TerminarAlerta": return R("Terminar la contingencia", ["INFORM", `terminar_alerta(${m.hilo || ""})`],
+      "La Vigilancia informa al Coordinador que el operador pidió terminar la contingencia.");
+    case "PrediccionColas": return R("Pronóstico de colas a 36 s", ["INFORM", `prediccion_colas(${d.horizonte_s || 36} s)`],
+      "El Predictor envía al Semafórico su pronóstico de colas (red T-GCN) para que decida con anticipación.");
+  }
+  return R(a, [String(m.tipo).toUpperCase(), a]);
+}
+
+function fase(m, ctx = {}) {
+  /* ctx = {actuo, restauro, actual}: la cola media se consulta antes del plan (línea base: sigue en la fase en curso)
+     y al cerrar (medir el efecto); todo lo que pasa después de restaurarPlanNormal es el cierre */
+  const a = m.accion || "";
+  if (ctx.restauro && m.de !== "comunicador" && m.tipo !== "telegram") return 6;
+  if (m.tipo === "mqtt" && (m.de === "entorno" || m.de === "camara")) return 0;
+  if (["consultarPersonaSolicitada", "Coincidencia"].includes(a) || (m.de === "consultor" && m.tipo === "interno" && /similitud/.test(a))) return 0;
+  if (["AlertaNovedad", "Alerta"].includes(a) || m.de === "clasificador") return 1;
+  if (["consultarEstadoVial", "EstadoTrafico", "predecirRutaHuida", "Ruta"].includes(a) || m.de === "predictor") return 2;
+  if (m.de === "coordinador" && m.tipo === "interno") return 3;
+  if (["consultarColaMedia", "ColaMedia"].includes(a)) return ctx.actuo ? 6 : (ctx.actual >= 0 ? ctx.actual : 2);
+  if (a === "restaurarPlanNormal" || a === "TerminarAlerta") return 6;
+  if (a === "activarPlan" || m.para === "cruces" || a === "ResultadoAccion") return 4;
+  if (a === "comunicar" || m.de === "comunicador") return 5;
+  return 2;
+}
+
+// contenido al estilo FIPA (expresión S): "estado_vial(cruce2, alto)" -> "estado_vial cruce2 alto"
+const sexp = c => String(c).replace(/^([\w]+)\((.*)\)$/, (_, n, args) => `${n} ${args.replace(/,\s*/g, " ")}`.trim());
+
+// ====================================================================== diagrama (Mermaid)
+function textoMermaid(msjs, inc) {
+  const usados = [...new Set(msjs.flatMap(m => [m.de, m.para]))].filter(p => p in ORDEN).sort((a, b) => ORDEN[a] - ORDEN[b]);
+  const titulo = inc.caso === "fondo" ? "Control continuo" :
+    `${NOMBRE_CASO[inc.caso] ? NOMBRE_CASO[inc.caso].replace("CASO", "Caso") + " · " : ""}${NOMBRE_EVENTO[inc.evento] || inc.evento || ""}${inc.cruce ? " en " + inc.cruce : ""} (${inc.nombre})`;
+  const lineas = ["---", `title: "SEQ: ${limpio(titulo).replace(/"/g, "'")}"`, "---", "sequenceDiagram", "autonumber"];
+  for (const id of usados) {
+    const p = PARTICIPANTES[ORDEN[id]];
+    lineas.push(`${p[1]} ${id} as ${p[2]}${p[3] !== "actor" ? `<br/>«${p[3]}»` : ""}`);
+  }
+  const conFases = $("verFases").checked && inc.caso !== "fondo" && usados.length > 1;
+  const primero = usados[0], ultimo = usados[usados.length - 1];
+  let faseActual = -1;
+  const ctx = { actuo: false, restauro: false, actual: -1 };
+  for (const m of msjs) {
+    ctx.actual = faseActual;
+    const f = fase(m, ctx);
+    if (m.accion === "activarPlan") ctx.actuo = true;
+    if (m.accion === "restaurarPlanNormal") ctx.restauro = true;
+    if (conFases && f !== faseActual) {
+      if (faseActual >= 0) lineas.push("end");
+      lineas.push(`rect ${COLOR_FASE[f]}`);
+      lineas.push(`Note over ${primero},${ultimo}: ${f + 1} · ${FASES[f][0]} — ${FASES[f][1]}`);
+      faseActual = f;
+    }
+    const i = interpretar(m);
+    const flecha = m.clase === "respuesta" ? "-->>" : (m.clase === "mqtt" || m.clase === "telegram") ? "-)" : "->>";
+    const act = m.activa && m.de !== m.para ? "+" : (m.cierra && m.responde?.activa && m.de !== m.para ? "-" : "");
+    let etiqueta;
+    if (modo === "tecnico") {
+      const [perf, cont] = i.tecnico;
+      etiqueta = perf === "f()" ? limpio(cont)
+               : perf === "MQTT" || perf === "TELEGRAM" ? `${limpio(cont)}<br/>«${perf}»`
+               : `${perf}<br/>(${limpio(sexp(cont))})<br/>«ACL:${perf}»`;
+    } else etiqueta = limpio(i.publico);
+    lineas.push(`${m.de}${flecha}${act}${m.para}: ${etiqueta}`);
+  }
+  if (conFases && faseActual >= 0) lineas.push("end");
   return lineas.join("\n");
 }
 
@@ -299,22 +490,21 @@ function dibujar() {
     pendiente = false;
     const inc = incidentes().find(i => i.k === seleccionado);
     if (!inc) { $("titulo").textContent = "Sin incidente seleccionado"; return; }
-    let msjs = comoMensajes(inc.k === "fondo" ? inc.msjs.slice(-25) : inc.msjs).filter(m => m.de in ORDEN && m.para in ORDEN);
-    const total = msjs.length;
+    const todos = (inc.k === "fondo" ? inc.msjs.slice(-20) : inc.msjs).filter(m => m.de in ORDEN && m.para in ORDEN);
+    const total = todos.length;
     $("paso").max = total;
     const hasta = pasoVisible === null ? total : Math.min(pasoVisible, total);
     $("paso").value = hasta;
     $("pasoTxt").textContent = `${hasta} / ${total}`;
-    msjs = msjs.slice(0, hasta);
+    const msjs = emparejar(todos.slice(0, hasta));
     mensajesDibujados = msjs;
-    $("titulo").textContent = inc.caso === "fondo" ? "Control continuo (últimos 25 mensajes)" :
-      `${inc.nombre} · ${(inc.evento || "").replace("_", " ")}${inc.cruce ? " en " + inc.cruce : ""}`;
+    $("titulo").textContent = inc.caso === "fondo" ? "Control continuo (últimos 20 mensajes)" :
+      `${inc.nombre} · ${NOMBRE_EVENTO[inc.evento] || inc.evento || ""}${inc.cruce ? " en " + inc.cruce : ""}`;
     resumen(inc, total);
     if (!msjs.length) { $("lienzo").innerHTML = '<div class="vacio">Paso 0: pulsa ▶ para reproducir.</div>'; return; }
     try {
-      const { svg } = await mermaid.render("diag" + Date.now(), textoMermaid(msjs));
+      const { svg } = await mermaid.render("diag" + Date.now(), textoMermaid(msjs, inc));
       $("lienzo").innerHTML = svg;
-      ultimoSvg = svg;
       decorar(msjs, pasoVisible !== null || !inc.cerrado);
     } catch (e) {
       $("lienzo").innerHTML = `<div class="vacio">No pude dibujar el diagrama: ${limpio(e.message || e)}</div>`;
@@ -326,6 +516,8 @@ function decorar(msjs, realzarUltimo) {
   const svg = $("lienzo").querySelector("svg");
   if (!svg) return;
   escalar();
+  const titulo = [...svg.querySelectorAll("text")].find(x => /^SEQ:/.test(x.textContent));
+  if (titulo) Object.assign(titulo.style, { fill: "#00e5ff", font: "700 17px Orbitron, sans-serif", letterSpacing: ".06em" });
   const lineas = [...svg.querySelectorAll(".messageLine0, .messageLine1")];
   const textos = [...svg.querySelectorAll(".messageText")];
   lineas.forEach((l, i) => {
@@ -333,7 +525,6 @@ function decorar(msjs, realzarUltimo) {
     l.style.stroke = COLOR[m.clase] || "#9fe8ff";
     if (m.clase === "respuesta") l.style.strokeDasharray = "5 4";
   });
-  // un texto largo se parte en varias líneas: cada texto pertenece a la primera flecha que está debajo de él
   const yLinea = lineas.map(l => { const b = l.getBBox(); return b.y + b.height / 2; });
   textos.forEach(t => {
     const b = t.getBBox(), y = b.y + b.height / 2;
@@ -345,20 +536,19 @@ function decorar(msjs, realzarUltimo) {
     const ultima = lineas[lineas.length - 1];
     ultima.classList.add("ultimo");
     const caja = $("lienzo"), r = ultima.getBoundingClientRect(), c = caja.getBoundingClientRect();
-    if (r.bottom > c.bottom - 30 || r.top < c.top) caja.scrollTop += r.bottom - c.bottom + 120;   // seguir el último paso
+    if (r.bottom > c.bottom - 30 || r.top < c.top) caja.scrollTop += r.bottom - c.bottom + 120;
   }
 }
 
-// ---------------------------------------------------------------- zoom: "ajustar" al ancho (mínimo legible) o escala fija
+// ====================================================================== zoom
 let escala = "ajustar";
-const ESCALA_MINIMA = 0.75;
 function escalar() {
   const svg = $("lienzo").querySelector("svg");
   if (!svg) return;
   const vb = (svg.getAttribute("viewBox") || "").split(/\s+/).map(Number);
   if (vb.length !== 4) return;
   const disponible = $("lienzo").clientWidth - 24;
-  const f = escala === "ajustar" ? Math.min(1.2, Math.max(ESCALA_MINIMA, disponible / vb[2])) : escala;
+  const f = escala === "ajustar" ? Math.min(1.2, Math.max(0.75, disponible / vb[2])) : escala;
   svg.style.maxWidth = "none";
   svg.setAttribute("width", Math.round(vb[2] * f));
   svg.setAttribute("height", Math.round(vb[3] * f));
@@ -370,36 +560,82 @@ $("zoomMas").onclick = () => { escala = Math.min(2, (escalar() || 1) + 0.15); es
 $("zoomAjustar").onclick = () => { escala = "ajustar"; escalar(); };
 window.addEventListener("resize", () => escalar());
 
+// ====================================================================== detalle del mensaje (lenguaje cotidiano + ACL)
+const esc = s => String(s ?? "").replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
 function elegir(i) {
   const m = mensajesDibujados[i]; if (!m) return;
   const svg = $("lienzo").querySelector("svg");
   svg?.querySelectorAll(".elegido").forEach(e => e.classList.remove("elegido"));
   svg?.querySelectorAll(".messageLine0, .messageLine1")[i]?.classList.add("elegido");
   const t0 = mensajesDibujados[0].ts;
-  let contenido = m.detalle || "";
-  try { contenido = JSON.stringify(JSON.parse(contenido), null, 2); } catch { /* texto libre */ }
-  const tipo = { interno: "decisión interna", mqtt: "MQTT (dispositivo)", telegram: "Telegram", respuesta: "inform (respuesta)" }[m.clase] || m.tipo;
-  $("detalle").innerHTML = `<dl>
-      <dt>Paso</dt><dd>${i + 1}</dd>
-      <dt>Hora</dt><dd>${m.hora}</dd>
-      <dt>Desde el evento</dt><dd>+${((m.ts - t0)).toFixed(3)} s</dd>
-      <dt>De → para</dt><dd>${m.de} → ${m.para}</dd>
-      <dt>Tipo</dt><dd style="color:${COLOR[m.clase] || "inherit"}">${tipo}</dd>
-      <dt>Acción</dt><dd>${limpio(m.accion)}</dd>
-      <dt>Conversación</dt><dd>${m.hilo || m.traza || "-"}${m.sesion ? ` <span class="tenue">(sesión ${m.sesion})</span>` : ""}</dd>
-    </dl><pre>${limpio(contenido) ? contenido.replace(/[<>&]/g, c => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])) : "(sin contenido)"}</pre>`;
+  const inter = interpretar(m);
+  const antes = mensajesDibujados.slice(0, i);
+  const ctx = { actuo: antes.some(x => x.accion === "activarPlan"), restauro: antes.some(x => x.accion === "restaurarPlanNormal"), actual: -1 };
+  antes.forEach(x => { ctx.actual = fase(x, { ...ctx, actual: ctx.actual }); });
+  const f = fase(m, ctx);
+  let html = `<p class="explica">${esc(inter.explica)}</p>
+    <dl><dt>Paso</dt><dd>${i + 1} · fase ${f + 1} (${FASES[f][0]})</dd>
+      <dt>Momento</dt><dd>${m.hora} · +${(m.ts - t0).toFixed(3)} s desde el evento</dd></dl>`;
+  if (["request", "query-ref", "inform", "respuesta"].includes(m.clase)) {
+    const perf = m.tipo;
+    const [significado, perspectiva] = PERFORMATIVA[perf] || ["", ""];
+    let contenido = m.detalle || "";
+    try { contenido = JSON.stringify(JSON.parse(contenido)); } catch { /* resumen recortado */ }
+    html += `<h3>Mensaje FIPA-ACL</h3>
+      <dl><dt>Performativa</dt><dd><span class="perf" style="color:${COLOR[m.clase]}">${perf.toUpperCase()}</span> · ${significado}</dd>
+        <dt>Perspectiva</dt><dd>${perspectiva}${m.clase === "respuesta" ? " · responde al paso " + (mensajesDibujados.indexOf(m.responde) + 1) : ""}</dd></dl>
+      <pre>(<span class="k">${perf}</span>
+  <span class="k">:sender</span>          <span class="v">${NOMBRE[m.de] || m.de}</span>
+  <span class="k">:receiver</span>        <span class="v">${NOMBRE[m.para] || m.para}</span>
+  <span class="k">:content</span>         <span class="v">(${esc(m.accion)} ${esc(contenido)})</span>
+  <span class="k">:language</span>        <span class="v">JSON</span>
+  <span class="k">:ontology</span>        <span class="v">sma-ctg</span>
+  <span class="k">:protocol</span>        <span class="v">${protocolo(m)}</span>
+  <span class="k">:conversation-id</span> <span class="v">${esc(m.hilo || m.traza || "-")}</span>
+)</pre>`;
+  } else {
+    const que = { interno: "Razonamiento interno del agente: no es un mensaje, es una decisión que toma con su conocimiento y sus modelos.",
+                  mqtt: "Comunicación con el entorno por MQTT (dispositivos, sensores, cámara o semáforos): no es un mensaje FIPA-ACL.",
+                  telegram: "Salida del sistema hacia las personas por Telegram." }[m.clase] || "";
+    html += `<h3>${m.clase === "interno" ? "Decisión interna" : m.clase === "mqtt" ? "Mensaje MQTT" : "Telegram"}</h3>
+      <p class="tenue">${que}</p><pre>${esc(m.accion)}${m.detalle ? "\n\n" + esc(m.detalle) : ""}</pre>`;
+  }
+  $("detalle").innerHTML = html;
 }
 
 function resumen(inc, total) {
   const ms = inc.msjs;
   $("rMsj").textContent = total;
-  $("rAg").textContent = new Set(ms.flatMap(m => [m.de, m.para]).filter(p => !["entorno", "camara", "cruces", "ciudadania", "policia"].includes(p))).size;
+  $("rAg").textContent = new Set(ms.flatMap(m => [m.de, m.para]).filter(p => PARTICIPANTES[ORDEN[p]]?.[3] === "agent")).size;
   $("rDur").textContent = ms.length > 1 ? `${(ms[ms.length - 1].ts - ms[0].ts).toFixed(1)} s` : "-";
   const sem = ms.find(m => m.para === "cruces");
   $("rSem").textContent = sem && inc.caso !== "fondo" ? `${(sem.ts - ms[0].ts).toFixed(2)} s` : "-";
 }
 
-// ---------------------------------------------------------------- reproducción y exportación
+// ====================================================================== modo, leyenda, reproducción y exportación
+function pintarModo() {
+  $("modoPublico").classList.toggle("on", modo === "publico");
+  $("modoTecnico").classList.toggle("on", modo === "tecnico");
+  $("leyenda").innerHTML = modo === "tecnico"
+    ? `<span><i style="border-color:#ffb300"></i><b>REQUEST</b> solicita una acción</span>
+       <span><i style="border-color:#b04dff"></i><b>QUERY-REF</b> pide información</span>
+       <span><i style="border-color:#00e5ff"></i><b>INFORM</b> comunica un hecho</span>
+       <span><i style="border-color:#00e5ff;border-top-style:dashed"></i>respuesta (FIPA-Request / FIPA-Query)</span>
+       <span><i style="border-color:#00ff7a"></i><b>f()</b> razonamiento interno</span>
+       <span><i style="border-color:#ff2bd6"></i><b>MQTT</b> entorno</span>
+       <span><i style="border-color:#7CFFB2"></i><b>Telegram</b></span>
+       <span>barra vertical = el agente atiende la petición</span>`
+    : `<span><i style="border-color:#ffb300"></i>pide <b>hacer</b> algo</span>
+       <span><i style="border-color:#b04dff"></i><b>pregunta</b></span>
+       <span><i style="border-color:#00e5ff"></i><b>informa</b></span>
+       <span><i style="border-color:#00e5ff;border-top-style:dashed"></i><b>responde</b></span>
+       <span><i style="border-color:#00ff7a"></i>el agente <b>piensa y decide</b></span>
+       <span><i style="border-color:#ff2bd6"></i>sensores, cámara y semáforos</span>
+       <span><i style="border-color:#7CFFB2"></i>aviso por <b>Telegram</b></span>`;
+}
+$("modoPublico").onclick = () => { modo = "publico"; guardado("secuencia.modo", modo); pintarModo(); dibujar(); };
+$("modoTecnico").onclick = () => { modo = "tecnico"; guardado("secuencia.modo", modo); pintarModo(); dibujar(); };
+
 function detener() { clearInterval(reproduciendo); reproduciendo = null; $("btnPlay").textContent = "▶ Reproducir"; $("btnPlay").classList.remove("on"); }
 $("btnPlay").onclick = () => {
   if (reproduciendo) { detener(); return; }
@@ -410,12 +646,12 @@ $("btnPlay").onclick = () => {
   reproduciendo = setInterval(() => {
     pasoVisible += 1; dibujar();
     if (pasoVisible >= Number($("paso").max)) detener();
-  }, 900);
+  }, 1200);
 };
 $("btnInicio").onclick = () => { detener(); $("seguir").checked = false; pasoVisible = 1; dibujar(); };
 $("btnFin").onclick = () => { detener(); pasoVisible = null; dibujar(); };
 $("paso").oninput = e => { detener(); $("seguir").checked = false; pasoVisible = Number(e.target.value); dibujar(); };
-for (const id of ["verDescartes", "verFondo", "seguir"]) $(id).onchange = () => { pintarLista(); dibujar(); };
+for (const id of ["verDescartes", "verFondo", "seguir", "verFases"]) $(id).onchange = () => { pintarLista(); dibujar(); };
 
 function descargar(nombre, blob) {
   const a = document.createElement("a");
@@ -434,7 +670,7 @@ function svgConFondo() {
   copia.setAttribute("width", vb[2]); copia.setAttribute("height", vb[3]);
   return { texto: new XMLSerializer().serializeToString(copia), ancho: vb[2], alto: vb[3] };
 }
-const nombreArchivo = ext => `secuencia_${(seleccionado || "sma").split("|").pop().replace(/[^\w-]/g, "")}.${ext}`;
+const nombreArchivo = ext => `secuencia_${(seleccionado || "sma").split("|").pop().replace(/[^\w-]/g, "")}_${modo}.${ext}`;
 $("btnSvg").onclick = () => { const s = svgConFondo(); if (s) descargar(nombreArchivo("svg"), new Blob([s.texto], { type: "image/svg+xml" })); };
 $("btnPng").onclick = () => {
   const s = svgConFondo(); if (!s) return;
@@ -447,10 +683,9 @@ $("btnPng").onclick = () => {
   img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s.texto);
 };
 
-// ---------------------------------------------------------------- datos: historial + en vivo
+// ====================================================================== datos: historial + en vivo
 let refresco = null;
 function programar() { clearTimeout(refresco); refresco = setTimeout(() => { pintarLista(); if (pasoVisible === null) dibujar(); }, 150); }
-
 async function cargar() {
   try { trazas = await (await fetch("/api/trazas")).json(); } catch { trazas = []; }
   pintarLista(); dibujar();
@@ -464,6 +699,7 @@ function conectar() {
   };
   ws.onclose = () => { $("punto").classList.remove("ok"); $("conexion").textContent = "reconectando…"; setTimeout(conectar, 2000); };
 }
+pintarModo();
 cargar().then(conectar);
 </script>
 </body>

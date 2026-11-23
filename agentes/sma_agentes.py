@@ -172,6 +172,31 @@ SESION = datetime.now().strftime("%Y%m%d-%H%M%S")   # los ids de alerta (AL-0001
 CAMPOS_SIN_TRAZA = {"embedding", "vector", "p", "rutas", "llegadas", "accesos"}
 
 
+CAMPOS_DATOS = ("tipo", "tipo_evento", "ubicacion", "id", "prioridad", "sector", "nivel", "A", "B", "media", "segundos",
+                "similitud", "coincide", "camara", "receptor", "nombre", "plan", "semaforos", "accion", "estado", "cruces",
+                "confianza", "calles", "minutos", "intercepcion", "persecucion", "horizonte_s", "fuente")
+
+
+def datos_clave(cuerpo):
+    """Datos clave del contenido (sin recortar) para que el panel escriba el mensaje en lenguaje entendible."""
+    if not isinstance(cuerpo, dict):
+        return {}
+    d = {k: cuerpo[k] for k in CAMPOS_DATOS if k in cuerpo}
+    if isinstance(cuerpo.get("real"), dict):              # accidente real del DATT
+        d.update({f"real_{k}": cuerpo["real"].get(k) for k in ("via", "gravedad", "clase", "momento")})
+    if isinstance(cuerpo.get("persona"), dict):
+        d["persona"] = cuerpo["persona"].get("alias")
+    elif isinstance(cuerpo.get("persona"), str):
+        d["persona"] = cuerpo["persona"]
+    alerta = cuerpo.get("alerta")
+    if isinstance(alerta, dict):
+        d["alerta"] = alerta.get("id")
+        d.setdefault("tipo_alerta", alerta.get("tipo"))
+    elif isinstance(alerta, str):
+        d["alerta"] = alerta
+    return d
+
+
 def nueva_traza():
     global _contador_trazas
     _contador_trazas += 1
@@ -186,13 +211,13 @@ def resumir(cuerpo, largo=420):
     return texto if len(texto) <= largo else texto[:largo] + "…"
 
 
-def traza(de, para, tipo, accion, hilo=None, detalle=None, traza_id=None):
+def traza(de, para, tipo, accion, hilo=None, detalle=None, traza_id=None, datos=None):
     """tipo: performativa FIPA (inform, request, query-ref), 'interno' (decisión del agente), 'mqtt' o 'telegram'."""
     if _mqtt_log is None:
         return
     ahora = datetime.now()
     dato = {"ts": time.time(), "sesion": SESION, "hora": f"{ahora:%H:%M:%S}.{ahora.microsecond // 1000:03d}", "de": de, "para": para,
-            "tipo": tipo, "accion": accion, "hilo": hilo, "traza": traza_id, "detalle": detalle}
+            "tipo": tipo, "accion": accion, "hilo": hilo, "traza": traza_id, "detalle": detalle, "datos": datos or {}}
     try:
         _mqtt_log.publish(TEMA_TRAZAS, json.dumps(dato, ensure_ascii=False, default=str))
     except Exception:
@@ -213,7 +238,7 @@ async def _enviar_con_traza(self, msg):
     if not hilo and isinstance(cuerpo, dict):
         hilo = cuerpo.get("id") if accion == "Alerta" else cuerpo.get("alerta") if accion == "TerminarAlerta" else None
     traza(str(self.agent.jid).split("@")[0], str(msg.to).split("@")[0], msg.get_metadata("performative"), accion,
-          hilo, resumir(cuerpo), cuerpo.get("traza") if isinstance(cuerpo, dict) else None)
+          hilo, resumir(cuerpo), cuerpo.get("traza") if isinstance(cuerpo, dict) else None, datos_clave(cuerpo))
     await _enviar_original(self, msg)
 
 
@@ -322,7 +347,8 @@ class AgenteVigilancia(Agent):
             evento["traza"] = nueva_traza()
             tipo = evento.get("tipo")
             traza("entorno", "vigilancia", "mqtt", f"sma/eventos/{evento.get('ubicacion')}: {tipo}",
-                  evento.get("alerta") if tipo == "fin_contingencia" else None, resumir(evento), evento["traza"])
+                  evento.get("alerta") if tipo == "fin_contingencia" else None, resumir(evento), evento["traza"],
+                  datos_clave(evento))
             self.agent.contador[tipo] = self.agent.contador.get(tipo, 0) + 1
             self.agent.mente(evento)
             if tipo == "fin_contingencia":
