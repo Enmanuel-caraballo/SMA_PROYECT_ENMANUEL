@@ -1,5 +1,5 @@
 {
- "_epsilon": 0.1196,
+ "_epsilon": 0.0871,
  "accidente@cruce4|semaforos_optimos": {
   "impacto": 0.455,
   "n": 1,
@@ -63,6 +63,42 @@
     "durante": 5.3,
     "efecto": 0.32,
     "impacto": 0.684
+   }
+  ]
+ },
+ "accidente@cruce2|semaforos_optimos": {
+  "impacto": 0.691,
+  "n": 1,
+  "historial": [
+   {
+    "antes": 6.0,
+    "durante": 3.6,
+    "efecto": 0.39,
+    "impacto": 0.691
+   }
+  ]
+ },
+ "congestion@cruce2|semaforos_optimos": {
+  "impacto": 0.539,
+  "n": 1,
+  "historial": [
+   {
+    "antes": 4.0,
+    "durante": 6.3,
+    "efecto": -0.57,
+    "impacto": 0.539
+   }
+  ]
+ },
+ "accidente@cruce2|desvio_local": {
+  "impacto": 0.456,
+  "n": 1,
+  "historial": [
+   {
+    "antes": 6.8,
+    "durante": 10.7,
+    "efecto": -0.57,
+    "impacto": 0.456
    }
   ]
  }
