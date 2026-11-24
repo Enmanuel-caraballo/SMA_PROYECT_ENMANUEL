@@ -315,6 +315,8 @@ python agentes/comunicador.py --probar           # redacta y envía un aviso "PR
 # Cada incidente (accidente, persona solicitada…) aparece en la lista con su diagrama de secuencia real.
 # ▶ Reproducir = paso a paso para explicarlo; clic en el texto de una flecha = contenido del mensaje;
 # SVG / PNG = exportar el diagrama para el informe.
+# Botones Diagrama / Conversación y Público / Ambos / FIPA-ACL: la tabla «Conversación» pone cada mensaje
+# FIPA-ACL al lado de su traducción en lenguaje natural.
 # Historial: maqueta_virtual/panel/trazas/trazas.jsonl (no se sube a Git; se puede borrar).
 
 

@@ -176,7 +176,9 @@ Los accidentes cierran el tramo (todos los carriles). Sin accidente o con un acc
 `http://localhost:8000/secuencia` dibuja, con los mensajes FIPA-ACL **reales**, un diagrama de secuencia UML por
 incidente: solo aparecen los agentes que participaron (el Caso 1 no muestra al Predictor; el Caso 2 agrega la cámara, el
 Predictor y la Policía). Se actualiza en vivo, se puede reproducir paso a paso, cada flecha muestra su contenido al hacer
-clic y se exporta a SVG o PNG. Las flechas que vuelven al mismo agente son sus decisiones internas (clasificar, comparar
+clic y se exporta a SVG o PNG. Los textos se ven en lenguaje cotidiano, en notación FIPA-ACL
+(`QUERY-REF (estado_vial cruce2) «ACL:QUERY-REF»`) o **ambos a la vez**, y la vista **Conversación** muestra cada
+mensaje FIPA-ACL junto a su traducción en lenguaje natural. Las flechas que vuelven al mismo agente son sus decisiones internas (clasificar, comparar
 el rostro, elegir el plan por utilidad…). Los agentes publican cada mensaje en `sma/trazas`, sin datos biométricos.
 
 ## Gemelo digital 3D

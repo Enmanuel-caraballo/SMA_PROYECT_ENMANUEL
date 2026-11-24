@@ -55,6 +55,25 @@
   .grupo button { border-radius: 0; }
   .grupo button:first-child { border-radius: 8px 0 0 8px; }
   .grupo button:last-child { border-radius: 0 8px 8px 0; border-left: 0; }
+  .grupo button.medio { border-left: 0; }
+  table.conv { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.conv th { position: sticky; top: -10px; background: #07111d; color: var(--tenue); font: 600 11px "Orbitron";
+    letter-spacing: .1em; text-transform: uppercase; text-align: left; padding: 8px 8px; border-bottom: 1px solid var(--borde); z-index: 1; }
+  table.conv td { padding: 8px 8px; border-bottom: 1px solid rgba(0,229,255,.08); vertical-align: top; }
+  table.conv tr { cursor: pointer; }
+  table.conv tr:hover td { background: rgba(0,229,255,.05); }
+  table.conv tr.sel td { background: rgba(0,229,255,.12); }
+  table.conv tr.fase td { cursor: default; background: rgba(0,229,255,.04); color: var(--cian); font: 600 12px "Orbitron";
+    letter-spacing: .08em; padding: 6px 8px; }
+  table.conv .n { font: 700 12px "Orbitron"; color: var(--tenue); width: 34px; }
+  table.conv .quien { white-space: nowrap; font-weight: 600; width: 170px; }
+  table.conv .quien small { display: block; color: var(--tenue); font-weight: 400; }
+  table.conv .acl { font: 12px/1.45 "JetBrains Mono", monospace; color: #9fe8ff; width: 40%; }
+  table.conv .acl b { font: 700 11px "Orbitron"; letter-spacing: .06em; }
+  table.conv .acl small { display: block; color: var(--tenue); }
+  table.conv .nat { font-size: 15px; line-height: 1.4; }
+  table.conv .nat .corto { display: block; color: var(--texto); font-weight: 600; }
+  table.conv .nat .largo { display: block; color: var(--tenue); font-size: 13.5px; }
   input[type=range] { width: 120px; accent-color: var(--cian); }
   .paso { font: 12px "JetBrains Mono"; color: var(--tenue); min-width: 58px; }
   #lienzo { flex: 1; min-height: 0; overflow: auto; border-radius: 10px; background: rgba(0,0,0,.25); padding: 10px; }
@@ -113,7 +132,8 @@
   <section class="caja">
     <div class="barra">
       <span class="titulo" id="titulo">Sin incidente seleccionado</span>
-      <span class="grupo"><button id="modoPublico" title="Textos en lenguaje cotidiano para la presentación">Público</button><button id="modoTecnico" title="Vista técnica: notación FIPA-ACL «ACL:PERFORMATIVA» (contenido)">FIPA-ACL</button></span>
+      <span class="grupo"><button id="vistaDiagrama" title="Diagrama de secuencia UML">Diagrama</button><button id="vistaConversacion" title="Tabla: cada mensaje FIPA-ACL junto a su traducción en lenguaje natural">Conversación</button></span>
+      <span class="grupo" id="grupoModo"><button id="modoPublico" title="Textos en lenguaje cotidiano para la presentación">Público</button><button id="modoAmbos" class="medio" title="FIPA-ACL y su traducción en lenguaje natural en cada flecha">Ambos</button><button id="modoTecnico" title="Vista técnica: notación FIPA-ACL «ACL:PERFORMATIVA» (contenido)">FIPA-ACL</button></span>
       <button id="btnInicio" title="Primer paso">⏮</button>
       <button id="btnPlay" title="Reproducir paso a paso">▶ Reproducir</button>
       <button id="btnFin" title="Mostrar todo">⏭</button>
@@ -212,7 +232,8 @@ let seleccionado = null;
 let pasoVisible = null;
 let reproduciendo = null;
 let mensajesDibujados = [];
-let modo = guardado("secuencia.modo") || "publico";
+let modo = guardado("secuencia.modo") || "ambos";
+let vista = guardado("secuencia.vista") || "diagrama";
 
 // ====================================================================== incidentes
 function clave(t, mapa) {
@@ -407,7 +428,7 @@ function interpretar(m) {
       `El Predictor responde: ruta ${(d.calles || []).join(" → ")} con probabilidad ${pct(d.confianza)}${d.intercepcion ? `; intercepción sugerida en ${d.intercepcion.cruce}` : ""}.`);
     case "activarPlan": return R(`Aplica el plan «${d.nombre}»`, ["REQUEST", `activar_plan(${d.plan})`],
       `El Coordinador le pide al Semafórico aplicar «${d.nombre}»: ${Object.entries(d.semaforos || {}).map(([c, o]) => `${c} ${MODOS[o] || o}`).join(", ")}${d.persecucion ? " (persecución: modos fijos)" : ""}.`);
-    case "ResultadoAccion": return R(d.accion === "restaurarPlanNormal" ? "Hecho: semáforos en normal" : `Hecho: plan aplicado en ${(d.cruces || []).length} cruces`,
+    case "ResultadoAccion": return R(d.accion === "restaurarPlanNormal" ? "Hecho: semáforos en normal" : ((d.cruces || []).length === 0 ? "Hecho: sin cambios en los semáforos" : `Hecho: plan aplicado en ${d.cruces.length} ${d.cruces.length === 1 ? "cruce" : "cruces"}`),
       ["INFORM", `resultado(${d.accion}, ${d.estado})`], `El Semafórico confirma que ejecutó «${d.accion}» (estado: ${d.estado}).`);
     case "comunicar": return R(`Avisa a la ${d.receptor === "Policia" ? "Policía" : "ciudadanía"}`, ["REQUEST", `comunicar(${d.receptor})`],
       `El Coordinador le pide al Comunicador avisar a la ${d.receptor === "Policia" ? "Policía (alerta de seguridad: nunca a la ciudadanía)" : "ciudadanía"}.`);
@@ -469,13 +490,11 @@ function textoMermaid(msjs, inc) {
     const i = interpretar(m);
     const flecha = m.clase === "respuesta" ? "-->>" : (m.clase === "mqtt" || m.clase === "telegram") ? "-)" : "->>";
     const act = m.activa && m.de !== m.para ? "+" : (m.cierra && m.responde?.activa && m.de !== m.para ? "-" : "");
-    let etiqueta;
-    if (modo === "tecnico") {
-      const [perf, cont] = i.tecnico;
-      etiqueta = perf === "f()" ? limpio(cont)
+    const [perf, cont] = i.tecnico;
+    const fipa = perf === "f()" ? limpio(cont)
                : perf === "MQTT" || perf === "TELEGRAM" ? `${limpio(cont)}<br/>«${perf}»`
                : `${perf}<br/>(${limpio(sexp(cont))})<br/>«ACL:${perf}»`;
-    } else etiqueta = limpio(i.publico);
+    const etiqueta = modo === "tecnico" ? fipa : modo === "ambos" ? `${fipa}<br/>💬 ${limpio(i.publico)}` : limpio(i.publico);
     lineas.push(`${m.de}${flecha}${act}${m.para}: ${etiqueta}`);
   }
   if (conFases && faseActual >= 0) lineas.push("end");
@@ -502,6 +521,7 @@ function dibujar() {
       `${inc.nombre} · ${NOMBRE_EVENTO[inc.evento] || inc.evento || ""}${inc.cruce ? " en " + inc.cruce : ""}`;
     resumen(inc, total);
     if (!msjs.length) { $("lienzo").innerHTML = '<div class="vacio">Paso 0: pulsa ▶ para reproducir.</div>'; return; }
+    if (vista === "conversacion") { conversacion(msjs, inc); return; }
     try {
       const { svg } = await mermaid.render("diag" + Date.now(), textoMermaid(msjs, inc));
       $("lienzo").innerHTML = svg;
@@ -510,6 +530,46 @@ function dibujar() {
       $("lienzo").innerHTML = `<div class="vacio">No pude dibujar el diagrama: ${limpio(e.message || e)}</div>`;
     }
   });
+}
+
+let ultimoIncidenteTabla = null;
+function conversacion(msjs, inc) {
+  /* tabla: cada mensaje FIPA-ACL junto a su traducción en lenguaje natural, agrupada por fase del caso */
+  const t0 = msjs[0].ts;
+  const ctx = { actuo: false, restauro: false, actual: -1 };
+  let faseActual = -1;
+  const filas = [];
+  msjs.forEach((m, i) => {
+    ctx.actual = faseActual;
+    const f = fase(m, ctx);
+    if (m.accion === "activarPlan") ctx.actuo = true;
+    if (m.accion === "restaurarPlanNormal") ctx.restauro = true;
+    if ($("verFases").checked && f !== faseActual)
+      filas.push(`<tr class="fase"><td colspan="4">${f + 1} · ${FASES[f][0]} — ${FASES[f][1]}</td></tr>`);
+    faseActual = f;
+    const inter = interpretar(m);
+    const [perf, cont] = inter.tecnico;
+    const color = COLOR[m.clase] || "#9fe8ff";
+    const acl = perf === "f()" ? `<b style="color:${color}">RAZONAMIENTO</b><br>${esc(cont)}`
+      : perf === "MQTT" || perf === "TELEGRAM" ? `<b style="color:${color}">${perf}</b><br>${esc(cont)}`
+      : `<b style="color:${color}">${perf}</b>${m.clase === "respuesta" ? ' <small style="display:inline">(respuesta)</small>' : ""}<br>(${esc(sexp(cont))})<small>«ACL:${perf}» · ${protocolo(m)}</small>`;
+    filas.push(`<tr data-i="${i}">
+      <td class="n">${i + 1}</td>
+      <td class="quien">${esc(NOMBRE[m.de] || m.de)} → ${esc(NOMBRE[m.para] || m.para)}<small>+${(m.ts - t0).toFixed(2)} s</small></td>
+      <td class="acl">${acl}</td>
+      <td class="nat"><span class="corto">${esc(inter.publico)}</span><span class="largo">${esc(inter.explica)}</span></td></tr>`);
+  });
+  $("lienzo").innerHTML = `<table class="conv"><thead><tr><th>#</th><th>De → para</th><th>Mensaje FIPA-ACL</th>
+    <th>En lenguaje natural</th></tr></thead><tbody>${filas.join("")}</tbody></table>`;
+  if (ultimoIncidenteTabla !== inc.k) { $("lienzo").scrollTop = 0; ultimoIncidenteTabla = inc.k; }
+  for (const tr of $("lienzo").querySelectorAll("tr[data-i]")) tr.onclick = () => {
+    $("lienzo").querySelectorAll("tr.sel").forEach(x => x.classList.remove("sel"));
+    tr.classList.add("sel"); elegir(Number(tr.dataset.i));
+  };
+  if (pasoVisible !== null || !inc.cerrado) {
+    const ultima = $("lienzo").querySelector("tr[data-i]:last-child");
+    ultima?.classList.add("sel"); ultima?.scrollIntoView({ block: "nearest" });
+  }
 }
 
 function decorar(msjs, realzarUltimo) {
@@ -615,16 +675,21 @@ function resumen(inc, total) {
 // ====================================================================== modo, leyenda, reproducción y exportación
 function pintarModo() {
   $("modoPublico").classList.toggle("on", modo === "publico");
+  $("modoAmbos").classList.toggle("on", modo === "ambos");
   $("modoTecnico").classList.toggle("on", modo === "tecnico");
-  $("leyenda").innerHTML = modo === "tecnico"
-    ? `<span><i style="border-color:#ffb300"></i><b>REQUEST</b> solicita una acción</span>
+  $("vistaDiagrama").classList.toggle("on", vista === "diagrama");
+  $("vistaConversacion").classList.toggle("on", vista === "conversacion");
+  $("grupoModo").style.display = vista === "diagrama" ? "" : "none";
+  for (const id of ["zoomMenos", "zoomAjustar", "zoomMas", "btnSvg", "btnPng"]) $(id).style.display = vista === "diagrama" ? "" : "none";
+  $("leyenda").innerHTML = modo !== "publico" || vista === "conversacion"
+    ? `${modo === "ambos" && vista === "diagrama" ? "<span>💬 = traducción en lenguaje natural ·</span>" : ""}<span><i style="border-color:#ffb300"></i><b>REQUEST</b> solicita una acción</span>
        <span><i style="border-color:#b04dff"></i><b>QUERY-REF</b> pide información</span>
        <span><i style="border-color:#00e5ff"></i><b>INFORM</b> comunica un hecho</span>
        <span><i style="border-color:#00e5ff;border-top-style:dashed"></i>respuesta (FIPA-Request / FIPA-Query)</span>
        <span><i style="border-color:#00ff7a"></i><b>f()</b> razonamiento interno</span>
        <span><i style="border-color:#ff2bd6"></i><b>MQTT</b> entorno</span>
        <span><i style="border-color:#7CFFB2"></i><b>Telegram</b></span>
-       <span>barra vertical = el agente atiende la petición</span>`
+       ${vista === "diagrama" ? "<span>barra vertical = el agente atiende la petición</span>" : ""}`
     : `<span><i style="border-color:#ffb300"></i>pide <b>hacer</b> algo</span>
        <span><i style="border-color:#b04dff"></i><b>pregunta</b></span>
        <span><i style="border-color:#00e5ff"></i><b>informa</b></span>
@@ -635,6 +700,9 @@ function pintarModo() {
 }
 $("modoPublico").onclick = () => { modo = "publico"; guardado("secuencia.modo", modo); pintarModo(); dibujar(); };
 $("modoTecnico").onclick = () => { modo = "tecnico"; guardado("secuencia.modo", modo); pintarModo(); dibujar(); };
+$("modoAmbos").onclick = () => { modo = "ambos"; guardado("secuencia.modo", modo); pintarModo(); dibujar(); };
+$("vistaDiagrama").onclick = () => { vista = "diagrama"; guardado("secuencia.vista", vista); pintarModo(); dibujar(); };
+$("vistaConversacion").onclick = () => { vista = "conversacion"; guardado("secuencia.vista", vista); pintarModo(); dibujar(); };
 
 function detener() { clearInterval(reproduciendo); reproduciendo = null; $("btnPlay").textContent = "▶ Reproducir"; $("btnPlay").classList.remove("on"); }
 $("btnPlay").onclick = () => {

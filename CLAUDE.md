@@ -272,7 +272,10 @@ las **alertas** y la **conversación entre agentes**, de modo que el SMA se vea 
   (clasificar, comparar rostro, elegir plan, rutas de huida, órdenes MQTT a los cruces, redacción y envío por Telegram).
   Correlación: la Vigilancia pone un id `EV-…` (`nueva_traza`) al percibir; el Clasificador crea `AL-…` y las dos quedan
   unidas; los ids de alerta se reinician en cada arranque, por eso la clave incluye `sesion`. Solo se dibujan los agentes
-  que participaron; en vivo, reproducción paso a paso, detalle por mensaje, zoom y exportación SVG/PNG. El panel guarda las
+  que participaron; en vivo, reproducción paso a paso, detalle por mensaje, zoom y exportación SVG/PNG.
+  Vistas: Diagrama (textos Público, Ambos = FIPA-ACL + traducción 💬, o FIPA-ACL al estilo «ACL:PERFORMATIVA»,
+  estereotipos «agent»/«environment», activaciones y 7 fases) y Conversación (tabla: mensaje FIPA-ACL | lenguaje natural).
+  `interpretar()` en secuencia.html traduce cada mensaje con los `datos` clave que trae la traza. El panel guarda las
   trazas en `panel/trazas/trazas.jsonl` (ignorado por Git) y las sirve en `/api/trazas`. Cada panel usa el client_id MQTT
   `sma-panel-<puerto>` (dos paneles con el mismo id se desconectaban entre sí).
 - Depuración desde la consola: `window.__bocagrande` (cámara, controles, escena, geo, aristasDir, `avanzar(s)`) e
