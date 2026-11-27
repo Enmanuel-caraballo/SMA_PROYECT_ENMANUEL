@@ -1,5 +1,5 @@
 {
- "_epsilon": 0.0871,
+ "_epsilon": 0.05,
  "accidente@cruce4|semaforos_optimos": {
   "impacto": 0.455,
   "n": 1,
@@ -13,14 +13,26 @@
   ]
  },
  "accidente@cruce5/salida|contraflujo_salida": {
-  "impacto": 0.665,
-  "n": 1,
+  "impacto": 0.326,
+  "n": 3,
   "historial": [
    {
     "antes": 3.9,
     "durante": 10.1,
     "efecto": -1.0,
     "impacto": 0.665
+   },
+   {
+    "antes": 2.8,
+    "durante": 5.8,
+    "efecto": -1.0,
+    "impacto": 0.466
+   },
+   {
+    "antes": 3.8,
+    "durante": 14.6,
+    "efecto": -1.0,
+    "impacto": 0.326
    }
   ]
  },
@@ -43,14 +55,32 @@
   ]
  },
  "seguridad@cruce3|solo_avisar": {
-  "impacto": 0.278,
-  "n": 1,
+  "impacto": 0.22,
+  "n": 4,
   "historial": [
    {
     "antes": 2.0,
     "durante": 2.7,
     "efecto": -0.24,
     "impacto": 0.278
+   },
+   {
+    "antes": 6.0,
+    "durante": 3.5,
+    "efecto": 0.41,
+    "impacto": 0.368
+   },
+   {
+    "antes": 2.0,
+    "durante": 4.4,
+    "efecto": -0.8,
+    "impacto": 0.28
+   },
+   {
+    "antes": 5.6,
+    "durante": 9.5,
+    "efecto": -0.71,
+    "impacto": 0.22
    }
   ]
  },
@@ -67,14 +97,20 @@
   ]
  },
  "accidente@cruce2|semaforos_optimos": {
-  "impacto": 0.691,
-  "n": 1,
+  "impacto": 0.722,
+  "n": 2,
   "historial": [
    {
     "antes": 6.0,
     "durante": 3.6,
     "efecto": 0.39,
     "impacto": 0.691
+   },
+   {
+    "antes": 8.8,
+    "durante": 5.9,
+    "efecto": 0.33,
+    "impacto": 0.722
    }
   ]
  },
@@ -99,6 +135,18 @@
     "durante": 10.7,
     "efecto": -0.57,
     "impacto": 0.456
+   }
+  ]
+ },
+ "aglomeracion@cruce1|solo_avisar": {
+  "impacto": 0.227,
+  "n": 1,
+  "historial": [
+   {
+    "antes": 2.3,
+    "durante": 4.8,
+    "efecto": -0.81,
+    "impacto": 0.227
    }
   ]
  }

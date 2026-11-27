@@ -24,3 +24,9 @@ mediciones/.respaldo/
 
 # trazas de la conversación entre agentes (panel /secuencia)
 maqueta_virtual/panel/trazas/
+
+# entrenamiento continuo: respaldos de campeones, datos de estrés y bitácora
+modelos/entrenados/historial/
+modelos/datos/bocagrande_colas_estres.csv.gz
+modelos/datos/bocagrande_colas_prueba_estres.csv.gz
+modelos/entrenados/entrenamiento_continuo.log
